@@ -1,0 +1,391 @@
+/* Using your provided CSS classes for formatting, adapted for the UI */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Card View Styles - Integrated with Original */
+#card-view {
+    overflow-y: auto;
+    width: 100%;
+    padding: 1rem;
+}
+
+#card-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.scene-card {
+    background-color: #1f2937 !important;
+    color: #f3f4f6 !important;
+    border: 1px solid #374151 !important;
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+    cursor: grab;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    width: 100%;
+    min-height: 200px;
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.scene-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+    border-color: #3b82f6;
+}
+
+.scene-card.dragging {
+    opacity: 0.8;
+    transform: rotate(3deg) scale(1.02);
+    z-index: 1000;
+}
+
+.card-actions {
+    position: absolute;
+    right: -55px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    opacity: 0;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.scene-card:hover .card-actions {
+    opacity: 1;
+    right: -50px;
+}
+
+.card-actions .icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #374151;
+    background: rgba(55, 65, 81, 0.9);
+    color: #9ca3af;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-actions .icon-btn:hover {
+    background: #4b5563;
+    color: #f3f4f6;
+    transform: scale(1.1);
+}
+
+.scene-card-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #374151;
+    min-height: 32px;
+}
+
+.card-scene-title {
+    flex-grow: 1;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-family: 'Courier Prime', monospace;
+    font-size: 13px;
+    padding: 4px 6px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    outline: none;
+    background: transparent;
+    color: #f3f4f6 !important;
+    margin-right: 12px;
+    min-height: 20px;
+}
+
+.card-scene-title:focus {
+    border-color: #3b82f6;
+    background-color: rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.card-scene-title[contenteditable="true"]:empty:before {
+    content: attr(data-placeholder);
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.card-scene-number {
+    font-family: 'Courier Prime', monospace;
+    font-size: 12px;
+    font-weight: bold;
+    color: #9ca3af !important;
+    background: rgba(55, 65, 81, 0.8) !important;
+    border: 1px solid #374151 !important;
+    border-radius: 6px;
+    padding: 4px 8px;
+    width: 60px;
+    text-align: center;
+    outline: none;
+}
+
+.card-scene-number:focus {
+    border-color: #3b82f6 !important;
+    background-color: rgba(59, 130, 246, 0.2) !important;
+    color: #f3f4f6 !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.card-description {
+    width: 100%;
+    border: 1px solid #374151 !important;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'Courier Prime', monospace;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    background: rgba(17, 24, 39, 0.8) !important;
+    color: #f3f4f6 !important;
+    box-sizing: border-box;
+    min-height: 120px;
+    font-size: 13px;
+}
+
+.card-description:focus {
+    border-color: #3b82f6 !important;
+    background-color: rgba(17, 24, 39, 0.9) !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.card-description::placeholder {
+    color: #9ca3af !important;
+    font-style: italic;
+}
+
+.card-watermark {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 8px;
+    color: rgba(156, 163, 175, 0.3) !important;
+    font-family: 'Inter', sans-serif;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Enhanced Mobile Support for Cards */
+@media (max-width: 768px) {
+    #card-container {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 16px;
+        padding-right: 55px;
+    }
+
+    .scene-card {
+        width: 100%;
+        max-width: none;
+        min-height: 250px;
+    }
+
+    .card-actions {
+        right: -48px;
+    }
+
+    .card-actions .icon-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+}
+
+/* Original Screenplay Output Styles */
+#screenplay-output {
+    font-family: 'Courier New', monospace;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    background-color: #ffffff;
+    color: #000000;
+    padding: 2rem;
+    min-height: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin: 1rem;
+    border: 1px solid #e5e7eb;
+    max-width: 8.5in;
+    margin: 1rem auto;
+}
+
+.title-page { 
+    text-align: center; 
+    margin-bottom: 0; 
+    padding-top: 2rem; 
+}
+
+.title-page h1 { 
+    font-weight: bold; 
+    margin-bottom: 0.25rem; 
+    text-transform: uppercase; 
+}
+
+.scene-heading { 
+    font-weight: bold; 
+    text-transform: uppercase; 
+}
+
+.action { 
+    /* No margin needed, spacing controlled by <br> */ 
+}
+
+.character { 
+    text-transform: uppercase; 
+    margin-left: 37%; 
+}
+
+.dialogue { 
+    margin-left: 25%; 
+    margin-right: 15%; 
+}
+
+.parenthetical { 
+    margin-left: 30%; 
+}
+
+.transition { 
+    text-align: right; 
+    text-transform: uppercase; 
+    font-weight: bold; 
+}
+
+/* Custom scrollbar for a cleaner look */
+textarea::-webkit-scrollbar, 
+#screenplay-output::-webkit-scrollbar, 
+#scene-list::-webkit-scrollbar,
+#card-view::-webkit-scrollbar { 
+    width: 8px; 
+}
+
+textarea::-webkit-scrollbar-track, 
+#screenplay-output::-webkit-scrollbar-track, 
+#scene-list::-webkit-scrollbar-track,
+#card-view::-webkit-scrollbar-track { 
+    background: #1f2937; 
+}
+
+textarea::-webkit-scrollbar-thumb, 
+#screenplay-output::-webkit-scrollbar-thumb, 
+#scene-list::-webkit-scrollbar-thumb,
+#card-view::-webkit-scrollbar-thumb { 
+    background-color: #4b5563; 
+    border-radius: 20px; 
+}
+
+#screenplay-output::-webkit-scrollbar-track { 
+    background: #e5e7eb; 
+}
+
+#screenplay-output::-webkit-scrollbar-thumb { 
+    background-color: #9ca3af; 
+}
+
+#info-modal { 
+    transition: opacity 0.3s ease; 
+}
+
+.main-content { 
+    height: calc(100vh - 50px); 
+}
+
+/* Rule to hide elements in fullscreen */
+:fullscreen #main-toolbar, 
+:fullscreen #main-header,
+:fullscreen #script-header,
+:fullscreen #card-header {
+    display: none;
+}
+
+:fullscreen .main-content {
+    height: 100vh;
+}
+
+.dragging {
+    opacity: 0.5;
+    background: #4f46e5;
+}
+
+@supports (height: 100dvh) {
+    #info-modal { 
+        height: 100dvh; 
+    }
+}
+
+/* Enhanced screenplay formatting */
+.scene-heading {
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-top: 24px;
+    margin-bottom: 12px;
+}
+
+.character {
+    text-transform: uppercase;
+    margin-left: 37%;
+    margin-top: 24px;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+.dialogue {
+    margin-left: 25%;
+    margin-right: 15%;
+    margin-bottom: 6px;
+}
+
+.parenthetical {
+    margin-left: 30%;
+    margin-bottom: 6px;
+    font-style: italic;
+}
+
+.action {
+    margin-bottom: 12px;
+}
+
+.transition {
+    text-align: right;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin-top: 24px;
+    margin-bottom: 12px;
+}
+
+/* Header switching styles */
+.write-mode #main-header { display: flex; }
+.script-mode #script-header { display: flex; }
+.card-mode #card-header { display: flex; }
+
+.write-mode #script-header,
+.write-mode #card-header,
+.script-mode #main-header,
+.script-mode #card-header,
+.card-mode #main-header,
+.card-mode #script-header { 
+    display: none !important; 
+}
