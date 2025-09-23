@@ -1,112 +1,51 @@
-/* Base font for UI consistency */
+/* Using your provided CSS classes for formatting, adapted for the UI */
 body {
     font-family: 'Inter', sans-serif;
 }
-
-/* --- SCREENPLAY PREVIEW FORMATTING --- */
 #screenplay-output {
-    background-color: #ffffff;
-    color: #000000;
-    font-family: 'Courier Prime', 'Courier New', monospace;
-    font-size: 12pt;
-    line-height: 1; /* We control line height with margins */
-    max-width: 8.5in;
-    min-height: 100%;
-    margin: 0 auto;
-    padding: 1in 1in 1in 1.5in;
-    box-sizing: border-box;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
-    text-align: left;
+    font-family: 'Courier New', monospace; line-height: 1.5; white-space: pre-wrap;
+    background-color: #ffffff; color: #000000; padding: 2rem; min-height: 100%;
+    border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); margin: 1rem auto;
+    border: 1px solid #e5e7eb; max-width: 8.5in;
 }
-#screenplay-output > div {
-    margin: 0;
-    padding: 0;
-    white-space: pre-wrap;
-}
-.scene-heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    font-weight: bold;
-    text-transform: uppercase;
-    margin: 24px 0 12px 0;
-}
-.character {
-    text-transform: uppercase;
-    margin-left: 37%;
-    margin-top: 12px;
-    margin-bottom: 6px;
-}
-.dialogue {
-    margin-left: 25%;
-    margin-right: 15%;
-    line-height: 1.2;
-}
-.parenthetical {
-    margin-left: 30%;
-    font-style: normal;
-}
-.action {
-    margin: 12px 0;
-}
-.transition {
-    text-align: right;
-    text-transform: uppercase;
-    font-weight: bold;
-    margin: 12px 0;
-}
-.title-page-element {
-    font-weight: bold;
-    text-align: center;
-    margin: 24px 0;
-    text-transform: uppercase;
-    font-size: 12pt;
-}
+.title-page { text-align: center; margin-bottom: 0; padding-top: 2rem; }
+.title-page h1 { font-weight: bold; margin-bottom: 0.25rem; text-transform: uppercase; }
+.scene-heading { font-weight: bold; text-transform: uppercase; margin-top: 24px; margin-bottom: 12px; }
+.character { text-transform: uppercase; margin-left: 37%; margin-top: 24px; margin-bottom: 6px; font-weight: bold; }
+.dialogue { margin-left: 25%; margin-right: 15%; margin-bottom: 6px; }
+.parenthetical { margin-left: 30%; margin-bottom: 6px; font-style: italic; }
+.action { margin-bottom: 12px; }
+.transition { text-align: right; text-transform: uppercase; font-weight: bold; margin-top: 24px; margin-bottom: 12px; }
 
-/* --- SCENE NAVIGATOR DRAG & DROP STYLES --- */
-#scene-list li {
-    border: 2px solid #374151;
-    transition: all 0.2s ease;
-}
-#scene-list li:hover {
-    border-color: #3b82f6;
-    background-color: #1f2937;
-    transform: translateX(2px);
-}
-.sortable-ghost {
-    opacity: 0.4;
-    background: #3b82f6 !important;
-    border-style: dashed;
-}
-.sortable-chosen {
-    border-color: #10b981;
-}
-.dragging {
-    opacity: 0.9;
-    transform: scale(1.02) rotate(1deg);
-    background: #1f2937;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-}
+/* Custom scrollbar for a cleaner look */
+textarea::-webkit-scrollbar, #screenplay-output::-webkit-scrollbar, #scene-list::-webkit-scrollbar { width: 8px; }
+textarea::-webkit-scrollbar-track, #screenplay-output::-webkit-scrollbar-track, #scene-list::-webkit-scrollbar-track { background: #1f2937; }
+textarea::-webkit-scrollbar-thumb, #screenplay-output::-webkit-scrollbar-thumb, #scene-list::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 20px; }
+#screenplay-output::-webkit-scrollbar-track { background: #e5e7eb; }
+#screenplay-output::-webkit-scrollbar-thumb { background-color: #9ca3af; }
 
-/* --- CUSTOM SCROLLBARS --- */
-textarea::-webkit-scrollbar, 
-#screenplay-output::-webkit-scrollbar, 
-#scene-list::-webkit-scrollbar {
-    width: 8px;
+/* Rule to hide elements in fullscreen */
+:fullscreen #main-toolbar, :fullscreen #main-header { display: none; }
+:fullscreen .main-content { height: 100vh; }
+
+
+/* --- ADDED: CARD VIEW STYLES --- */
+.scene-card {
+    background-color: #1f2937; border: 1px solid #374151; border-radius: 12px;
+    padding: 16px; transition: all 0.3s ease; position: relative; display: flex; flex-direction: column;
 }
-textarea::-webkit-scrollbar-track, 
-#scene-list::-webkit-scrollbar-track {
-    background: #1f2937;
-}
-#screenplay-output::-webkit-scrollbar-track {
-    background: #e5e7eb;
-}
-textarea::-webkit-scrollbar-thumb, 
-#scene-list::-webkit-scrollbar-thumb {
-    background-color: #4b5563;
-    border-radius: 20px;
-}
-#screenplay-output::-webkit-scrollbar-thumb {
-    background-color: #9ca3af;
-    border-radius: 20px;
-}
+.scene-card:hover { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); transform: translateY(-2px); }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #374151; }
+.card-title { font-family: 'Courier Prime', monospace; font-weight: bold; color: #f3f4f6; background: transparent; border: none; width: 100%; text-transform: uppercase; font-size: 14px; outline: none; }
+.card-number { background-color: #374151; color: #9ca3af; padding: 4px 8px; border-radius: 6px; font-family: 'Courier Prime', monospace; font-size: 12px; font-weight: bold; }
+.card-content { font-family: 'Courier Prime', monospace; color: #d1d5db; background-color: rgba(17, 24, 39, 0.5); border: 1px solid #374151; border-radius: 8px; padding: 12px; width: 100%; min-height: 150px; resize: vertical; outline: none; font-size: 13px; line-height: 1.4; flex-grow: 1; }
+.card-content:focus, .card-title:focus { border-color: #3b82f6; }
+.card-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 4px; opacity: 0; transition: opacity 0.3s ease; }
+.scene-card:hover .card-actions { opacity: 1; }
+.card-action-btn { background-color: rgba(55, 65, 81, 0.9); border: none; color: #9ca3af; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; font-size: 12px; }
+.card-action-btn:hover { background-color: #4b5563; color: #f3f4f6; transform: scale(1.05); }
+.card-action-btn.delete:hover { background-color: #dc2626; color: white; }
+
+/* --- ADDED: DRAG & DROP STYLES --- */
+.dragging { opacity: 0.5; background: #4f46e5; }
+.sortable-ghost { opacity: 0.4; background: #3b82f6 !important; border-style: dashed; }
