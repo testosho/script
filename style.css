@@ -2,8 +2,6 @@
 body {
     font-family: 'Inter', sans-serif;
 }
-
-/* Original Screenplay Output Styles - KEEP EXACTLY AS IS */
 #screenplay-output {
     font-family: 'Courier New', monospace;
     line-height: 1.5;
@@ -19,7 +17,6 @@ body {
     max-width: 8.5in;
     margin: 1rem auto;
 }
-
 .title-page { text-align: center; margin-bottom: 0; padding-top: 2rem; }
 .title-page h1 { font-weight: bold; margin-bottom: 0.25rem; text-transform: uppercase; }
 .scene-heading { font-weight: bold; text-transform: uppercase; }
@@ -93,42 +90,23 @@ textarea::-webkit-scrollbar-thumb, #screenplay-output::-webkit-scrollbar-thumb, 
     margin-bottom: 12px;
 }
 
-/* CARD VIEW STYLES - MINIMAL AND CLEAN */
-#card-view {
-    display: flex;
-    flex-direction: column;
-    background-color: #1f2937;
-}
-
-.card-toolbar {
-    flex-shrink: 0;
-}
-
-#card-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 20px;
-    padding: 20px;
-    background-color: #111827;
-}
-
+/* CARD VIEW STYLES - MINIMAL ADDITION */
 .scene-card {
     background-color: #1f2937;
     border: 1px solid #374151;
     border-radius: 12px;
     padding: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
     position: relative;
 }
 
 .scene-card:hover {
     border-color: #3b82f6;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
     transform: translateY(-2px);
 }
 
-.scene-card-header {
+.card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -137,27 +115,26 @@ textarea::-webkit-scrollbar-thumb, #screenplay-output::-webkit-scrollbar-thumb, 
     border-bottom: 1px solid #374151;
 }
 
-.scene-card-title {
+.card-title {
     font-family: 'Courier Prime', monospace;
     font-weight: bold;
     color: #f3f4f6;
-    font-size: 14px;
-    text-transform: uppercase;
-    flex-grow: 1;
-    margin-right: 12px;
     background: transparent;
     border: 1px solid transparent;
-    padding: 4px 8px;
+    padding: 6px 8px;
     border-radius: 4px;
+    width: 100%;
+    text-transform: uppercase;
+    font-size: 14px;
     outline: none;
 }
 
-.scene-card-title:focus {
+.card-title:focus {
     border-color: #3b82f6;
     background-color: rgba(59, 130, 246, 0.1);
 }
 
-.scene-card-number {
+.card-number {
     background-color: #374151;
     color: #9ca3af;
     padding: 4px 8px;
@@ -166,52 +143,53 @@ textarea::-webkit-scrollbar-thumb, #screenplay-output::-webkit-scrollbar-thumb, 
     font-size: 12px;
     font-weight: bold;
     border: none;
-    width: 60px;
+    width: 50px;
     text-align: center;
     outline: none;
+    margin-left: 8px;
 }
 
-.scene-card-number:focus {
+.card-number:focus {
     background-color: #4b5563;
     color: #f3f4f6;
 }
 
-.scene-card-content {
+.card-content {
     font-family: 'Courier Prime', monospace;
-    font-size: 13px;
-    line-height: 1.5;
     color: #d1d5db;
     background-color: rgba(17, 24, 39, 0.5);
     border: 1px solid #374151;
     border-radius: 8px;
     padding: 12px;
-    resize: vertical;
-    min-height: 120px;
     width: 100%;
+    min-height: 120px;
+    resize: vertical;
     outline: none;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
-.scene-card-content:focus {
+.card-content:focus {
     border-color: #3b82f6;
     background-color: rgba(17, 24, 39, 0.8);
 }
 
-.scene-card-actions {
+.card-actions {
     position: absolute;
     top: 12px;
     right: 12px;
     display: flex;
-    gap: 8px;
+    gap: 4px;
     opacity: 0;
     transition: opacity 0.3s ease;
 }
 
-.scene-card:hover .scene-card-actions {
+.scene-card:hover .card-actions {
     opacity: 1;
 }
 
 .card-action-btn {
-    background-color: #374151;
+    background-color: rgba(55, 65, 81, 0.9);
     border: none;
     color: #9ca3af;
     width: 28px;
@@ -222,11 +200,13 @@ textarea::-webkit-scrollbar-thumb, #screenplay-output::-webkit-scrollbar-thumb, 
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    font-size: 12px;
 }
 
 .card-action-btn:hover {
     background-color: #4b5563;
     color: #f3f4f6;
+    transform: scale(1.05);
 }
 
 .card-action-btn.delete:hover {
@@ -234,58 +214,37 @@ textarea::-webkit-scrollbar-thumb, #screenplay-output::-webkit-scrollbar-thumb, 
     color: white;
 }
 
-/* Empty state */
-.cards-empty-state {
+.card-empty {
     grid-column: 1 / -1;
     text-align: center;
     color: #6b7280;
     padding: 60px 20px;
+    font-style: italic;
 }
 
-.cards-empty-state i {
+.card-empty i {
     font-size: 48px;
     margin-bottom: 16px;
     opacity: 0.3;
 }
 
-.cards-empty-state h3 {
-    font-size: 20px;
-    margin-bottom: 8px;
-    color: #9ca3af;
-}
-
 /* Mobile responsiveness for cards */
 @media (max-width: 768px) {
     #card-container {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
         gap: 16px;
-        padding: 16px;
     }
-
+    
     .scene-card {
         padding: 12px;
     }
-
-    .scene-card-title {
+    
+    .card-title {
         font-size: 13px;
     }
-
-    .scene-card-content {
+    
+    .card-content {
         font-size: 12px;
         min-height: 100px;
-    }
-
-    .card-toolbar {
-        padding: 12px;
-    }
-
-    .card-toolbar .flex {
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-
-    .card-toolbar button {
-        padding: 8px 12px;
-        font-size: 14px;
     }
 }
