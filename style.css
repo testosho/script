@@ -949,12 +949,14 @@ body.fullscreen-active #desktop-side-toolbar {
     left: 12px;
     font-size: 8px;
     color: rgba(156, 163, 175, 0.3) !important;
-    opacity: 0.5;
+    opacity: 0;  /* CHANGED: Hidden by default */
+    visibility: hidden;  /* ADDED: Completely hidden */
     font-family: 'Inter', sans-serif;
     font-weight: 400;
     pointer-events: none;
     z-index: 1;
 }
+
 
 /* Mobile Card Pagination */
 .mobile-pagination {
@@ -1317,12 +1319,13 @@ body.fullscreen-active #desktop-side-toolbar {
         font-size: 10pt !important;
     }
     
-    .card-watermark {
-        opacity: 0.3 !important;
-        font-size: 7pt !important;
-        color: #666 !important;
-    }
-    
+   .card-watermark {
+    opacity: 0.3 !important;
+    visibility: visible !important;  /* ADD THIS LINE */
+    font-size: 7pt !important;
+    color: #666 !important;
+}
+
     .card-header {
         border-bottom: 1px solid #000 !important;
     }
