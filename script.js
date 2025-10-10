@@ -1708,61 +1708,170 @@ function getElementType(line, nextLine, inDialogue) {
         if (menuPanel) menuPanel.classList.remove('open');
     }
 
-    function openInfoModal() {
-        const modal = document.getElementById('info-modal');
-        if (!modal) return;
+	function openInfoModal() {
+	    const modal = document.getElementById('info-modal');
+	    if (!modal) return;
 
-        createModal(
-            'info-modal',
-            'Info & Help',
-            `
-                <h3>Fountain Syntax Guide</h3>
-                <p><strong>Scene Headings:</strong> Start with INT. or EXT.</p>
-                <p>Example: <code>INT. OFFICE - DAY</code></p>
+	    createModal(
+	        'info-modal',
+	        '📖 Info & Help',
+	        `
+	            <div style="max-height: 60vh; overflow-y: auto; padding-right: 10px;">
+	                <h3 style="color: var(--primary-color); margin-top: 0;">🎬 Fountain Syntax Guide</h3>
                 
-                <p><strong>Character Names:</strong> All caps on their own line</p>
-                <p>Example: <code>JOHN</code></p>
+	                <p><strong>Scene Headings:</strong> Start with INT. or EXT.</p>
+	                <p style="margin-left: 20px; color: var(--muted-text-color);"><code>INT. OFFICE - DAY</code></p>
                 
-                <p><strong>Dialogue:</strong> Text below character name</p>
+	                <p><strong>Character Names:</strong> All caps on their own line</p>
+	                <p style="margin-left: 20px; color: var(--muted-text-color);"><code>JOHN</code></p>
                 
-                <p><strong>Parentheticals:</strong> In parentheses</p>
-                <p>Example: <code>(smiling)</code></p>
+	                <p><strong>Dialogue:</strong> Text below character name</p>
                 
-                <p><strong>Transitions:</strong> Right-aligned, ends with TO:</p>
-                <p>Example: <code>CUT TO:</code></p>
+	                <p><strong>Parentheticals:</strong> In parentheses</p>
+	                <p style="margin-left: 20px; color: var(--muted-text-color);"><code>(smiling)</code></p>
                 
-                <p><strong>Action:</strong> Any other text</p>
+	                <p><strong>Transitions:</strong> Right-aligned, ends with TO:</p>
+	                <p style="margin-left: 20px; color: var(--muted-text-color);"><code>CUT TO:</code></p>
                 
-                <p><strong>Mobile:</strong> Swipe through card pages (5 cards at a time). Drag scenes in Scene Navigator to reorder them!</p>
-            `,
-            ''
-        );
+	                <p><strong>Action:</strong> Any other text (scene description)</p>
+                
+	                <hr style="border: 1px solid var(--border-color); margin: 20px 0;">
+                
+	                <h3 style="color: var(--primary-color);">🎯 App Features</h3>
+                
+	                <p><strong>📝 Write Mode:</strong></p>
+	                <ul style="margin-left: 20px; line-height: 1.8;">
+	                    <li><strong>Desktop Toolbar:</strong> INT/EXT, DAY/NIGHT, CAPS, (), Transitions</li>
+	                    <li><strong>Mobile Toolbar:</strong> Same buttons appear when keyboard is open</li>
+	                    <li><strong>Undo/Redo:</strong> Track all changes</li>
+	                    <li><strong>Fullscreen:</strong> Distraction-free writing</li>
+	                </ul>
+                
+	                <p><strong>📄 Script Mode:</strong></p>
+	                <ul style="margin-left: 20px; line-height: 1.8;">
+	                    <li>Industry-standard formatted preview</li>
+	                    <li>Scene numbers toggle</li>
+	                    <li>Export as PDF (English/Unicode)</li>
+	                </ul>
+                
+	                <p><strong>🃏 Card Mode:</strong></p>
+	                <ul style="margin-left: 20px; line-height: 1.8;">
+	                    <li><strong>Desktop:</strong> Grid view with hover actions</li>
+	                    <li><strong>Mobile:</strong> 5 cards per page with pagination</li>
+	                    <li><strong>Tap card:</strong> Show share/delete/add buttons</li>
+	                    <li><strong>+ Button:</strong> Add new scene below current card</li>
+	                    <li><strong>Save Button:</strong> Export visible or all cards as PDF</li>
+	                </ul>
+                
+	                <p><strong>🧭 Scene Navigator:</strong></p>
+	                <ul style="margin-left: 20px; line-height: 1.8;">
+	                    <li>Drag and drop to reorder scenes</li>
+	                    <li>Filter by location, time, character</li>
+	                    <li>Export scene order as text</li>
+	                    <li>Click scene to jump to it in editor</li>
+	                </ul>
+                
+	                <p><strong>💾 File Operations:</strong></p>
+	                <ul style="margin-left: 20px; line-height: 1.8;">
+	                    <li><strong>New:</strong> Start fresh project</li>
+	                    <li><strong>Open:</strong> Import .fountain files</li>
+	                    <li><strong>Save:</strong> Export as Fountain or PDF</li>
+	                    <li><strong>Auto-Save:</strong> Saves to browser every 30 seconds</li>
+	                    <li><strong>Share:</strong> Share script via native share menu</li>
+	                </ul>
+                
+	                <p><strong>⚙️ Settings:</strong></p>
+	                <ul style="margin-left: 20px; line-height: 1.8;">
+	                    <li><strong>Project Info:</strong> Set project name and author</li>
+	                    <li><strong>Title Page:</strong> Add formatted title page</li>
+	                    <li><strong>Scene Numbers:</strong> Toggle on/off in preview</li>
+	                    <li><strong>Zoom:</strong> Adjust editor font size</li>
+	                </ul>
+                
+	                <hr style="border: 1px solid var(--border-color); margin: 20px 0;">
+                
+	                <p style="color: var(--muted-text-color); font-size: 0.9rem;">
+	                    <strong>💡 Tip:</strong> All data is saved locally in your browser. 
+	                    Use "Save" to export important work!
+	                </p>
+	            </div>
+	        `,
+	        ''
+	    );
 
-        modal.classList.add('open');
-        if (menuPanel) menuPanel.classList.remove('open');
-    }
+	    modal.classList.add('open');
+	    if (menuPanel) menuPanel.classList.remove('open');
+	}
+    
+	function openAboutModal() {
+	    const modal = document.getElementById('about-modal');
+	    if (!modal) return;
 
-    function openAboutModal() {
-        const modal = document.getElementById('about-modal');
-        if (!modal) return;
+	    createModal(
+	        'about-modal',
+	        'About ToscripT',
+	        `
+	            <div style="text-align: center; padding: 20px;">
+	                <h3 style="color: var(--primary-color); margin-top: 0; font-size: 1.8rem;">🎬 ToscripT Professional</h3>
+	                <p style="font-size: 1.1rem; color: var(--muted-text-color);">
+	                    A professional screenwriting tool for mobile and desktop
+	                </p>
+                
+	                <div style="margin: 30px 0; padding: 20px; background: var(--background-color); border-radius: 8px; border: 1px solid var(--border-color);">
+	                    <p><strong>Version:</strong> 2.5</p>
+	                    <p><strong>Format:</strong> Fountain Markup</p>
+	                    <p><strong>Platform:</strong> Web (Mobile & Desktop)</p>
+	                </div>
+                
+	                <p style="line-height: 1.8; margin: 20px 0;">
+	                    Write, preview, and export professional screenplays anywhere. 
+	                    Features drag-and-drop scene organization, index card mode, 
+	                    and industry-standard PDF export.
+	                </p>
+                
+	                <hr style="border: 1px solid var(--border-color); margin: 30px 0;">
+                
+	                <p style="font-size: 0.95rem; color: var(--muted-text-color); margin-bottom: 15px;">
+	                    Developed with Love for Film Making by
+	                </p>
+                
+	                <a href="https://thosho.github.io/" 
+	                   target="_blank" 
+	                   rel="noopener noreferrer"
+	                   style="
+	                       display: inline-block;
+	                       background: linear-gradient(135deg, var(--primary-color), #2563eb);
+	                       color: white;
+	                       text-decoration: none;
+	                       padding: 12px 30px;
+	                       border-radius: 8px;
+	                       font-weight: bold;
+	                       font-size: 1.1rem;
+	                       transition: all 0.3s ease;
+	                       box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+	                   "
+	                   onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(59, 130, 246, 0.5)';"
+	                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.3)';">
+	                    @ThoshoTech
+	                </a>
+                
+	                <p style="margin-top: 20px; font-size: 0.85rem; color: var(--muted-text-color);">
+	                    © 2025 ThoshoTech. All rights reserved.
+	                </p>
+                
+	                <p style="margin-top: 25px; font-size: 0.9rem; color: var(--muted-text-color); line-height: 1.6;">
+	                    <strong>Open Source:</strong> This project is open source.<br>
+	                    Visit the website for more projects and updates.
+	                </p>
+	            </div>
+	        `,
+	        ''
+	    );
 
-        createModal(
-            'about-modal',
-            'About ToscripT',
-            `
-                <h3>ToscripT Professional</h3>
-                <p>A professional screenwriting tool for mobile and desktop.</p>
-                <p><strong>Version:</strong> 2.3</p>
-                <p><strong>Format:</strong> Fountain Markup</p>
-                <p>Write, preview, and export professional screenplays anywhere.</p>
-            `,
-            ''
-        );
-
-        modal.classList.add('open');
-        if (menuPanel) menuPanel.classList.remove('open');
-    }
-
+	    modal.classList.add('open');
+	    if (menuPanel) menuPanel.classList.remove('open');
+	}
+    
     function handleNewProject() {
         if (confirm('Start a new project? Unsaved changes will be lost.')) {
             if (fountainInput) {
