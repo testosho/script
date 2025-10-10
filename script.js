@@ -482,7 +482,7 @@ FADE OUT.`;
         screenplayOutput.innerHTML = scriptHtml;
     }
 
-    // ENHANCED: Card View with Mobile Pagination
+    // Enhanced Card View Rendering (UPDATE THIS FUNCTION)
     function renderEnhancedCardView() {
         const cardContainer = document.getElementById('card-container');
         console.log('=== RENDERING CARD VIEW ===');
@@ -566,11 +566,23 @@ FADE OUT.`;
                     currentPage = parseInt(e.target.dataset.page);
                     renderEnhancedCardView();
                     bindCardEditingEvents();
+                    
+                    // Re-setup mobile actions after pagination
+                    if (window.innerWidth < 768) {
+                        setTimeout(() => setupMobileCardActions(), 100);
+                    }
                 });
             });
         }
 
         console.log('Cards rendered successfully');
+        
+        // Setup mobile card actions after rendering
+        if (isMobile) {
+            setTimeout(() => {
+                setupMobileCardActions();
+            }, 100);
+        }
     }
 
     // Card Editing Functions
@@ -1848,6 +1860,65 @@ FADE OUT.`;
         console.log('Event listeners setup complete');
     }
 
+    // Mobile card actions - show/hide on tap
+// Mobile Card Actions - Show/Hide on Tap
+    function setupMobileCardActions() {
+        if (window.innerWidth > 768) return;
+        
+        const cardContainer = document.getElementById('card-container');
+        if (!cardContainer) return;
+        
+        console.log('Setting up mobile card actions...');
+        
+        // Remove active class from all cards when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.scene-card') && !e.target.closest('.card-actions')) {
+                document.querySelectorAll('.scene-card.active').forEach(card => {
+                    card.classList.remove('active');
+                });
+            }
+        });
+        
+        // Toggle active class on card click
+        cardContainer.addEventListener('click', (e) => {
+            const card = e.target.closest('.scene-card');
+            
+            // Don't toggle if clicking action buttons
+            if (e.target.closest('.card-actions')) {
+                return;
+            }
+            
+            // Don't toggle if editing title or description
+            if (e.target.closest('.card-scene-title') || 
+                e.target.closest('.card-description') || 
+                e.target.closest('.card-scene-number')) {
+                return;
+            }
+            
+            if (card) {
+                e.stopPropagation();
+                
+                const wasActive = card.classList.contains('active');
+                
+                // Remove active from all other cards
+                document.querySelectorAll('.scene-card.active').forEach(otherCard => {
+                    if (otherCard !== card) {
+                        otherCard.classList.remove('active');
+                    }
+                });
+                
+                // Toggle active on clicked card
+                if (wasActive) {
+                    card.classList.remove('active');
+                } else {
+                    card.classList.add('active');
+                }
+            }
+        });
+        
+        console.log('Mobile card actions setup complete');
+    }
+
     // INITIALIZATION
     function initialize() {
         console.log('Initializing ToscripT...');
@@ -1871,6 +1942,27 @@ FADE OUT.`;
             history.add(fountainInput.value);
             history.updateButtons();
         }
+
+        // Setup mobile card actions on initialization
+        if (window.innerWidth < 768) {
+            setupMobileCardActions();
+        }
+
+        // Re-setup mobile card actions on window resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (window.innerWidth < 768) {
+                    setupMobileCardActions();
+                } else {
+                    // Remove active class on desktop
+                    document.querySelectorAll('.scene-card.active').forEach(card => {
+                        card.classList.remove('active');
+                    });
+                }
+            }, 200);
+        });
 
         console.log('ToscripT initialized successfully');
     }
