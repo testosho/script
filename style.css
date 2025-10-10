@@ -89,7 +89,7 @@ body.fullscreen-active #desktop-side-toolbar {
     justify-content: center;
 }
 
-/* Screenplay Preview Formatting */
+/* Screenplay Preview Formatting - Industry Standard */
 #screenplay-output {
     background-color: #ffffff;
     color: #000000;
@@ -111,6 +111,14 @@ body.fullscreen-active #desktop-side-toolbar {
     white-space: pre-wrap;
 }
 
+/* Empty line spacer for proper screenplay spacing */
+.empty-line {
+    height: 12px;
+    margin: 0;
+    padding: 0;
+}
+
+/* Scene Heading - Industry Standard Spacing */
 .scene-heading {
     display: flex;
     justify-content: space-between;
@@ -118,7 +126,7 @@ body.fullscreen-active #desktop-side-toolbar {
     font-weight: bold !important; 
     text-transform: uppercase !important; 
     color: #000000 !important;
-    margin: 24px 0 12px 0;
+    margin: 0 0 12px 0;
     width: 100%;
 }
 
@@ -128,32 +136,41 @@ body.fullscreen-active #desktop-side-toolbar {
     margin-left: auto;
 }
 
+/* Character Name */
 .character { 
     text-transform: uppercase !important; 
     margin-left: 37% !important; 
     color: #000000 !important;
     margin-top: 12px;
-    margin-bottom: 6px;
+    margin-bottom: 0;
 }
 
+/* Dialogue */
 .dialogue { 
     margin-left: 25% !important; 
     margin-right: 15% !important; 
     color: #000000 !important;
     line-height: 1.2;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
+/* Parenthetical */
 .parenthetical { 
     margin-left: 30% !important; 
     color: #000000 !important;
     font-style: normal;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
+/* Action/Description */
 .action { 
     color: #000000 !important;
-    margin: 12px 0;
+    margin: 0 0 12px 0;
 }
 
+/* Transition - Industry Standard */
 .transition { 
     text-align: right !important; 
     text-transform: uppercase !important; 
@@ -162,6 +179,7 @@ body.fullscreen-active #desktop-side-toolbar {
     margin: 12px 0;
 }
 
+/* Title Page Elements */
 .title-page-element {
     color: #000000 !important;
     font-weight: bold;
@@ -716,7 +734,7 @@ body.fullscreen-active #desktop-side-toolbar {
     margin: 0;
 }
 
-/* FIXED: Compact Scene Card with No Wasted Space */
+/* Compact Scene Card with No Wasted Space */
 .scene-card {
     background-color: var(--card-bg-color) !important;
     color: var(--card-text-color) !important;
@@ -893,7 +911,7 @@ body.fullscreen-active #desktop-side-toolbar {
     height: auto;
 }
 
-/* FIXED: Card Description - No Wasted Space */
+/* Card Description - No Wasted Space */
 .card-description {
     width: 100%;
     border: 1px solid var(--card-border-color) !important;
@@ -942,21 +960,20 @@ body.fullscreen-active #desktop-side-toolbar {
     background: var(--text-color);
 }
 
-/* FIXED: Card Watermark - Tighter Position */
+/* Card Watermark - Hidden on screen, visible when printing */
 .card-watermark {
     position: absolute;
     bottom: 4px;
     left: 12px;
     font-size: 8px;
     color: rgba(156, 163, 175, 0.3) !important;
-    opacity: 0;  /* CHANGED: Hidden by default */
-    visibility: hidden;  /* ADDED: Completely hidden */
+    opacity: 0;
+    visibility: hidden;
     font-family: 'Inter', sans-serif;
     font-weight: 400;
     pointer-events: none;
     z-index: 1;
 }
-
 
 /* Mobile Card Pagination */
 .mobile-pagination {
@@ -997,48 +1014,6 @@ body.fullscreen-active #desktop-side-toolbar {
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
-/* Mobile Script Preview - Better Formatting */
-@media (max-width: 768px) {
-    #screenplay-output {
-        max-width: 100%;
-        padding: 0.5in 0.25in;
-        font-size: 11pt;
-        overflow-x: hidden;
-    }
-    
-    .scene-heading {
-        font-size: 11pt;
-        margin: 18px 0 10px 0;
-    }
-    
-    .character {
-        margin-left: 25% !important;
-        font-size: 11pt;
-    }
-    
-    .dialogue {
-        margin-left: 15% !important;
-        margin-right: 10% !important;
-        font-size: 11pt;
-    }
-    
-    .parenthetical {
-        margin-left: 20% !important;
-        font-size: 10pt;
-    }
-    
-    .action {
-        font-size: 11pt;
-        margin: 10px 0;
-    }
-    
-    .transition {
-        font-size: 11pt;
-        margin: 10px 0;
-    }
-}
-
-
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
     #desktop-side-toolbar {
@@ -1057,6 +1032,50 @@ body.fullscreen-active #desktop-side-toolbar {
         padding: 1rem;
         font-size: 16px;
         -webkit-text-size-adjust: 100%;
+    }
+    
+    /* Mobile Script Preview - Better Formatting */
+    #screenplay-output {
+        max-width: 100%;
+        padding: 0.5in 0.25in;
+        font-size: 11pt;
+        overflow-x: hidden;
+    }
+    
+    .scene-heading {
+        font-size: 11pt;
+        margin: 0 0 10px 0;
+    }
+    
+    .character {
+        margin-left: 25% !important;
+        font-size: 11pt;
+        margin-top: 10px;
+    }
+    
+    .dialogue {
+        margin-left: 15% !important;
+        margin-right: 10% !important;
+        font-size: 11pt;
+    }
+    
+    .parenthetical {
+        margin-left: 20% !important;
+        font-size: 10pt;
+    }
+    
+    .action {
+        font-size: 11pt;
+        margin: 0 0 10px 0;
+    }
+    
+    .transition {
+        font-size: 11pt;
+        margin: 10px 0;
+    }
+    
+    .empty-line {
+        height: 10px;
     }
     
     .page-header .header-center {
@@ -1106,7 +1125,7 @@ body.fullscreen-active #desktop-side-toolbar {
         grid-template-columns: none;
     }
     
-    /* FIXED: Mobile Scene Card - Compact */
+    /* Mobile Scene Card - Compact */
     .scene-card {
         width: 100% !important;
         max-width: 100% !important;
@@ -1116,13 +1135,13 @@ body.fullscreen-active #desktop-side-toolbar {
         cursor: pointer;
     }
     
-    /* FIXED: Mobile Card Description - Limited Height */
+    /* Mobile Card Description - Limited Height */
     .card-description {
         min-height: 150px;
         max-height: 250px;
     }
     
-    /* FIXED: Mobile Card Actions - Hidden Until Tap, All Grey */
+    /* Mobile Card Actions - Hidden Until Tap, All Grey */
     .card-actions {
         position: absolute;
         right: -65px;
@@ -1361,13 +1380,13 @@ body.fullscreen-active #desktop-side-toolbar {
         font-size: 10pt !important;
     }
     
-   .card-watermark {
-    opacity: 0.3 !important;
-    visibility: visible !important;  /* ADD THIS LINE */
-    font-size: 7pt !important;
-    color: #666 !important;
-}
-
+    .card-watermark {
+        opacity: 0.3 !important;
+        visibility: visible !important;
+        font-size: 7pt !important;
+        color: #666 !important;
+    }
+    
     .card-header {
         border-bottom: 1px solid #000 !important;
     }
