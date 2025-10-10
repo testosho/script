@@ -716,12 +716,13 @@ body.fullscreen-active #desktop-side-toolbar {
     margin: 0;
 }
 
+/* FIXED: Compact Scene Card with No Wasted Space */
 .scene-card {
     background-color: var(--card-bg-color) !important;
     color: var(--card-text-color) !important;
     border: 1px solid var(--card-border-color) !important;
     border-radius: 12px;
-    padding: 12px;
+    padding: 12px 12px 8px 12px;
     display: flex;
     position: relative;
     cursor: pointer;
@@ -755,7 +756,7 @@ body.fullscreen-active #desktop-side-toolbar {
     z-index: 1000;
 }
 
-/* Desktop Card Actions */
+/* Desktop Card Actions - All Grey */
 .card-actions {
     position: absolute;
     right: -60px;
@@ -781,7 +782,7 @@ body.fullscreen-active #desktop-side-toolbar {
     height: 36px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
-    background: rgba(55, 65, 81, 0.8);
+    background: rgba(55, 65, 81, 0.9);
     color: var(--muted-text-color);
     font-size: 16px;
     cursor: pointer;
@@ -797,6 +798,22 @@ body.fullscreen-active #desktop-side-toolbar {
     background: rgba(75, 85, 99, 1);
     color: var(--text-color);
     transform: scale(1.1);
+}
+
+/* Override all button colors to grey */
+.card-actions .share-card-btn,
+.card-actions .delete-card-btn,
+.card-actions .add-card-btn-mobile {
+    background: rgba(55, 65, 81, 0.9);
+    border-color: var(--border-color);
+    color: var(--muted-text-color);
+}
+
+.card-actions .share-card-btn:hover,
+.card-actions .delete-card-btn:hover,
+.card-actions .add-card-btn-mobile:hover {
+    background: rgba(75, 85, 99, 1);
+    color: var(--text-color);
 }
 
 .scene-card-content {
@@ -876,6 +893,7 @@ body.fullscreen-active #desktop-side-toolbar {
     height: auto;
 }
 
+/* FIXED: Card Description - No Wasted Space */
 .card-description {
     width: 100%;
     border: 1px solid var(--card-border-color) !important;
@@ -888,8 +906,9 @@ body.fullscreen-active #desktop-side-toolbar {
     background: rgba(17, 24, 39, 0.8) !important;
     color: var(--card-text-color) !important;
     box-sizing: border-box;
-    overflow-y: hidden;
+    overflow-y: auto;
     min-height: 120px;
+    max-height: 200px;
     height: auto;
 }
 
@@ -923,9 +942,10 @@ body.fullscreen-active #desktop-side-toolbar {
     background: var(--text-color);
 }
 
+/* FIXED: Card Watermark - Tighter Position */
 .card-watermark {
     position: absolute;
-    bottom: 8px;
+    bottom: 4px;
     left: 12px;
     font-size: 8px;
     color: rgba(156, 163, 175, 0.3) !important;
@@ -1042,19 +1062,23 @@ body.fullscreen-active #desktop-side-toolbar {
         grid-template-columns: none;
     }
     
+    /* FIXED: Mobile Scene Card - Compact */
     .scene-card {
         width: 100% !important;
         max-width: 100% !important;
         height: auto;
-        min-height: 300px;
+        min-height: auto;
+        padding: 12px 12px 8px 12px;
         cursor: pointer;
     }
     
+    /* FIXED: Mobile Card Description - Limited Height */
     .card-description {
-        min-height: 180px;
+        min-height: 150px;
+        max-height: 250px;
     }
     
-    /* FIXED: Mobile Card Actions - Hidden Until Tap */
+    /* FIXED: Mobile Card Actions - Hidden Until Tap, All Grey */
     .card-actions {
         position: absolute;
         right: -65px;
@@ -1077,15 +1101,15 @@ body.fullscreen-active #desktop-side-toolbar {
         right: -60px;
     }
     
-    /* Beautiful consistent action buttons */
+    /* Beautiful consistent action buttons - All Grey */
     .card-actions .icon-btn {
         width: 48px;
         height: 48px;
         font-size: 20px;
         border-radius: 12px;
         border: 2px solid var(--border-color);
-        background: var(--surface-color);
-        color: white;
+        background: rgba(55, 65, 81, 0.95);
+        color: var(--text-color);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1094,37 +1118,21 @@ body.fullscreen-active #desktop-side-toolbar {
         position: relative;
     }
     
-    /* Share button - blue theme */
-    .card-actions .share-card-btn {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        border-color: #3b82f6;
-    }
-    
-    .card-actions .share-card-btn:active {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
-        transform: scale(0.95);
-    }
-    
-    /* Delete button - red theme */
-    .card-actions .delete-card-btn {
-        background: linear-gradient(135deg, #ef4444, #dc2626);
-        border-color: #ef4444;
-    }
-    
-    .card-actions .delete-card-btn:active {
-        background: linear-gradient(135deg, #dc2626, #b91c1c);
-        transform: scale(0.95);
-    }
-    
-    /* Add button - green theme */
+    /* All buttons grey - no color differentiation */
+    .card-actions .share-card-btn,
+    .card-actions .delete-card-btn,
     .card-actions .add-card-btn-mobile {
-        background: linear-gradient(135deg, #22c55e, #16a34a);
-        border-color: #22c55e;
+        background: rgba(55, 65, 81, 0.95);
+        border-color: var(--border-color);
+        color: var(--text-color);
     }
     
+    .card-actions .share-card-btn:active,
+    .card-actions .delete-card-btn:active,
     .card-actions .add-card-btn-mobile:active {
-        background: linear-gradient(135deg, #16a34a, #15803d);
+        background: rgba(75, 85, 99, 1);
         transform: scale(0.95);
+        color: white;
     }
     
     .card-scene-title {
