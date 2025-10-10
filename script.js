@@ -1812,15 +1812,15 @@ function getElementType(line, nextLine, inDialogue) {
 	        'About ToscripT',
 	        `
 	            <div style="text-align: center; padding: 20px;">
-	                <h3 style="color: var(--primary-color); margin-top: 0; font-size: 1.8rem;">🎬 ToscripT Professional</h3>
+	                <h3 style="color: var(--primary-color); margin-top: 0; font-size: 1.8rem;">🎬 ToscripT </h3>
 	                <p style="font-size: 1.1rem; color: var(--muted-text-color);">
-	                    A professional screenwriting tool for mobile and desktop
+	                    A professional screenwriting tool for Android
 	                </p>
                 
 	                <div style="margin: 30px 0; padding: 20px; background: var(--background-color); border-radius: 8px; border: 1px solid var(--border-color);">
 	                    <p><strong>Version:</strong> 2.5</p>
 	                    <p><strong>Format:</strong> Fountain Markup</p>
-	                    <p><strong>Platform:</strong> Web (Mobile & Desktop)</p>
+	                    <p><strong>Platform:</strong> Android </p>
 	                </div>
                 
 	                <p style="line-height: 1.8; margin: 20px 0;">
@@ -1832,7 +1832,7 @@ function getElementType(line, nextLine, inDialogue) {
 	                <hr style="border: 1px solid var(--border-color); margin: 30px 0;">
                 
 	                <p style="font-size: 0.95rem; color: var(--muted-text-color); margin-bottom: 15px;">
-	                    Developed with Love for Film Making by
+	                   with Love for Film Making, Developed by
 	                </p>
                 
 	                <a href="https://thosho.github.io/" 
@@ -1857,11 +1857,6 @@ function getElementType(line, nextLine, inDialogue) {
                 
 	                <p style="margin-top: 20px; font-size: 0.85rem; color: var(--muted-text-color);">
 	                    © 2025 ThoshoTech. All rights reserved.
-	                </p>
-                
-	                <p style="margin-top: 25px; font-size: 0.9rem; color: var(--muted-text-color); line-height: 1.6;">
-	                    <strong>Open Source:</strong> This project is open source.<br>
-	                    Visit the website for more projects and updates.
 	                </p>
 	            </div>
 	        `,
