@@ -1,4 +1,4 @@
-// ToscripT Professional - Complete Fixed Version (All Issues Resolved)
+// ToscripT Professional - Complete Version with All Features
 
 document.addEventListener('DOMContentLoaded', () => {
     // Global variables
@@ -153,7 +153,7 @@ FADE OUT.`;
         }
     }
 
-    // FIXED: Placeholder functions with better detection
+    // Placeholder functions
     function setPlaceholder() {
         if (fountainInput && (!fountainInput.value || fountainInput.value.trim() === '')) {
             fountainInput.value = placeholderText;
@@ -168,7 +168,6 @@ FADE OUT.`;
         }
     }
 
-    // FIXED: Check if current text is placeholder
     function isPlaceholder() {
         return fountainInput && (fountainInput.classList.contains('placeholder') || fountainInput.value === placeholderText);
     }
@@ -230,57 +229,48 @@ FADE OUT.`;
                 continue;
             }
 
-            // Scene headings
             if (line.toUpperCase().startsWith('INT.') || line.toUpperCase().startsWith('EXT.')) {
                 tokens.push({ type: 'sceneheading', text: line.toUpperCase() });
                 inDialogue = false;
                 continue;
             }
 
-            // Transitions
             if (line.toUpperCase().endsWith('TO:') || line.toUpperCase() === 'FADE OUT.' || line.toUpperCase() === 'FADE IN:' || line.toUpperCase() === 'FADE TO BLACK:') {
                 tokens.push({ type: 'transition', text: line.toUpperCase() });
                 inDialogue = false;
                 continue;
             }
 
-            // Character names (all caps with next line)
             if (line === line.toUpperCase() && !line.startsWith('!') && line.length > 0 && nextLine) {
                 tokens.push({ type: 'character', text: line });
                 inDialogue = true;
                 continue;
             }
 
-            // Parentheticals in dialogue
             if (inDialogue && line.startsWith('(')) {
                 tokens.push({ type: 'parenthetical', text: line });
                 continue;
             }
 
-            // Dialogue
             if (inDialogue) {
                 tokens.push({ type: 'dialogue', text: line });
                 continue;
             }
 
-            // Action (everything else)
             tokens.push({ type: 'action', text: line });
         }
 
         return tokens;
     }
 
-    // FIXED: Scene Extraction - Only include action/description in cards
+    // Scene Extraction - Only action in cards
     function extractScenesFromText(text) {
         console.log('=== EXTRACTING SCENES ===');
         if (!text || !text.trim() || text === placeholderText) {
-            console.warn('No valid text to extract');
             return [];
         }
 
         const tokens = parseFountain(text);
-        console.log('Tokens parsed:', tokens.length);
-        
         const scenes = [];
         let currentScene = null;
         let sceneNumber = 0;
@@ -315,7 +305,6 @@ FADE OUT.`;
                     characters: []
                 };
             } else if (currentScene) {
-                // FIX: Only add action/description to cards, NOT dialogue, parentheticals, or transitions
                 if (token.type === 'action') {
                     currentScene.description.push(token.text);
                 } else if (token.type === 'character') {
@@ -323,9 +312,7 @@ FADE OUT.`;
                     if (!currentScene.characters.includes(charName)) {
                         currentScene.characters.push(charName);
                     }
-                    // Don't add character names to description
                 }
-                // Ignore dialogue, parentheticals, and transitions for card description
             }
         });
 
@@ -335,7 +322,7 @@ FADE OUT.`;
         return scenes;
     }
 
-    // FIXED: Switch View Function - Preserve text properly
+    // Switch View Function
     function switchView(view) {
         console.log(`Switching to view: ${view}`);
         currentView = view;
@@ -350,7 +337,6 @@ FADE OUT.`;
             renderEnhancedScript();
             
         } else if (view === 'card') {
-            // Extract scenes before rendering cards
             if (fountainInput && !isPlaceholder()) {
                 console.log('Extracting scenes for card view...');
                 projectData.projectInfo.scenes = extractScenesFromText(fountainInput.value);
@@ -361,7 +347,6 @@ FADE OUT.`;
             if (cardHeader) cardHeader.style.display = 'flex';
             renderEnhancedCardView();
             
-            // Bind card events after rendering
             setTimeout(() => {
                 bindCardEditingEvents();
             }, 100);
@@ -370,7 +355,6 @@ FADE OUT.`;
             writeView?.classList.add('active');
             if (mainHeader) mainHeader.style.display = 'flex';
             
-            // FIX: Don't clear placeholder if there's actual content
             setTimeout(() => {
                 if (fountainInput) {
                     if (!isPlaceholder()) {
@@ -410,14 +394,12 @@ FADE OUT.`;
                 continue;
             }
 
-            // Title page elements
             if (/^(TITLE|AUTHOR|CREDIT|SOURCE):/i.test(line)) {
                 scriptHtml += `<div class="title-page-element">${line}</div>`;
                 inDialogue = false;
                 continue;
             }
 
-            // Scene headings
             if (line.toUpperCase().startsWith('INT.') || line.toUpperCase().startsWith('EXT.')) {
                 sceneCount++;
                 if (showSceneNumbers) {
@@ -432,33 +414,28 @@ FADE OUT.`;
                 continue;
             }
 
-            // Transitions
             if (line.toUpperCase().endsWith('TO:') || line.toUpperCase() === 'FADE OUT.' || line.toUpperCase() === 'FADE IN:' || line.toUpperCase() === 'FADE TO BLACK:') {
                 scriptHtml += `<div class="transition">${line.toUpperCase()}</div>`;
                 inDialogue = false;
                 continue;
             }
 
-            // Character names
             if (line === line.toUpperCase() && !line.startsWith('!') && line.length > 0 && nextLine) {
                 scriptHtml += `<div class="character">${line}</div>`;
                 inDialogue = true;
                 continue;
             }
 
-            // Parentheticals
             if (inDialogue && line.startsWith('(')) {
                 scriptHtml += `<div class="parenthetical">${line}</div>`;
                 continue;
             }
 
-            // Dialogue
             if (inDialogue) {
                 scriptHtml += `<div class="dialogue">${line}</div>`;
                 continue;
             }
 
-            // Action
             scriptHtml += `<div class="action">${line}</div>`;
         }
 
@@ -608,7 +585,7 @@ FADE OUT.`;
         const trimmedScript = scriptText.trim();
         if (trimmedScript !== fountainInput.value.trim() && trimmedScript !== '') {
             fountainInput.value = trimmedScript;
-            fountainInput.classList.remove('placeholder'); // Ensure placeholder is removed
+            fountainInput.classList.remove('placeholder');
             history.add(fountainInput.value);
             saveProjectData();
         }
@@ -660,132 +637,159 @@ FADE OUT.`;
         bindCardEditingEvents();
     }
 
-    // Export functions
-    function generateCardImageBlob(card) {
-        return new Promise((resolve) => {
-            const tempContainer = document.createElement('div');
-            tempContainer.style.cssText = `
-                position: absolute; 
-                left: -9999px; 
-                width: 3in; 
-                height: 5in; 
-                padding: 15px; 
-                background: white; 
-                color: black;
-                border: 2px solid black;
-                border-radius: 8px;
-                box-sizing: border-box;
-                font-family: 'Courier New', monospace;
-            `;
-            
-            const clonedCard = card.cloneNode(true);
-            const actions = clonedCard.querySelector('.card-actions');
-            if (actions) actions.remove();
-            
-            const title = clonedCard.querySelector('.card-scene-title');
-            if (title) title.style.cssText = 'font-weight: bold; font-size: 11pt; color: black; background: white; border: none; text-transform: uppercase; margin-bottom: 10px;';
-            
-            const desc = clonedCard.querySelector('.card-description');
-            if (desc) desc.style.cssText = 'font-size: 10pt; border: none; background: white; color: black; width: 100%; height: auto; resize: none;';
-            
-            const sceneNum = clonedCard.querySelector('.card-scene-number');
-            if (sceneNum) sceneNum.style.cssText = 'background: white; border: 1px solid black; font-weight: bold; color: black; width: 40px; font-size: 10pt;';
-            
-            tempContainer.appendChild(clonedCard);
-            document.body.appendChild(tempContainer);
-            
-            if (typeof html2canvas !== 'undefined') {
-                html2canvas(tempContainer, {
-                    backgroundColor: '#ffffff',
-                    scale: 2,
-                    width: 288,
-                    height: 480,
-                    logging: false
-                }).then(canvas => {
-                    canvas.toBlob(blob => {
-                        document.body.removeChild(tempContainer);
-                        resolve(blob);
-                    }, 'image/png');
+    // Original Card Design - Cleaner, Darker Text
+    async function generateCardImageBlob(cardElement) {
+        const sceneNumber = cardElement.querySelector('.card-scene-number')?.value || '1';
+        const sceneHeading = cardElement.querySelector('.card-scene-title')?.textContent.trim().toUpperCase() || 'UNTITLED SCENE';
+        const description = cardElement.querySelector('.card-description')?.value || '';
+
+        const printableCard = document.createElement('div');
+        printableCard.style.cssText = `
+            position: absolute;
+            left: -9999px;
+            width: 480px;
+            height: 288px;
+            background-color: #ffffff;
+            border: 1.5px solid #000000;
+            font-family: 'Courier Prime', 'Courier New', monospace;
+            color: #000000;
+            font-weight: 500;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        `;
+
+        const descriptionSummary = description.split('\n').slice(0, 4).join('<br>');
+
+        printableCard.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 10px;">
+                <span style="font-size: 14px; font-weight: 700;">${sceneHeading}</span>
+                <span style="font-size: 14px; font-weight: 700;">${sceneNumber}</span>
+            </div>
+            <div style="flex-grow: 1; font-size: 15px; line-height: 1.6;">${descriptionSummary}</div>
+            <div style="font-size: 10px; text-align: right; opacity: 0.6; margin-top: auto;">ToscripT</div>
+        `;
+
+        document.body.appendChild(printableCard);
+
+        return new Promise(async (resolve) => {
+            try {
+                const canvas = await html2canvas(printableCard, {
+                    scale: 3,
+                    backgroundColor: '#ffffff'
                 });
-            } else {
-                console.error('html2canvas not loaded');
-                document.body.removeChild(tempContainer);
+                canvas.toBlob(blob => {
+                    resolve(blob);
+                }, 'image/png', 0.95);
+            } catch (error) {
+                console.error('Card image generation failed', error);
                 resolve(null);
+            } finally {
+                document.body.removeChild(printableCard);
             }
         });
     }
 
     async function shareSceneCard(sceneId) {
-        const card = document.querySelector(`.scene-card[data-scene-id="${sceneId}"]`);
-        if (!card) return;
-
-        const blob = await generateCardImageBlob(card);
-        if (!blob) {
-            alert('Unable to generate card image');
+        const cardElement = document.querySelector(`.card-for-export[data-scene-id="${sceneId}"]`);
+        if (!cardElement) {
+            alert('Could not find the card to share.');
             return;
         }
 
-        const file = new File([blob], `scene-${sceneId}.png`, { type: 'image/png' });
+        const blob = await generateCardImageBlob(cardElement);
+        if (!blob) {
+            alert('Failed to create card image.');
+            return;
+        }
 
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        const sceneNumber = cardElement.querySelector('.card-scene-number')?.value || '';
+        const sceneHeading = cardElement.querySelector('.card-scene-title')?.textContent || 'Scene';
+        const fileName = `Scene${sceneNumber}-${sceneHeading.replace(/[^a-zA-Z0-9]/g, '')}.png`;
+
+        if (navigator.share && navigator.canShare({ files: [new File([blob], fileName, { type: 'image/png' })] })) {
+            const file = new File([blob], fileName, { type: 'image/png' });
             try {
                 await navigator.share({
                     files: [file],
-                    title: `Scene ${sceneId} Card`,
-                    text: 'Scene card from ToscripT'
+                    title: sceneHeading,
+                    text: `Scene card from ToscripT: ${sceneHeading}`
                 });
-            } catch (err) {
-                if (err.name !== 'AbortError') {
-                    console.error('Share failed:', err);
-                }
+            } catch (error) {
+                console.log('Share was cancelled or failed', error);
             }
         } else {
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `scene-${sceneId}.png`;
-            link.click();
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, fileName);
         }
     }
 
+    // Original Card PDF Export Design
     async function saveAllCardsAsImages() {
-        const cards = document.querySelectorAll('.scene-card.card-for-export');
-        if (cards.length === 0) {
-            alert('No cards to export');
+        console.log('Generating PDF for all scene cards...');
+
+        if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
+            alert('PDF generation library is not loaded. Cannot create PDF.');
             return;
         }
 
-        if (typeof JSZip === 'undefined' || typeof window.jspdf === 'undefined') {
-            alert('Required libraries not loaded. Please refresh the page.');
+        const cards = document.querySelectorAll('.card-for-export');
+        if (cards.length === 0) {
+            alert('No cards to save.');
             return;
         }
+
+        alert(`Preparing to generate a PDF with ${cards.length} cards. This may take a moment...`);
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({
             orientation: 'portrait',
-            unit: 'in',
-            format: [3, 5]
+            unit: 'mm',
+            format: 'a4'
         });
 
-        for (let i = 0; i < cards.length; i++) {
-            const blob = await generateCardImageBlob(cards[i]);
-            if (blob) {
-                const dataUrl = URL.createObjectURL(blob);
-                if (i > 0) doc.addPage();
-                doc.addImage(dataUrl, 'PNG', 0, 0, 3, 5);
-                URL.revokeObjectURL(dataUrl);
-            }
-        }
+        const cardWidthMM = 127;
+        const cardHeightMM = 76;
+        const pageHeightMM = 297;
+        const pageWidthMM = 210;
+        const topMarginMM = 15;
+        const leftMarginMM = (pageWidthMM - cardWidthMM) / 2;
+        const gapMM = 15;
 
-        doc.save(`${projectData.projectInfo.projectName || 'screenplay'}-cards.pdf`);
+        let x = leftMarginMM;
+        let y = topMarginMM;
+
+        try {
+            for (let i = 0; i < cards.length; i++) {
+                const blob = await generateCardImageBlob(cards[i]);
+                if (!blob) continue;
+
+                const dataUrl = URL.createObjectURL(blob);
+
+                if (y + cardHeightMM > pageHeightMM - topMarginMM) {
+                    doc.addPage();
+                    y = topMarginMM;
+                }
+
+                doc.addImage(dataUrl, 'PNG', x, y, cardWidthMM, cardHeightMM);
+                URL.revokeObjectURL(dataUrl);
+
+                y += cardHeightMM + gapMM;
+            }
+
+            doc.save('ToscripT-AllCards.pdf');
+            alert(`PDF created successfully with ${cards.length} cards!`);
+        } catch (error) {
+            console.error('Failed to generate PDF', error);
+            alert('An error occurred while creating the PDF. Please check the console for details.');
+        }
     }
 
     // Action Button Handler
     function handleActionBtn(action) {
         if (!fountainInput) return;
         
-        clearPlaceholder(); // Clear placeholder when using action buttons
+        clearPlaceholder();
 
         const start = fountainInput.selectionStart;
         const end = fountainInput.selectionEnd;
@@ -917,12 +921,7 @@ FADE OUT.`;
         });
 
         const blob = new Blob([orderText], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${projectData.projectInfo.projectName || 'screenplay'}-scene-order.txt`;
-        link.click();
-        URL.revokeObjectURL(url);
+        downloadBlob(blob, `${projectData.projectInfo.projectName || 'screenplay'}-scene-order.txt`);
     }
 
     // Filter Functions
@@ -1128,7 +1127,7 @@ FADE OUT.`;
         }
     }
 
-    // FIXED: File opening with proper placeholder handling
+    // File opening
     function openFountainFile(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -1143,7 +1142,6 @@ FADE OUT.`;
                     projectData = data;
                     if (fountainInput) {
                         fountainInput.value = projectData.projectInfo.scriptContent || '';
-                        // CRITICAL FIX: Remove placeholder class after loading file
                         fountainInput.classList.remove('placeholder');
                     }
                 } catch (err) {
@@ -1153,7 +1151,6 @@ FADE OUT.`;
             } else {
                 if (fountainInput) {
                     fountainInput.value = content;
-                    // CRITICAL FIX: Remove placeholder class after loading file
                     fountainInput.classList.remove('placeholder');
                 }
             }
@@ -1278,7 +1275,7 @@ FADE OUT.`;
         const authorInput = document.getElementById('author-input');
         const creditInput = document.getElementById('credit-input');
 
-        clearPlaceholder(); // Clear placeholder before adding title page
+        clearPlaceholder();
 
         let titlePage = '';
         if (titleInput?.value) titlePage += `TITLE: ${titleInput.value}\n`;
@@ -1314,12 +1311,7 @@ FADE OUT.`;
             }
         } else {
             const blob = new Blob([scriptText], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${projectData.projectInfo.projectName || 'screenplay'}.fountain`;
-            link.click();
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, `${projectData.projectInfo.projectName || 'screenplay'}.fountain`);
         }
 
         if (menuPanel) menuPanel.classList.remove('open');
@@ -1351,7 +1343,7 @@ FADE OUT.`;
                 
                 <p><strong>Action:</strong> Any other text</p>
                 
-                <p><strong>Note:</strong> Card view shows only scene headings and action descriptions. Dialogue, transitions, and parentheticals are excluded from cards.</p>
+                <p><strong>Note:</strong> Card view shows only scene headings and action descriptions.</p>
             `,
             ''
         );
@@ -1381,7 +1373,7 @@ FADE OUT.`;
         if (menuPanel) menuPanel.classList.remove('open');
     }
 
-    // FIXED: New Project Function
+    // New/Clear Project functions
     function handleNewProject() {
         if (confirm('Start a new project? Unsaved changes will be lost.')) {
             if (fountainInput) {
@@ -1404,7 +1396,6 @@ FADE OUT.`;
             }
             saveProjectData();
             
-            // Switch to write view if in card view
             if (currentView === 'card') {
                 switchView('write');
             }
@@ -1412,7 +1403,6 @@ FADE OUT.`;
         if (menuPanel) menuPanel.classList.remove('open');
     }
 
-    // FIXED: Clear Project Function
     function handleClearProject() {
         if (confirm('Clear all project data? This cannot be undone.')) {
             localStorage.removeItem('universalFilmProjectToScript');
@@ -1435,7 +1425,6 @@ FADE OUT.`;
                 history.add(fountainInput.value);
             }
             
-            // Switch to write view if in card view
             if (currentView === 'card') {
                 switchView('write');
             }
@@ -1447,10 +1436,8 @@ FADE OUT.`;
     function setupEventListeners() {
         console.log('Setting up event listeners...');
 
-        // Make jumpToScene globally accessible
         window.jumpToScene = jumpToScene;
 
-        // Input listener with sync guard
         if (fountainInput) {
             fountainInput.addEventListener('input', () => {
                 if (isUpdatingFromSync) {
@@ -1473,7 +1460,6 @@ FADE OUT.`;
             });
         }
 
-        // File input
         if (fileInput) {
             fileInput.addEventListener('change', openFountainFile);
         }
@@ -1500,48 +1486,27 @@ FADE OUT.`;
         }
 
         // Hamburger menus
-        const hamburgerBtn = document.getElementById('hamburger-btn');
-        if (hamburgerBtn) {
-            hamburgerBtn.addEventListener('click', e => {
-                e.stopPropagation();
-                if (menuPanel) menuPanel.classList.toggle('open');
-            });
-        }
-
-        const hamburgerBtnScript = document.getElementById('hamburger-btn-script');
-        if (hamburgerBtnScript) {
-            hamburgerBtnScript.addEventListener('click', e => {
-                e.stopPropagation();
-                if (menuPanel) menuPanel.classList.toggle('open');
-            });
-        }
-
-        const hamburgerBtnCard = document.getElementById('hamburger-btn-card');
-        if (hamburgerBtnCard) {
-            hamburgerBtnCard.addEventListener('click', e => {
-                e.stopPropagation();
-                if (menuPanel) menuPanel.classList.toggle('open');
-            });
-        }
+        ['hamburger-btn', 'hamburger-btn-script', 'hamburger-btn-card'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    if (menuPanel) menuPanel.classList.toggle('open');
+                });
+            }
+        });
 
         // Scene navigator
-        const sceneNavigatorBtn = document.getElementById('scene-navigator-btn');
-        if (sceneNavigatorBtn) {
-            sceneNavigatorBtn.addEventListener('click', e => {
-                e.stopPropagation();
-                updateSceneNavigator();
-                if (sceneNavigatorPanel) sceneNavigatorPanel.classList.add('open');
-            });
-        }
-
-        const sceneNavigatorBtnScript = document.getElementById('scene-navigator-btn-script');
-        if (sceneNavigatorBtnScript) {
-            sceneNavigatorBtnScript.addEventListener('click', e => {
-                e.stopPropagation();
-                updateSceneNavigator();
-                if (sceneNavigatorPanel) sceneNavigatorPanel.classList.add('open');
-            });
-        }
+        ['scene-navigator-btn', 'scene-navigator-btn-script'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    updateSceneNavigator();
+                    if (sceneNavigatorPanel) sceneNavigatorPanel.classList.add('open');
+                });
+            }
+        });
 
         const closeNavigatorBtn = document.getElementById('close-navigator-btn');
         if (closeNavigatorBtn) {
@@ -1560,9 +1525,9 @@ FADE OUT.`;
         }
 
         // Export scene order
-        const exportSceneBtn = document.getElementById('export-scene-order-btn');
-        if (exportSceneBtn) {
-            exportSceneBtn.addEventListener('click', exportSceneOrderAsText);
+        const exportBtn = document.getElementById('export-scene-order-btn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', exportSceneOrderAsText);
         }
 
         // Add new card
@@ -1577,7 +1542,7 @@ FADE OUT.`;
             saveAllCardsBtn.addEventListener('click', saveAllCardsAsImages);
         }
 
-        // FIXED: Menu handlers - use handleNewProject and handleClearProject
+        // Menu handlers
         const newBtn = document.getElementById('new-btn');
         if (newBtn) {
             newBtn.addEventListener('click', e => {
@@ -1679,7 +1644,6 @@ FADE OUT.`;
             });
         }
 
-        // FIXED: Clear project button
         const clearProjectBtn = document.getElementById('clear-project-btn');
         if (clearProjectBtn) {
             clearProjectBtn.addEventListener('click', e => {
