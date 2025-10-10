@@ -1,4 +1,4 @@
-// ToscripT Professional - Complete Fixed Version with Button Fixes
+// ToscripT Professional - Complete Fixed Version (All Issues Resolved)
 
 document.addEventListener('DOMContentLoaded', () => {
     // Global variables
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let showSceneNumbers = true;
     let currentView = 'write';
     let debounceTimeout = null;
-    let isUpdatingFromSync = false;  // ADD THIS LINE
+    let isUpdatingFromSync = false;
 
     // DOM elements
     const fountainInput = document.getElementById('fountain-input');
@@ -85,7 +85,7 @@ FADE OUT.`;
         updateInput() {
             if (fountainInput) {
                 fountainInput.value = this.stack[this.currentIndex];
-                if (fountainInput.value) {
+                if (fountainInput.value && fountainInput.value !== placeholderText) {
                     clearPlaceholder();
                 } else {
                     setPlaceholder();
@@ -153,9 +153,9 @@ FADE OUT.`;
         }
     }
 
-    // Placeholder functions
+    // FIXED: Placeholder functions with better detection
     function setPlaceholder() {
-        if (fountainInput && !fountainInput.value) {
+        if (fountainInput && (!fountainInput.value || fountainInput.value.trim() === '')) {
             fountainInput.value = placeholderText;
             fountainInput.classList.add('placeholder');
         }
@@ -168,9 +168,14 @@ FADE OUT.`;
         }
     }
 
+    // FIXED: Check if current text is placeholder
+    function isPlaceholder() {
+        return fountainInput && (fountainInput.classList.contains('placeholder') || fountainInput.value === placeholderText);
+    }
+
     // Save/Load functions
     function saveProjectData() {
-        if (fountainInput) {
+        if (fountainInput && !isPlaceholder()) {
             projectData.projectInfo.scriptContent = fountainInput.value;
             projectData.projectInfo.scenes = extractScenesFromText(fountainInput.value);
         }
@@ -195,8 +200,12 @@ FADE OUT.`;
             }
         }
         if (fountainInput) {
-            fountainInput.value = projectData.projectInfo.scriptContent || '';
-            if (!fountainInput.value) setPlaceholder();
+            if (projectData.projectInfo.scriptContent && projectData.projectInfo.scriptContent.trim()) {
+                fountainInput.value = projectData.projectInfo.scriptContent;
+                fountainInput.classList.remove('placeholder');
+            } else {
+                setPlaceholder();
+            }
         }
         updateSceneNoIndicator();
         updateAutoSaveIndicator();
@@ -204,7 +213,7 @@ FADE OUT.`;
 
     // Parser Function
     function parseFountain(input) {
-        if (input === placeholderText || !input.trim()) {
+        if (!input || !input.trim() || input === placeholderText) {
             return [];
         }
         const lines = input.split('\n');
@@ -261,38 +270,41 @@ FADE OUT.`;
         return tokens;
     }
 
-    // Scene Extraction
+    // FIXED: Scene Extraction - Only include action/description in cards
     function extractScenesFromText(text) {
+        console.log('=== EXTRACTING SCENES ===');
         if (!text || !text.trim() || text === placeholderText) {
+            console.warn('No valid text to extract');
             return [];
         }
 
         const tokens = parseFountain(text);
+        console.log('Tokens parsed:', tokens.length);
+        
         const scenes = [];
         let currentScene = null;
         let sceneNumber = 0;
 
         tokens.forEach(token => {
             if (token.type === 'sceneheading') {
-                if (currentScene) {
-                    scenes.push(currentScene);
-                }
+                if (currentScene) scenes.push(currentScene);
+                
                 sceneNumber++;
                 const heading = token.text.toUpperCase();
-
+                
                 const sceneTypeMatch = heading.match(/(INT\.|EXT\.|INT\.\/EXT\.|EXT\.\/INT\.)/i);
                 const sceneType = sceneTypeMatch ? sceneTypeMatch[1] : 'INT.';
-
+                
                 const timeMatch = heading.match(/-(DAY|NIGHT|MORNING|EVENING|DAWN|DUSK|CONTINUOUS|LATER|MOMENTS LATER)/i);
                 const timeOfDay = timeMatch ? timeMatch[1] : 'DAY';
-
+                
                 let location = heading
                     .replace(/(INT\.|EXT\.|INT\.\/EXT\.|EXT\.\/INT\.)/i, '')
                     .replace(/-(DAY|NIGHT|MORNING|EVENING|DAWN|DUSK|CONTINUOUS|LATER|MOMENTS LATER)/i, '')
                     .trim();
-
+                
                 if (!location) location = 'LOCATION';
-
+                
                 currentScene = {
                     number: sceneNumber,
                     heading: heading,
@@ -303,31 +315,31 @@ FADE OUT.`;
                     characters: []
                 };
             } else if (currentScene) {
-                if (token.type === 'action' || token.type === 'dialogue') {
+                // FIX: Only add action/description to cards, NOT dialogue, parentheticals, or transitions
+                if (token.type === 'action') {
                     currentScene.description.push(token.text);
                 } else if (token.type === 'character') {
                     const charName = token.text.trim().toUpperCase();
                     if (!currentScene.characters.includes(charName)) {
                         currentScene.characters.push(charName);
                     }
-                    currentScene.description.push(token.text);
-                } else if (token.type === 'parenthetical' || token.type === 'transition') {
-                    currentScene.description.push(token.text);
+                    // Don't add character names to description
                 }
+                // Ignore dialogue, parentheticals, and transitions for card description
             }
         });
 
-        if (currentScene) {
-            scenes.push(currentScene);
-        }
-
+        if (currentScene) scenes.push(currentScene);
+        
+        console.log('=== EXTRACTED', scenes.length, 'SCENES ===');
         return scenes;
     }
 
-    // FIXED: Switch View Function
+    // FIXED: Switch View Function - Preserve text properly
     function switchView(view) {
         console.log(`Switching to view: ${view}`);
         currentView = view;
+        
         [writeView, scriptView, cardView].forEach(v => v?.classList.remove('active'));
         [mainHeader, scriptHeader, cardHeader].forEach(h => h && (h.style.display = 'none'));
         hideMobileToolbar();
@@ -336,9 +348,10 @@ FADE OUT.`;
             scriptView?.classList.add('active');
             if (scriptHeader) scriptHeader.style.display = 'flex';
             renderEnhancedScript();
+            
         } else if (view === 'card') {
-            // CRITICAL FIX: Extract scenes before rendering cards
-            if (fountainInput && fountainInput.value.trim() && fountainInput.value !== placeholderText) {
+            // Extract scenes before rendering cards
+            if (fountainInput && !isPlaceholder()) {
                 console.log('Extracting scenes for card view...');
                 projectData.projectInfo.scenes = extractScenesFromText(fountainInput.value);
                 console.log('Scenes extracted:', projectData.projectInfo.scenes.length);
@@ -352,11 +365,17 @@ FADE OUT.`;
             setTimeout(() => {
                 bindCardEditingEvents();
             }, 100);
+            
         } else {
             writeView?.classList.add('active');
             if (mainHeader) mainHeader.style.display = 'flex';
+            
+            // FIX: Don't clear placeholder if there's actual content
             setTimeout(() => {
                 if (fountainInput) {
+                    if (!isPlaceholder()) {
+                        fountainInput.classList.remove('placeholder');
+                    }
                     fountainInput.focus();
                     if (window.innerWidth <= 768 && currentView === 'write') {
                         showMobileToolbar();
@@ -371,6 +390,11 @@ FADE OUT.`;
         if (!screenplayOutput || !fountainInput) return;
 
         const text = fountainInput.value;
+        if (isPlaceholder()) {
+            screenplayOutput.innerHTML = '<div style="text-align: center; padding: 4rem; color: #999;">Write your screenplay to see the preview</div>';
+            return;
+        }
+
         const lines = text.split('\n');
         let scriptHtml = '';
         let sceneCount = 0;
@@ -444,13 +468,15 @@ FADE OUT.`;
     // Enhanced Card View Rendering
     function renderEnhancedCardView() {
         const cardContainer = document.getElementById('card-container');
+        console.log('=== RENDERING CARD VIEW ===');
+        
         if (!cardContainer) {
             console.error('Card container not found');
             return;
         }
 
         const scenes = projectData.projectInfo.scenes;
-        console.log('Rendering cards. Scenes available:', scenes.length);
+        console.log('Scenes to render:', scenes.length);
 
         if (scenes.length === 0) {
             cardContainer.innerHTML = `
@@ -471,7 +497,7 @@ FADE OUT.`;
                         <input class="card-scene-number" type="text" value="${scene.number}" maxlength="4" data-scene-id="${scene.number}">
                     </div>
                     <div class="card-body">
-                        <textarea class="card-description" placeholder="Enter detailed scene description..." data-scene-id="${scene.number}">${scene.description.join('\n')}</textarea>
+                        <textarea class="card-description" placeholder="Enter scene description (action only)..." data-scene-id="${scene.number}">${scene.description.join('\n')}</textarea>
                     </div>
                     <div class="card-watermark">TO SCRIPT</div>
                 </div>
@@ -582,6 +608,7 @@ FADE OUT.`;
         const trimmedScript = scriptText.trim();
         if (trimmedScript !== fountainInput.value.trim() && trimmedScript !== '') {
             fountainInput.value = trimmedScript;
+            fountainInput.classList.remove('placeholder'); // Ensure placeholder is removed
             history.add(fountainInput.value);
             saveProjectData();
         }
@@ -603,7 +630,7 @@ FADE OUT.`;
                         <input class="card-scene-number" type="text" value="${newSceneNumber}" maxlength="4" data-scene-id="${newSceneNumber}">
                     </div>
                     <div class="card-body">
-                        <textarea class="card-description" placeholder="Enter detailed scene description..." data-scene-id="${newSceneNumber}"></textarea>
+                        <textarea class="card-description" placeholder="Enter scene description (action only)..." data-scene-id="${newSceneNumber}"></textarea>
                     </div>
                     <div class="card-watermark">TO SCRIPT</div>
                 </div>
@@ -757,6 +784,8 @@ FADE OUT.`;
     // Action Button Handler
     function handleActionBtn(action) {
         if (!fountainInput) return;
+        
+        clearPlaceholder(); // Clear placeholder when using action buttons
 
         const start = fountainInput.selectionStart;
         const end = fountainInput.selectionEnd;
@@ -1015,7 +1044,7 @@ FADE OUT.`;
     }
 
     function saveAsFountain() {
-        if (!fountainInput) return;
+        if (!fountainInput || isPlaceholder()) return;
         const blob = new Blob([fountainInput.value], { type: 'text/plain' });
         downloadBlob(blob, `${projectData.projectInfo.projectName || 'screenplay'}.fountain`);
     }
@@ -1099,6 +1128,7 @@ FADE OUT.`;
         }
     }
 
+    // FIXED: File opening with proper placeholder handling
     function openFountainFile(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -1113,6 +1143,8 @@ FADE OUT.`;
                     projectData = data;
                     if (fountainInput) {
                         fountainInput.value = projectData.projectInfo.scriptContent || '';
+                        // CRITICAL FIX: Remove placeholder class after loading file
+                        fountainInput.classList.remove('placeholder');
                     }
                 } catch (err) {
                     console.error('Failed to parse .filmproj file');
@@ -1121,6 +1153,8 @@ FADE OUT.`;
             } else {
                 if (fountainInput) {
                     fountainInput.value = content;
+                    // CRITICAL FIX: Remove placeholder class after loading file
+                    fountainInput.classList.remove('placeholder');
                 }
             }
 
@@ -1244,6 +1278,8 @@ FADE OUT.`;
         const authorInput = document.getElementById('author-input');
         const creditInput = document.getElementById('credit-input');
 
+        clearPlaceholder(); // Clear placeholder before adding title page
+
         let titlePage = '';
         if (titleInput?.value) titlePage += `TITLE: ${titleInput.value}\n`;
         if (authorInput?.value) titlePage += `AUTHOR: ${authorInput.value}\n`;
@@ -1260,7 +1296,7 @@ FADE OUT.`;
     }
 
     async function shareScript() {
-        if (!fountainInput) return;
+        if (!fountainInput || isPlaceholder()) return;
 
         const scriptText = fountainInput.value;
         const shareData = {
@@ -1314,6 +1350,8 @@ FADE OUT.`;
                 <p>Example: <code>CUT TO:</code></p>
                 
                 <p><strong>Action:</strong> Any other text</p>
+                
+                <p><strong>Note:</strong> Card view shows only scene headings and action descriptions. Dialogue, transitions, and parentheticals are excluded from cards.</p>
             `,
             ''
         );
@@ -1332,7 +1370,7 @@ FADE OUT.`;
             `
                 <h3>ToscripT Professional</h3>
                 <p>A professional screenwriting tool for mobile and desktop.</p>
-                <p><strong>Version:</strong> 2.0</p>
+                <p><strong>Version:</strong> 2.1</p>
                 <p><strong>Format:</strong> Fountain Markup</p>
                 <p>Write, preview, and export professional screenplays anywhere.</p>
             `,
@@ -1340,6 +1378,68 @@ FADE OUT.`;
         );
 
         modal.classList.add('open');
+        if (menuPanel) menuPanel.classList.remove('open');
+    }
+
+    // FIXED: New Project Function
+    function handleNewProject() {
+        if (confirm('Start a new project? Unsaved changes will be lost.')) {
+            if (fountainInput) {
+                fountainInput.value = '';
+                fountainInput.classList.remove('placeholder');
+            }
+            setPlaceholder();
+            projectData = {
+                projectInfo: {
+                    projectName: 'Untitled',
+                    prodName: 'Author',
+                    scriptContent: '',
+                    scenes: []
+                }
+            };
+            history.stack = [];
+            history.currentIndex = 0;
+            if (fountainInput) {
+                history.add(fountainInput.value);
+            }
+            saveProjectData();
+            
+            // Switch to write view if in card view
+            if (currentView === 'card') {
+                switchView('write');
+            }
+        }
+        if (menuPanel) menuPanel.classList.remove('open');
+    }
+
+    // FIXED: Clear Project Function
+    function handleClearProject() {
+        if (confirm('Clear all project data? This cannot be undone.')) {
+            localStorage.removeItem('universalFilmProjectToScript');
+            if (fountainInput) {
+                fountainInput.value = '';
+                fountainInput.classList.remove('placeholder');
+            }
+            setPlaceholder();
+            projectData = {
+                projectInfo: {
+                    projectName: 'Untitled',
+                    prodName: 'Author',
+                    scriptContent: '',
+                    scenes: []
+                }
+            };
+            history.stack = [];
+            history.currentIndex = 0;
+            if (fountainInput) {
+                history.add(fountainInput.value);
+            }
+            
+            // Switch to write view if in card view
+            if (currentView === 'card') {
+                switchView('write');
+            }
+        }
         if (menuPanel) menuPanel.classList.remove('open');
     }
 
@@ -1363,9 +1463,11 @@ FADE OUT.`;
 
                 clearTimeout(debounceTimeout);
                 debounceTimeout = setTimeout(() => {
-                    projectData.projectInfo.scenes = extractScenesFromText(fountainInput.value);
-                    if (currentView === 'card') {
-                        renderEnhancedCardView();
+                    if (!isPlaceholder()) {
+                        projectData.projectInfo.scenes = extractScenesFromText(fountainInput.value);
+                        if (currentView === 'card') {
+                            renderEnhancedCardView();
+                        }
                     }
                 }, 500);
             });
@@ -1475,28 +1577,12 @@ FADE OUT.`;
             saveAllCardsBtn.addEventListener('click', saveAllCardsAsImages);
         }
 
-        // Menu handlers
+        // FIXED: Menu handlers - use handleNewProject and handleClearProject
         const newBtn = document.getElementById('new-btn');
         if (newBtn) {
             newBtn.addEventListener('click', e => {
                 e.preventDefault();
-                if (confirm('Start a new project? Unsaved changes will be lost.')) {
-                    if (fountainInput) fountainInput.value = '';
-                    setPlaceholder();
-                    projectData = {
-                        projectInfo: {
-                            projectName: 'Untitled',
-                            prodName: 'Author',
-                            scriptContent: '',
-                            scenes: []
-                        }
-                    };
-                    history.stack = [];
-                    history.currentIndex = 0;
-                    history.add(fountainInput.value);
-                    saveProjectData();
-                }
-                if (menuPanel) menuPanel.classList.remove('open');
+                handleNewProject();
             });
         }
 
@@ -1593,27 +1679,12 @@ FADE OUT.`;
             });
         }
 
+        // FIXED: Clear project button
         const clearProjectBtn = document.getElementById('clear-project-btn');
         if (clearProjectBtn) {
             clearProjectBtn.addEventListener('click', e => {
                 e.preventDefault();
-                if (confirm('Clear all project data? This cannot be undone.')) {
-                    localStorage.removeItem('universalFilmProjectToScript');
-                    if (fountainInput) fountainInput.value = '';
-                    setPlaceholder();
-                    projectData = {
-                        projectInfo: {
-                            projectName: 'Untitled',
-                            prodName: 'Author',
-                            scriptContent: '',
-                            scenes: []
-                        }
-                    };
-                    history.stack = [];
-                    history.currentIndex = 0;
-                    history.add(fountainInput.value);
-                }
-                if (menuPanel) menuPanel.classList.remove('open');
+                handleClearProject();
             });
         }
 
@@ -1710,8 +1781,10 @@ FADE OUT.`;
         loadProjectData();
 
         if (fountainInput) {
-            if (!fountainInput.value) {
+            if (!fountainInput.value || fountainInput.value === placeholderText) {
                 setPlaceholder();
+            } else {
+                fountainInput.classList.remove('placeholder');
             }
             fountainInput.style.fontSize = `${fontSize}px`;
             setTimeout(() => {
