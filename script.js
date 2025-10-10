@@ -362,52 +362,64 @@ FADE OUT.`;
     }
 
     // Switch View Function
-    function switchView(view) {
-        console.log(`Switching to view: ${view}`);
-        currentView = view;
-        
-        [writeView, scriptView, cardView].forEach(v => v?.classList.remove('active'));
-        [mainHeader, scriptHeader, cardHeader].forEach(h => h && (h.style.display = 'none'));
-        hideMobileToolbar();
-
-        if (view === 'script') {
-            scriptView?.classList.add('active');
-            if (scriptHeader) scriptHeader.style.display = 'flex';
-            renderEnhancedScript();
-            
-        } else if (view === 'card') {
-            if (fountainInput && !isPlaceholder()) {
-                console.log('Extracting scenes for card view...');
-                projectData.projectInfo.scenes = extractScenesFromText(fountainInput.value);
-                console.log('Scenes extracted:', projectData.projectInfo.scenes.length);
-            }
-            
-            cardView?.classList.add('active');
-            if (cardHeader) cardHeader.style.display = 'flex';
-            currentPage = 0; // Reset to first page
-            renderEnhancedCardView();
-            
-            setTimeout(() => {
-                bindCardEditingEvents();
-            }, 100);
-            
-        } else {
-            writeView?.classList.add('active');
-            if (mainHeader) mainHeader.style.display = 'flex';
-            
-            setTimeout(() => {
-                if (fountainInput) {
-                    if (!isPlaceholder()) {
-                        fountainInput.classList.remove('placeholder');
-                    }
-                    fountainInput.focus();
-                    if (window.innerWidth <= 768 && currentView === 'write') {
-                        showMobileToolbar();
-                    }
-                }
-            }, 200);
+   // Switch View Function - FIXED VERSION
+function switchView(view) {
+    console.log(`Switching to view: ${view}`);
+    currentView = view;
+    
+    [writeView, scriptView, cardView].forEach(v => v?.classList.remove('active'));
+    [mainHeader, scriptHeader, cardHeader].forEach(h => {
+        if (h) {
+            h.style.display = 'none';
         }
+    });
+    hideMobileToolbar();
+
+    if (view === 'script') {
+        scriptView?.classList.add('active');
+        if (scriptHeader) {
+            scriptHeader.style.display = 'flex';  // Show script header
+        }
+        renderEnhancedScript();
+        
+    } else if (view === 'card') {
+        if (fountainInput && !isPlaceholder()) {
+            console.log('Extracting scenes for card view...');
+            projectData.projectInfo.scenes = extractScenesFromText(fountainInput.value);
+            console.log('Scenes extracted:', projectData.projectInfo.scenes.length);
+        }
+        
+        cardView?.classList.add('active');
+        if (cardHeader) {
+            cardHeader.style.display = 'flex';  // FIXED: Show card header
+        }
+        currentPage = 0;
+        renderEnhancedCardView();
+        
+        setTimeout(() => {
+            bindCardEditingEvents();
+        }, 100);
+        
+    } else {
+        writeView?.classList.add('active');
+        if (mainHeader) {
+            mainHeader.style.display = 'flex';  // Show main header
+        }
+        
+        setTimeout(() => {
+            if (fountainInput) {
+                if (!isPlaceholder()) {
+                    fountainInput.classList.remove('placeholder');
+                }
+                fountainInput.focus();
+                if (window.innerWidth <= 768 && currentView === 'write') {
+                    showMobileToolbar();
+                }
+            }
+        }, 200);
     }
+}
+
 
     // Enhanced Script Rendering
     function renderEnhancedScript() {
