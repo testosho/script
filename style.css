@@ -495,6 +495,15 @@ body.fullscreen-active #desktop-side-toolbar {
     margin-bottom: 0.3rem;
 }
 
+.scene-time {
+    background: var(--success-color);
+    color: white;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
 .dragging {
     opacity: 0.8;
     transform: scale(1.05) rotate(2deg);
@@ -715,7 +724,7 @@ body.fullscreen-active #desktop-side-toolbar {
     padding: 12px;
     display: flex;
     position: relative;
-    cursor: grab;
+    cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     width: 100%;
@@ -735,19 +744,26 @@ body.fullscreen-active #desktop-side-toolbar {
     border-color: var(--primary-color);
 }
 
+.scene-card.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
 .scene-card.dragging {
     opacity: 0.8;
     transform: rotate(3deg) scale(1.02);
     z-index: 1000;
 }
 
+/* Desktop Card Actions */
 .card-actions {
     position: absolute;
-    right: -55px;
+    right: -60px;
     top: 50%;
     transform: translateY(-50%);
     z-index: 10;
     opacity: 0;
+    visibility: hidden;
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
@@ -756,7 +772,8 @@ body.fullscreen-active #desktop-side-toolbar {
 
 .scene-card:hover .card-actions {
     opacity: 1;
-    right: -50px;
+    visibility: visible;
+    right: -55px;
 }
 
 .card-actions .icon-btn {
@@ -780,18 +797,6 @@ body.fullscreen-active #desktop-side-toolbar {
     background: rgba(75, 85, 99, 1);
     color: var(--text-color);
     transform: scale(1.1);
-    box-shadow: none;
-}
-
-/* Mobile Plus Button for Adding Cards */
-.add-card-btn-mobile {
-    background: var(--success-color) !important;
-    border-color: var(--success-color) !important;
-}
-
-.add-card-btn-mobile:hover {
-    background: #16a34a !important;
-    transform: scale(1.15) !important;
 }
 
 .scene-card-content {
@@ -1033,7 +1038,7 @@ body.fullscreen-active #desktop-side-toolbar {
         flex-direction: column;
         gap: 20px;
         padding: 15px;
-        padding-right: 15px;
+        padding-right: 70px;
         grid-template-columns: none;
     }
     
@@ -1042,34 +1047,84 @@ body.fullscreen-active #desktop-side-toolbar {
         max-width: 100% !important;
         height: auto;
         min-height: 300px;
+        cursor: pointer;
     }
     
     .card-description {
         min-height: 180px;
     }
     
-    /* Mobile: Show card actions inline below card on mobile */
+    /* FIXED: Mobile Card Actions - Hidden Until Tap */
     .card-actions {
-        position: relative;
-        right: auto;
-        top: auto;
-        transform: none;
+        position: absolute;
+        right: -65px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0;
+        visibility: hidden;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 10px;
+        transition: all 0.3s ease;
+        z-index: 10;
+    }
+    
+    /* Show actions when card is active (tapped) */
+    .scene-card.active .card-actions,
+    .scene-card:focus-within .card-actions {
         opacity: 1;
-        flex-direction: row;
-        justify-content: center;
-        margin-top: 12px;
-        gap: 12px;
+        visibility: visible;
+        right: -60px;
     }
     
-    .scene-card:hover .card-actions {
-        right: auto;
-    }
-    
+    /* Beautiful consistent action buttons */
     .card-actions .icon-btn {
-        width: 44px;
-        height: 44px;
-        font-size: 18px;
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+        border-radius: 12px;
+        border: 2px solid var(--border-color);
+        background: var(--surface-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        transition: all 0.2s ease;
         position: relative;
+    }
+    
+    /* Share button - blue theme */
+    .card-actions .share-card-btn {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        border-color: #3b82f6;
+    }
+    
+    .card-actions .share-card-btn:active {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        transform: scale(0.95);
+    }
+    
+    /* Delete button - red theme */
+    .card-actions .delete-card-btn {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border-color: #ef4444;
+    }
+    
+    .card-actions .delete-card-btn:active {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        transform: scale(0.95);
+    }
+    
+    /* Add button - green theme */
+    .card-actions .add-card-btn-mobile {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        border-color: #22c55e;
+    }
+    
+    .card-actions .add-card-btn-mobile:active {
+        background: linear-gradient(135deg, #16a34a, #15803d);
+        transform: scale(0.95);
     }
     
     .card-scene-title {
@@ -1095,6 +1150,7 @@ body.fullscreen-active #desktop-side-toolbar {
     /* Mobile Pagination Styling */
     .mobile-pagination {
         padding: 15px 10px;
+        margin-right: -55px;
     }
     
     .pagination-btn {
