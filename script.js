@@ -411,77 +411,134 @@ FADE OUT.`;
     }
 
     // Enhanced Script Rendering
-    function renderEnhancedScript() {
-        if (!screenplayOutput || !fountainInput) return;
+    // Enhanced Script Rendering with Industry Standard Spacing
+function renderEnhancedScript() {
+    if (!screenplayOutput || !fountainInput) return;
 
-        const text = fountainInput.value;
-        if (isPlaceholder()) {
-            screenplayOutput.innerHTML = '<div style="text-align: center; padding: 4rem; color: #999;">Write your screenplay to see the preview</div>';
-            return;
-        }
-
-        const lines = text.split('\n');
-        let scriptHtml = '';
-        let sceneCount = 0;
-        let inDialogue = false;
-
-        for(let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            const nextLine = (i + 1 < lines.length) ? lines[i+1].trim() : null;
-
-            if (!line) {
-                scriptHtml += '<div class="empty-line"></div>';
-                inDialogue = false;
-                continue;
-            }
-
-            if (/^(TITLE|AUTHOR|CREDIT|SOURCE):/i.test(line)) {
-                scriptHtml += `<div class="title-page-element">${line}</div>`;
-                inDialogue = false;
-                continue;
-            }
-
-            if (line.toUpperCase().startsWith('INT.') || line.toUpperCase().startsWith('EXT.')) {
-                sceneCount++;
-                if (showSceneNumbers) {
-                    scriptHtml += `<div class="scene-heading">
-                        <span>${line.toUpperCase()}</span>
-                        <span class="scene-number">${sceneCount}</span>
-                    </div>`;
-                } else {
-                    scriptHtml += `<div class="scene-heading">${line.toUpperCase()}</div>`;
-                }
-                inDialogue = false;
-                continue;
-            }
-
-            if (line.toUpperCase().endsWith('TO:') || line.toUpperCase() === 'FADE OUT.' || line.toUpperCase() === 'FADE IN:' || line.toUpperCase() === 'FADE TO BLACK:') {
-                scriptHtml += `<div class="transition">${line.toUpperCase()}</div>`;
-                inDialogue = false;
-                continue;
-            }
-
-            if (line === line.toUpperCase() && !line.startsWith('!') && line.length > 0 && nextLine) {
-                scriptHtml += `<div class="character">${line}</div>`;
-                inDialogue = true;
-                continue;
-            }
-
-            if (inDialogue && line.startsWith('(')) {
-                scriptHtml += `<div class="parenthetical">${line}</div>`;
-                continue;
-            }
-
-            if (inDialogue) {
-                scriptHtml += `<div class="dialogue">${line}</div>`;
-                continue;
-            }
-
-            scriptHtml += `<div class="action">${line}</div>`;
-        }
-
-        screenplayOutput.innerHTML = scriptHtml;
+    const text = fountainInput.value;
+    if (isPlaceholder()) {
+        screenplayOutput.innerHTML = '<div style="text-align: center; padding: 4rem; color: #999;">Write your screenplay to see the preview</div>';
+        return;
     }
+
+    const lines = text.split('\n');
+    let scriptHtml = '';
+    let sceneCount = 0;
+    let inDialogue = false;
+    let previousElementType = null;
+    let lastWasTransition = false;
+
+    for(let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        const nextLine = (i + 1 < lines.length) ? lines[i+1].trim() : null;
+        const currentElementType = getElementType(line, nextLine, inDialogue);
+
+        if (!line) {
+            scriptHtml += '<div class="empty-line"></div>';
+            inDialogue = false;
+            continue;
+        }
+
+        // Add spacing before scene headings
+        if (currentElementType === 'scene-heading') {
+            // Two blank lines after transition, one blank line after other elements
+            if (previousElementType === 'transition') {
+                scriptHtml += '<div class="empty-line"></div><div class="empty-line"></div>';
+            } else if (previousElementType && previousElementType !== 'empty' && previousElementType !== 'title-page') {
+                scriptHtml += '<div class="empty-line"></div>';
+            }
+            
+            sceneCount++;
+            if (showSceneNumbers) {
+                scriptHtml += `<div class="scene-heading">
+                    <span>${line.toUpperCase()}</span>
+                    <span class="scene-number">${sceneCount}</span>
+                </div>`;
+            } else {
+                scriptHtml += `<div class="scene-heading">${line.toUpperCase()}</div>`;
+            }
+            inDialogue = false;
+            previousElementType = 'scene-heading';
+            lastWasTransition = false;
+            continue;
+        }
+
+        if (currentElementType === 'title-page') {
+            scriptHtml += `<div class="title-page-element">${line}</div>`;
+            inDialogue = false;
+            previousElementType = 'title-page';
+            continue;
+        }
+
+        if (currentElementType === 'transition') {
+            scriptHtml += `<div class="transition">${line.toUpperCase()}</div>`;
+            inDialogue = false;
+            previousElementType = 'transition';
+            lastWasTransition = true;
+            continue;
+        }
+
+        if (currentElementType === 'character') {
+            scriptHtml += `<div class="character">${line}</div>`;
+            inDialogue = true;
+            previousElementType = 'character';
+            continue;
+        }
+
+        if (currentElementType === 'parenthetical') {
+            scriptHtml += `<div class="parenthetical">${line}</div>`;
+            previousElementType = 'parenthetical';
+            continue;
+        }
+
+        if (currentElementType === 'dialogue') {
+            scriptHtml += `<div class="dialogue">${line}</div>`;
+            previousElementType = 'dialogue';
+            continue;
+        }
+
+        // Action/Description
+        scriptHtml += `<div class="action">${line}</div>`;
+        previousElementType = 'action';
+    }
+
+    screenplayOutput.innerHTML = scriptHtml;
+}
+
+// Helper function to determine element type
+function getElementType(line, nextLine, inDialogue) {
+    if (!line) return 'empty';
+    
+    if (/^(TITLE|AUTHOR|CREDIT|SOURCE):/i.test(line)) {
+        return 'title-page';
+    }
+    
+    if (line.toUpperCase().startsWith('INT.') || line.toUpperCase().startsWith('EXT.')) {
+        return 'scene-heading';
+    }
+    
+    if (line.toUpperCase().endsWith('TO:') || 
+        line.toUpperCase() === 'FADE OUT.' || 
+        line.toUpperCase() === 'FADE IN:' || 
+        line.toUpperCase() === 'FADE TO BLACK:') {
+        return 'transition';
+    }
+    
+    if (line === line.toUpperCase() && !line.startsWith('!') && line.length > 0 && nextLine) {
+        return 'character';
+    }
+    
+    if (inDialogue && line.startsWith('(')) {
+        return 'parenthetical';
+    }
+    
+    if (inDialogue) {
+        return 'dialogue';
+    }
+    
+    return 'action';
+}
+
     // Enhanced Card View with Mobile Pagination
     function renderEnhancedCardView() {
         const cardContainer = document.getElementById('card-container');
