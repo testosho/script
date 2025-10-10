@@ -997,6 +997,48 @@ body.fullscreen-active #desktop-side-toolbar {
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
+/* Mobile Script Preview - Better Formatting */
+@media (max-width: 768px) {
+    #screenplay-output {
+        max-width: 100%;
+        padding: 0.5in 0.25in;
+        font-size: 11pt;
+        overflow-x: hidden;
+    }
+    
+    .scene-heading {
+        font-size: 11pt;
+        margin: 18px 0 10px 0;
+    }
+    
+    .character {
+        margin-left: 25% !important;
+        font-size: 11pt;
+    }
+    
+    .dialogue {
+        margin-left: 15% !important;
+        margin-right: 10% !important;
+        font-size: 11pt;
+    }
+    
+    .parenthetical {
+        margin-left: 20% !important;
+        font-size: 10pt;
+    }
+    
+    .action {
+        font-size: 11pt;
+        margin: 10px 0;
+    }
+    
+    .transition {
+        font-size: 11pt;
+        margin: 10px 0;
+    }
+}
+
+
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
     #desktop-side-toolbar {
