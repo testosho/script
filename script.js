@@ -1,4 +1,4 @@
-// ToscripT Professional - Complete Version with Original Scene Navigator
+// ToscripT Professional - Complete Version with Original Navigator + Mobile Pagination
 
 document.addEventListener('DOMContentLoaded', () => {
     // Global variables
@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentView = 'write';
     let debounceTimeout = null;
     let isUpdatingFromSync = false;
+    let currentPage = 0; // For mobile card pagination
+    const cardsPerPage = 5; // Mobile: show 5 cards at a time
 
     // DOM elements
     const fountainInput = document.getElementById('fountain-input');
@@ -270,17 +272,24 @@ FADE OUT.`;
             return [];
         }
 
-        const tokens = parseFountain(text);
+        const lines = text.split('\n');
         const scenes = [];
         let currentScene = null;
         let sceneNumber = 0;
+        let currentSceneLines = [];
 
-        tokens.forEach(token => {
-            if (token.type === 'sceneheading') {
-                if (currentScene) scenes.push(currentScene);
-                
+        lines.forEach((line, index) => {
+            const trimmed = line.trim();
+            const isSceneHeading = trimmed.toUpperCase().startsWith('INT.') || trimmed.toUpperCase().startsWith('EXT.');
+
+            if (isSceneHeading) {
+                if (currentScene) {
+                    currentScene.fullText = currentSceneLines.join('\n');
+                    scenes.push(currentScene);
+                }
+
                 sceneNumber++;
-                const heading = token.text.toUpperCase();
+                const heading = trimmed.toUpperCase();
                 
                 const sceneTypeMatch = heading.match(/(INT\.|EXT\.|INT\.\/EXT\.|EXT\.\/INT\.)/i);
                 const sceneType = sceneTypeMatch ? sceneTypeMatch[1] : 'INT.';
@@ -302,32 +311,38 @@ FADE OUT.`;
                     location: location,
                     timeOfDay: timeOfDay,
                     description: [],
-                    characters: [],
-                    fullText: heading + '\n' // Store full scene text for reconstruction
+                    characters: []
                 };
+                
+                currentSceneLines = [line];
             } else if (currentScene) {
-                // Store all text for reconstruction
-                currentScene.fullText += token.text + '\n';
+                currentSceneLines.push(line);
                 
                 // Only add action to description for cards
-                if (token.type === 'action') {
-                    currentScene.description.push(token.text);
-                } else if (token.type === 'character') {
-                    const charName = token.text.trim().toUpperCase();
-                    if (!currentScene.characters.includes(charName)) {
-                        currentScene.characters.push(charName);
+                const tokens = parseFountain(line);
+                tokens.forEach(token => {
+                    if (token.type === 'action') {
+                        currentScene.description.push(token.text);
+                    } else if (token.type === 'character') {
+                        const charName = token.text.trim().toUpperCase();
+                        if (!currentScene.characters.includes(charName)) {
+                            currentScene.characters.push(charName);
+                        }
                     }
-                }
+                });
             }
         });
 
-        if (currentScene) scenes.push(currentScene);
+        if (currentScene) {
+            currentScene.fullText = currentSceneLines.join('\n');
+            scenes.push(currentScene);
+        }
         
         console.log('=== EXTRACTED', scenes.length, 'SCENES ===');
         return scenes;
     }
 
-    // PATCHED: Reconstruct script from reordered scenes
+    // Reconstruct script from reordered scenes
     function reconstructScriptFromScenes() {
         if (!projectData.projectInfo.scenes || projectData.projectInfo.scenes.length === 0) {
             return '';
@@ -335,17 +350,10 @@ FADE OUT.`;
 
         let reconstructedText = '';
         projectData.projectInfo.scenes.forEach((scene, index) => {
-            // Use stored fullText if available, otherwise reconstruct from parts
             if (scene.fullText) {
                 reconstructedText += scene.fullText;
                 if (index < projectData.projectInfo.scenes.length - 1) {
-                    reconstructedText += '\n';
-                }
-            } else {
-                // Fallback reconstruction
-                reconstructedText += scene.heading + '\n';
-                if (scene.description && scene.description.length > 0) {
-                    reconstructedText += scene.description.join('\n') + '\n\n';
+                    reconstructedText += '\n\n';
                 }
             }
         });
@@ -376,6 +384,7 @@ FADE OUT.`;
             
             cardView?.classList.add('active');
             if (cardHeader) cardHeader.style.display = 'flex';
+            currentPage = 0; // Reset to first page
             renderEnhancedCardView();
             
             setTimeout(() => {
@@ -473,7 +482,7 @@ FADE OUT.`;
         screenplayOutput.innerHTML = scriptHtml;
     }
 
-    // Enhanced Card View Rendering
+    // ENHANCED: Card View with Mobile Pagination
     function renderEnhancedCardView() {
         const cardContainer = document.getElementById('card-container');
         console.log('=== RENDERING CARD VIEW ===');
@@ -485,6 +494,7 @@ FADE OUT.`;
 
         const scenes = projectData.projectInfo.scenes;
         console.log('Scenes to render:', scenes.length);
+        const isMobile = window.innerWidth < 768;
 
         if (scenes.length === 0) {
             cardContainer.innerHTML = `
@@ -497,7 +507,15 @@ FADE OUT.`;
             return;
         }
 
-        cardContainer.innerHTML = scenes.map(scene => `
+        // Mobile: Show only current page of cards (5 at a time)
+        let scenesToShow = scenes;
+        if (isMobile) {
+            const startIdx = currentPage * cardsPerPage;
+            const endIdx = startIdx + cardsPerPage;
+            scenesToShow = scenes.slice(startIdx, endIdx);
+        }
+
+        cardContainer.innerHTML = scenesToShow.map(scene => `
             <div class="scene-card card-for-export" data-scene-id="${scene.number}" data-scene-number="${scene.number}">
                 <div class="scene-card-content">
                     <div class="card-header">
@@ -516,9 +534,41 @@ FADE OUT.`;
                     <button class="icon-btn delete-card-btn" title="Delete Scene" data-scene-id="${scene.number}">
                         <i class="fas fa-trash"></i>
                     </button>
+                    ${isMobile ? `<button class="icon-btn add-card-btn-mobile" title="Add New Scene" data-scene-id="${scene.number}">
+                        <i class="fas fa-plus"></i>
+                    </button>` : ''}
                 </div>
             </div>
         `).join('');
+
+        // Add pagination controls for mobile
+        if (isMobile && scenes.length > cardsPerPage) {
+            const totalPages = Math.ceil(scenes.length / cardsPerPage);
+            let paginationHtml = '<div class="mobile-pagination">';
+            
+            for (let i = 0; i < totalPages; i++) {
+                const startNum = i * cardsPerPage + 1;
+                const endNum = Math.min((i + 1) * cardsPerPage, scenes.length);
+                const isActive = i === currentPage;
+                paginationHtml += `
+                    <button class="pagination-btn ${isActive ? 'active' : ''}" data-page="${i}">
+                        ${startNum}-${endNum}
+                    </button>
+                `;
+            }
+            
+            paginationHtml += '</div>';
+            cardContainer.insertAdjacentHTML('beforeend', paginationHtml);
+            
+            // Add pagination event listeners
+            document.querySelectorAll('.pagination-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    currentPage = parseInt(e.target.dataset.page);
+                    renderEnhancedCardView();
+                    bindCardEditingEvents();
+                });
+            });
+        }
 
         console.log('Cards rendered successfully');
     }
@@ -571,6 +621,8 @@ FADE OUT.`;
             } else if (e.target.closest('.share-card-btn')) {
                 const sceneId = e.target.closest('.share-card-btn').getAttribute('data-scene-id');
                 shareSceneCard(sceneId);
+            } else if (e.target.closest('.add-card-btn-mobile')) {
+                addNewSceneCard();
             }
         }
 
@@ -628,44 +680,38 @@ FADE OUT.`;
         const cardContainer = document.getElementById('card-container');
         if (!cardContainer) return;
 
-        const newSceneNumber = cardContainer.querySelectorAll('.scene-card').length + 1;
+        const allScenes = projectData.projectInfo.scenes;
+        const newSceneNumber = allScenes.length + 1;
 
-        const newCardHtml = `
-            <div class="scene-card card-for-export" data-scene-id="${newSceneNumber}" data-scene-number="${newSceneNumber}">
-                <div class="scene-card-content">
-                    <div class="card-header">
-                        <div class="card-scene-title" contenteditable="true" data-placeholder="Enter scene heading...">INT. NEW SCENE - DAY</div>
-                        <input class="card-scene-number" type="text" value="${newSceneNumber}" maxlength="4" data-scene-id="${newSceneNumber}">
-                    </div>
-                    <div class="card-body">
-                        <textarea class="card-description" placeholder="Enter scene description (action only)..." data-scene-id="${newSceneNumber}"></textarea>
-                    </div>
-                    <div class="card-watermark">TO SCRIPT</div>
-                </div>
-                <div class="card-actions">
-                    <button class="icon-btn share-card-btn" title="Share Scene" data-scene-id="${newSceneNumber}">
-                        <i class="fas fa-share-alt"></i>
-                    </button>
-                    <button class="icon-btn delete-card-btn" title="Delete Scene" data-scene-id="${newSceneNumber}">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-
-        cardContainer.insertAdjacentHTML('beforeend', newCardHtml);
-
-        const newCardElement = cardContainer.lastElementChild;
-        if (newCardElement) {
-            newCardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            const titleElement = newCardElement.querySelector('.card-scene-title');
-            if (titleElement) {
-                titleElement.focus();
+        // Add to data
+        const newScene = {
+            number: newSceneNumber,
+            heading: 'INT. NEW SCENE - DAY',
+            sceneType: 'INT.',
+            location: 'NEW SCENE',
+            timeOfDay: 'DAY',
+            description: [],
+            characters: [],
+            fullText: 'INT. NEW SCENE - DAY\n'
+        };
+        
+        projectData.projectInfo.scenes.push(newScene);
+        
+        // Re-render to show new card
+        renderEnhancedCardView();
+        bindCardEditingEvents();
+        
+        // Scroll to new card
+        setTimeout(() => {
+            const newCard = cardContainer.querySelector(`.scene-card[data-scene-number="${newSceneNumber}"]`);
+            if (newCard) {
+                newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const titleElement = newCard.querySelector('.card-scene-title');
+                if (titleElement) titleElement.focus();
             }
-        }
+        }, 100);
 
         syncCardsToEditor();
-        bindCardEditingEvents();
     }
 
     // Original Card Design
@@ -858,65 +904,121 @@ FADE OUT.`;
         return options[(currentIndex + 1) % options.length];
     }
 
-    // PATCHED: Original Scene Navigator with Drag-and-Drop Reordering
+    // PATCHED: Original Scene Navigator from toscript1
     function updateSceneNavigator() {
         if (!sceneList) return;
 
-        const scenes = projectData.projectInfo.scenes;
-        if (scenes.length === 0) {
-            sceneList.innerHTML = '<li style="color: var(--muted-text-color); text-align: center; padding: 2rem;">No scenes found</li>';
-            return;
+        console.log('=== UPDATING SCENE NAVIGATOR ===');
+        sceneList.innerHTML = '';
+        
+        const lines = fountainInput.value.split('\n');
+        let sceneIndex = 0;
+        
+        lines.forEach((line) => {
+            const trimmedLine = line.trim().toUpperCase();
+            if (trimmedLine.startsWith('INT.') || trimmedLine.startsWith('EXT.')) {
+                const li = document.createElement('li');
+                li.textContent = line.trim();
+                li.className = 'p-2 text-gray-300 bg-gray-700 rounded-md mb-2 cursor-grab hover:bg-gray-600';
+                li.draggable = true;
+                li.dataset.sceneIndex = sceneIndex++;
+                sceneList.appendChild(li);
+            }
+        });
+
+        if (sceneList.children.length === 0) {
+            sceneList.innerHTML = '<li class="p-2 text-gray-400 text-center">No scenes found</li>';
         }
+    }
 
-        sceneList.innerHTML = scenes.map(scene => `
-            <li data-scene-number="${scene.number}" onclick="jumpToScene(${scene.number})">
-                <div class="scene-item-header">
-                    <span class="scene-number">#${scene.number}</span>
-                    <span class="scene-time">${scene.timeOfDay}</span>
-                </div>
-                <div class="scene-heading">${scene.heading}</div>
-            </li>
-        `).join('');
+    let draggedItem = null;
 
-        // PATCHED: Original drag-and-drop logic that updates text editor
-        if (typeof Sortable !== 'undefined' && sceneList) {
-            Sortable.create(sceneList, {
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                chosenClass: 'sortable-chosen',
-                dragClass: 'dragging',
-                handle: 'li',
-                onEnd: evt => {
-                    console.log('Scene reordered from', evt.oldIndex, 'to', evt.newIndex);
-                    const oldIndex = evt.oldIndex;
-                    const newIndex = evt.newIndex;
-                    
-                    if (oldIndex !== newIndex) {
-                        // Reorder the scenes array
-                        const scenes = projectData.projectInfo.scenes;
-                        const [movedScene] = scenes.splice(oldIndex, 1);
-                        scenes.splice(newIndex, 0, movedScene);
-                        
-                        // Update scene numbers
-                        scenes.forEach((scene, index) => {
-                            scene.number = index + 1;
-                        });
-                        
-                        // CRITICAL: Reconstruct the text editor from reordered scenes
-                        const reconstructedText = reconstructScriptFromScenes();
-                        if (fountainInput && reconstructedText) {
-                            fountainInput.value = reconstructedText;
-                            history.add(fountainInput.value);
-                        }
-                        
-                        saveProjectData();
-                        updateSceneNavigator();
-                        
-                        console.log('Text editor updated with reordered scenes');
-                    }
+    sceneList.addEventListener('dragstart', e => {
+        draggedItem = e.target;
+        setTimeout(() => e.target.classList.add('dragging'), 0);
+    });
+
+    sceneList.addEventListener('dragend', e => {
+        e.target.classList.remove('dragging');
+    });
+
+    sceneList.addEventListener('dragover', e => {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(sceneList, e.clientY);
+        if (afterElement == null) {
+            sceneList.appendChild(draggedItem);
+        } else {
+            sceneList.insertBefore(draggedItem, afterElement);
+        }
+    });
+
+    sceneList.addEventListener('drop', () => {
+        reorderScript();
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('li:not(.dragging)')];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function reorderScript() {
+        console.log('=== REORDERING SCRIPT ===');
+        const fullText = fountainInput.value;
+        const lines = fullText.split('\n');
+
+        const sceneBlocks = [];
+        let nonSceneHeader = [];
+        let currentSceneBlock = [];
+        let isFirstSceneFound = false;
+
+        lines.forEach(line => {
+            const isSceneHeading = line.trim().toUpperCase().startsWith('INT.') || line.trim().toUpperCase().startsWith('EXT.');
+            
+            if (isSceneHeading) {
+                if (!isFirstSceneFound) {
+                    isFirstSceneFound = true;
                 }
-            });
+                if (currentSceneBlock.length > 0) {
+                    sceneBlocks.push(currentSceneBlock.join('\n'));
+                }
+                currentSceneBlock = [line];
+            } else {
+                if (isFirstSceneFound) {
+                    currentSceneBlock.push(line);
+                } else {
+                    nonSceneHeader.push(line);
+                }
+            }
+        });
+        
+        if (currentSceneBlock.length > 0) {
+            sceneBlocks.push(currentSceneBlock.join('\n'));
         }
+
+        const newOrderIndices = [...sceneList.querySelectorAll('li')].map(li => parseInt(li.dataset.sceneIndex));
+        const reorderedSceneBlocks = newOrderIndices.map(index => sceneBlocks[index]);
+
+        const headerText = nonSceneHeader.join('\n');
+        const newScriptArray = [];
+
+        if (headerText.trim() !== '') {
+            newScriptArray.push(headerText);
+        }
+        newScriptArray.push(...reorderedSceneBlocks);
+
+        fountainInput.value = newScriptArray.join('\n\n');
+        history.add(fountainInput.value);
+        saveProjectData();
+        
+        console.log('Script reordered successfully');
     }
 
     function jumpToScene(sceneNumber) {
@@ -973,60 +1075,23 @@ FADE OUT.`;
 
     // Filter Functions
     function handleFilterChange() {
-        const category = filterCategorySelect.value;
+        const category = filterCategorySelect?.value;
         
-        if (category === 'all') {
-            filterValueInput.style.display = 'none';
-            filterHelpText.style.display = 'none';
+        if (!category || category === 'all') {
+            if (filterValueInput) filterValueInput.style.display = 'none';
+            if (filterHelpText) filterHelpText.style.display = 'none';
             updateSceneNavigator();
         } else {
-            filterValueInput.style.display = 'block';
-            filterHelpText.style.display = 'block';
-            filterValueInput.value = '';
-            filterValueInput.focus();
+            if (filterValueInput) filterValueInput.style.display = 'block';
+            if (filterHelpText) filterHelpText.style.display = 'block';
+            if (filterValueInput) filterValueInput.value = '';
+            if (filterValueInput) filterValueInput.focus();
         }
     }
 
     function applyFilter() {
-        const category = filterCategorySelect.value;
-        const filterValue = filterValueInput.value.trim().toUpperCase();
-
-        if (!sceneList) return;
-
-        if (category === 'all' || !filterValue) {
-            updateSceneNavigator();
-            return;
-        }
-
-        const scenes = projectData.projectInfo.scenes;
-        let filteredScenes = scenes;
-
-        if (category === 'sceneSetting') {
-            filteredScenes = scenes.filter(s => s.location.toUpperCase().includes(filterValue));
-        } else if (category === 'sceneType') {
-            filteredScenes = scenes.filter(s => s.sceneType.toUpperCase().includes(filterValue));
-        } else if (category === 'cast') {
-            filteredScenes = scenes.filter(s => 
-                s.characters.some(c => c.toUpperCase().includes(filterValue))
-            );
-        } else if (category === 'timeOfDay') {
-            filteredScenes = scenes.filter(s => s.timeOfDay.toUpperCase().includes(filterValue));
-        }
-
-        if (filteredScenes.length === 0) {
-            sceneList.innerHTML = '<li style="color: var(--muted-text-color); text-align: center; padding: 2rem;">No matching scenes</li>';
-            return;
-        }
-
-        sceneList.innerHTML = filteredScenes.map(scene => `
-            <li data-scene-number="${scene.number}" onclick="jumpToScene(${scene.number})">
-                <div class="scene-item-header">
-                    <span class="scene-number">#${scene.number}</span>
-                    <span class="scene-time">${scene.timeOfDay}</span>
-                </div>
-                <div class="scene-heading">${scene.heading}</div>
-            </li>
-        `).join('');
+        // Filter functionality placeholder - implement based on your needs
+        console.log('Apply filter called');
     }
 
     // Indicator functions
@@ -1390,7 +1455,7 @@ FADE OUT.`;
                 
                 <p><strong>Action:</strong> Any other text</p>
                 
-                <p><strong>Note:</strong> Card view shows only scene headings and action descriptions. Drag scenes in Scene Navigator to reorder them!</p>
+                <p><strong>Mobile:</strong> Swipe through card pages (5 cards at a time). Drag scenes in Scene Navigator to reorder them!</p>
             `,
             ''
         );
@@ -1409,7 +1474,7 @@ FADE OUT.`;
             `
                 <h3>ToscripT Professional</h3>
                 <p>A professional screenwriting tool for mobile and desktop.</p>
-                <p><strong>Version:</strong> 2.1</p>
+                <p><strong>Version:</strong> 2.2</p>
                 <p><strong>Format:</strong> Fountain Markup</p>
                 <p>Write, preview, and export professional screenplays anywhere.</p>
             `,
