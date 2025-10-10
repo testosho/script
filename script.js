@@ -1,4 +1,4 @@
-// ToscripT Professional - Complete Version with All Features
+// ToscripT Professional - Complete Version with Original Scene Navigator
 
 document.addEventListener('DOMContentLoaded', () => {
     // Global variables
@@ -302,9 +302,14 @@ FADE OUT.`;
                     location: location,
                     timeOfDay: timeOfDay,
                     description: [],
-                    characters: []
+                    characters: [],
+                    fullText: heading + '\n' // Store full scene text for reconstruction
                 };
             } else if (currentScene) {
+                // Store all text for reconstruction
+                currentScene.fullText += token.text + '\n';
+                
+                // Only add action to description for cards
                 if (token.type === 'action') {
                     currentScene.description.push(token.text);
                 } else if (token.type === 'character') {
@@ -320,6 +325,32 @@ FADE OUT.`;
         
         console.log('=== EXTRACTED', scenes.length, 'SCENES ===');
         return scenes;
+    }
+
+    // PATCHED: Reconstruct script from reordered scenes
+    function reconstructScriptFromScenes() {
+        if (!projectData.projectInfo.scenes || projectData.projectInfo.scenes.length === 0) {
+            return '';
+        }
+
+        let reconstructedText = '';
+        projectData.projectInfo.scenes.forEach((scene, index) => {
+            // Use stored fullText if available, otherwise reconstruct from parts
+            if (scene.fullText) {
+                reconstructedText += scene.fullText;
+                if (index < projectData.projectInfo.scenes.length - 1) {
+                    reconstructedText += '\n';
+                }
+            } else {
+                // Fallback reconstruction
+                reconstructedText += scene.heading + '\n';
+                if (scene.description && scene.description.length > 0) {
+                    reconstructedText += scene.description.join('\n') + '\n\n';
+                }
+            }
+        });
+
+        return reconstructedText.trim();
     }
 
     // Switch View Function
@@ -637,7 +668,7 @@ FADE OUT.`;
         bindCardEditingEvents();
     }
 
-    // Original Card Design - Cleaner, Darker Text
+    // Original Card Design
     async function generateCardImageBlob(cardElement) {
         const sceneNumber = cardElement.querySelector('.card-scene-number')?.value || '1';
         const sceneHeading = cardElement.querySelector('.card-scene-title')?.textContent.trim().toUpperCase() || 'UNTITLED SCENE';
@@ -724,7 +755,7 @@ FADE OUT.`;
         }
     }
 
-    // Original Card PDF Export Design
+    // Original Card PDF Export
     async function saveAllCardsAsImages() {
         console.log('Generating PDF for all scene cards...');
 
@@ -827,7 +858,7 @@ FADE OUT.`;
         return options[(currentIndex + 1) % options.length];
     }
 
-    // Scene Navigator
+    // PATCHED: Original Scene Navigator with Drag-and-Drop Reordering
     function updateSceneNavigator() {
         if (!sceneList) return;
 
@@ -847,6 +878,7 @@ FADE OUT.`;
             </li>
         `).join('');
 
+        // PATCHED: Original drag-and-drop logic that updates text editor
         if (typeof Sortable !== 'undefined' && sceneList) {
             Sortable.create(sceneList, {
                 animation: 150,
@@ -855,17 +887,32 @@ FADE OUT.`;
                 dragClass: 'dragging',
                 handle: 'li',
                 onEnd: evt => {
+                    console.log('Scene reordered from', evt.oldIndex, 'to', evt.newIndex);
                     const oldIndex = evt.oldIndex;
                     const newIndex = evt.newIndex;
+                    
                     if (oldIndex !== newIndex) {
+                        // Reorder the scenes array
                         const scenes = projectData.projectInfo.scenes;
                         const [movedScene] = scenes.splice(oldIndex, 1);
                         scenes.splice(newIndex, 0, movedScene);
+                        
+                        // Update scene numbers
                         scenes.forEach((scene, index) => {
                             scene.number = index + 1;
                         });
+                        
+                        // CRITICAL: Reconstruct the text editor from reordered scenes
+                        const reconstructedText = reconstructScriptFromScenes();
+                        if (fountainInput && reconstructedText) {
+                            fountainInput.value = reconstructedText;
+                            history.add(fountainInput.value);
+                        }
+                        
                         saveProjectData();
                         updateSceneNavigator();
+                        
+                        console.log('Text editor updated with reordered scenes');
                     }
                 }
             });
@@ -1343,7 +1390,7 @@ FADE OUT.`;
                 
                 <p><strong>Action:</strong> Any other text</p>
                 
-                <p><strong>Note:</strong> Card view shows only scene headings and action descriptions.</p>
+                <p><strong>Note:</strong> Card view shows only scene headings and action descriptions. Drag scenes in Scene Navigator to reorder them!</p>
             `,
             ''
         );
