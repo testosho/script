@@ -37,7 +37,7 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* FIXED: Fullscreen mode - Keep toolbars visible */
+/* Fullscreen mode */
 body.fullscreen-active #main-header,
 body.fullscreen-active #script-header,
 body.fullscreen-active #card-header {
@@ -48,7 +48,6 @@ body.fullscreen-active .main-content {
     height: 100vh;
 }
 
-/* FIXED: Keep mobile toolbar and desktop toolbar visible in fullscreen */
 body.fullscreen-active #mobile-keyboard-toolbar,
 body.fullscreen-active #desktop-side-toolbar {
     display: flex !important;
@@ -90,30 +89,28 @@ body.fullscreen-active #desktop-side-toolbar {
     justify-content: center;
 }
 
-/* --- SCREENPLAY PREVIEW FORMATTING (THE FIX) --- */
-
-/* 1. The "Page" Container */
+/* Screenplay Preview Formatting */
 #screenplay-output {
     background-color: #ffffff;
     color: #000000;
     font-family: 'Courier Prime', 'Courier New', monospace;
     font-size: 12pt;
-    line-height: 1; /* We will control line height with margins */
+    line-height: 1;
     max-width: 8.5in;
     min-height: 100%;
     margin: 0 auto;
-    padding: 1in 1in 1in 1.5in; /* Top, Right, Bottom, Left margins */
+    padding: 1in 1in 1in 1.5in;
     box-sizing: border-box;
     box-shadow: 0 0 15px rgba(0,0,0,0.5);
     text-align: left;
 }
 
-/* 2. Reset default spacing for ALL screenplay elements */
 #screenplay-output > div {
     margin: 0;
     padding: 0;
-    white-space: pre-wrap; /* Respects line breaks within the element */
+    white-space: pre-wrap;
 }
+
 .scene-heading {
     display: flex;
     justify-content: space-between;
@@ -130,6 +127,7 @@ body.fullscreen-active #desktop-side-toolbar {
     color: #000000;
     margin-left: auto;
 }
+
 .character { 
     text-transform: uppercase !important; 
     margin-left: 37% !important; 
@@ -137,21 +135,25 @@ body.fullscreen-active #desktop-side-toolbar {
     margin-top: 12px;
     margin-bottom: 6px;
 }
+
 .dialogue { 
     margin-left: 25% !important; 
     margin-right: 15% !important; 
     color: #000000 !important;
     line-height: 1.2;
 }
+
 .parenthetical { 
     margin-left: 30% !important; 
     color: #000000 !important;
     font-style: normal;
 }
+
 .action { 
     color: #000000 !important;
     margin: 12px 0;
 }
+
 .transition { 
     text-align: right !important; 
     text-transform: uppercase !important; 
@@ -392,7 +394,6 @@ body.fullscreen-active #desktop-side-toolbar {
     color: var(--text-color);
 }
 
-/* FIXED: Enhanced Reorder Header with Save Button */
 .reorder-header {
     display: flex;
     justify-content: space-between;
@@ -446,7 +447,7 @@ body.fullscreen-active #desktop-side-toolbar {
     color: var(--muted-text-color);
 }
 
-/* FIXED: Enhanced Scene List with Better Drag & Drop */
+/* Enhanced Scene List */
 #scene-list {
     flex-grow: 1;
     overflow-y: auto;
@@ -485,7 +486,6 @@ body.fullscreen-active #desktop-side-toolbar {
     cursor: grabbing;
 }
 
-/* FIXED: Scene List Item Content */
 .scene-item-header {
     display: flex;
     justify-content: space-between;
@@ -495,34 +495,6 @@ body.fullscreen-active #desktop-side-toolbar {
     margin-bottom: 0.3rem;
 }
 
-.scene-number {
-    background: var(--primary-color);
-    color: white;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: bold;
-    min-width: 30px;
-    text-align: center;
-}
-
-.scene-time {
-    background: var(--success-color);
-    color: white;
-    padding: 0.15rem 0.4rem;
-    border-radius: 3px;
-    font-size: 0.7rem;
-    font-weight: bold;
-}
-
-.scene-heading {
-    font-size: 12px;
-    color: var(--text-color);
-    text-transform: uppercase;
-    line-height: 1.3;
-}
-
-/* FIXED: Drag and Drop Visual States */
 .dragging {
     opacity: 0.8;
     transform: scale(1.05) rotate(2deg);
@@ -618,7 +590,6 @@ body.fullscreen-active #desktop-side-toolbar {
     font-style: italic;
 }
 
-/* FIXED: Desktop Side Toolbar - Always Visible in Fullscreen */
 #desktop-side-toolbar {
     display: flex;
     flex-direction: column;
@@ -631,7 +602,7 @@ body.fullscreen-active #desktop-side-toolbar {
     flex-shrink: 0;
 }
 
-/* FIXED: Mobile Keyboard Toolbar - Enhanced for Fullscreen */
+/* Mobile Keyboard Toolbar */
 .mobile-keyboard-toolbar {
     position: fixed;
     left: 0;
@@ -701,19 +672,6 @@ body.fullscreen-active #desktop-side-toolbar {
     background-color: var(--background-color);
 }
 
-#screenplay-output {
-    font-family: 'Courier Prime', monospace;
-    background-color: white;
-    color: black;
-    padding: 2rem 1.5rem;
-    height: 100%;
-    overflow-y: auto;
-    border-radius: 8px;
-    max-width: 8.5in;
-    margin: 0 auto;
-    line-height: 1.5;
-}
-
 .title-page {
     text-align: center;
     margin-bottom: 4rem;
@@ -732,59 +690,7 @@ body.fullscreen-active #desktop-side-toolbar {
     margin-bottom: 0.5rem;
 }
 
-.scene-heading {
-    font-weight: bold;
-    text-transform: uppercase;
-    margin: 2rem 0 1rem 0;
-    font-size: 12px;
-    line-height: 1.5;
-    margin-left: 0;
-}
-
-.action {
-    margin-bottom: 1rem;
-    font-size: 12px;
-    line-height: 1.5;
-    max-width: 6in;
-    margin-left: 0;
-}
-
-.character {
-    text-transform: uppercase;
-    margin-left: 3.7in;
-    font-weight: bold;
-    margin-top: 1.5rem;
-    margin-bottom: 0;
-    font-size: 12px;
-}
-
-.dialogue {
-    margin-left: 2.5in;
-    margin-right: 2in;
-    margin-bottom: 1rem;
-    font-size: 12px;
-    line-height: 1.5;
-    max-width: 3.5in;
-}
-
-.parenthetical {
-    margin-left: 3.1in;
-    margin-right: 2.2in;
-    font-size: 12px;
-    line-height: 1.5;
-    margin-bottom: 0.5rem;
-}
-
-.transition {
-    text-align: right;
-    text-transform: uppercase;
-    font-weight: bold;
-    margin-top: 1.5rem;
-    margin-bottom: 1rem;
-    font-size: 12px;
-    margin-right: 1in;
-}
-
+/* Card View Styles */
 #card-view {
     overflow-y: auto;
     width: 100%;
@@ -843,6 +749,9 @@ body.fullscreen-active #desktop-side-toolbar {
     z-index: 10;
     opacity: 0;
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .scene-card:hover .card-actions {
@@ -872,6 +781,17 @@ body.fullscreen-active #desktop-side-toolbar {
     color: var(--text-color);
     transform: scale(1.1);
     box-shadow: none;
+}
+
+/* Mobile Plus Button for Adding Cards */
+.add-card-btn-mobile {
+    background: var(--success-color) !important;
+    border-color: var(--success-color) !important;
+}
+
+.add-card-btn-mobile:hover {
+    background: #16a34a !important;
+    transform: scale(1.15) !important;
 }
 
 .scene-card-content {
@@ -1011,6 +931,46 @@ body.fullscreen-active #desktop-side-toolbar {
     z-index: 1;
 }
 
+/* Mobile Card Pagination */
+.mobile-pagination {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    padding: 20px;
+    flex-wrap: wrap;
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+.pagination-btn {
+    background: linear-gradient(135deg, var(--surface-color), var(--background-color));
+    color: var(--text-color);
+    border: 2px solid var(--border-color);
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    min-width: 80px;
+    touch-action: manipulation;
+}
+
+.pagination-btn:hover {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.pagination-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* Mobile Responsive Styles */
 @media (max-width: 768px) {
     #desktop-side-toolbar {
         display: none;
@@ -1067,16 +1027,19 @@ body.fullscreen-active #desktop-side-toolbar {
         max-width: 90vw;
     }
     
+    /* Mobile Card View - Vertical Layout with Pagination */
     #card-container {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
         gap: 20px;
         padding: 15px;
-        padding-right: 55px;
+        padding-right: 15px;
+        grid-template-columns: none;
     }
     
     .scene-card {
-        width: 100%;
-        max-width: none;
+        width: 100% !important;
+        max-width: 100% !important;
         height: auto;
         min-height: 300px;
     }
@@ -1085,18 +1048,33 @@ body.fullscreen-active #desktop-side-toolbar {
         min-height: 180px;
     }
     
+    /* Mobile: Show card actions inline below card on mobile */
     .card-actions {
-        right: -48px;
+        position: relative;
+        right: auto;
+        top: auto;
+        transform: none;
+        opacity: 1;
+        flex-direction: row;
+        justify-content: center;
+        margin-top: 12px;
+        gap: 12px;
+    }
+    
+    .scene-card:hover .card-actions {
+        right: auto;
     }
     
     .card-actions .icon-btn {
-        width: 32px;
-        height: 32px;
-        font-size: 12px;
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+        position: relative;
     }
     
     .card-scene-title {
-        margin-right: 12px;
+        margin-right: 8px;
+        font-size: 12px;
     }
     
     #scene-list li {
@@ -1113,6 +1091,17 @@ body.fullscreen-active #desktop-side-toolbar {
         font-size: 0.65rem;
         padding: 0.1rem 0.3rem;
     }
+    
+    /* Mobile Pagination Styling */
+    .mobile-pagination {
+        padding: 15px 10px;
+    }
+    
+    .pagination-btn {
+        min-width: 70px;
+        padding: 10px 16px;
+        font-size: 13px;
+    }
 }
 
 @supports (-webkit-touch-callout: none) {
@@ -1121,6 +1110,7 @@ body.fullscreen-active #desktop-side-toolbar {
     }
 }
 
+/* Modal Styles */
 .modal {
     position: fixed;
     inset: 0;
@@ -1207,6 +1197,7 @@ body.fullscreen-active #desktop-side-toolbar {
     flex-shrink: 0;
 }
 
+/* Print Styles */
 @media print {
     * {
         -webkit-print-color-adjust: exact !important;
@@ -1232,7 +1223,8 @@ body.fullscreen-active #desktop-side-toolbar {
         color: black !important;
     }
     
-    .card-actions {
+    .card-actions,
+    .mobile-pagination {
         display: none !important;
     }
     
@@ -1272,6 +1264,7 @@ body.fullscreen-active #desktop-side-toolbar {
     }
 }
 
+/* Scrollbar Styles */
 textarea::-webkit-scrollbar,
 #screenplay-output::-webkit-scrollbar,
 #scene-list::-webkit-scrollbar,
