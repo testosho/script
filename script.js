@@ -634,21 +634,25 @@ function switchView(view) {
             }
         }
 
-        function handleCardClick(e) {
-            if (e.target.closest('.delete-card-btn')) {
-                const sceneId = e.target.closest('.delete-card-btn').getAttribute('data-scene-id');
-                const card = cardContainer.querySelector(`.scene-card[data-scene-id="${sceneId}"]`);
-                if (card && confirm('Delete this scene card?')) {
-                    card.remove();
-                    syncCardsToEditor();
-                }
-            } else if (e.target.closest('.share-card-btn')) {
-                const sceneId = e.target.closest('.share-card-btn').getAttribute('data-scene-id');
-                shareSceneCard(sceneId);
-            } else if (e.target.closest('.add-card-btn-mobile')) {
-                addNewSceneCard();
-            }
-        }
+		function handleCardClick(e) {
+		    if (e.target.closest('.delete-card-btn')) {
+		        const sceneId = e.target.closest('.delete-card-btn').getAttribute('data-scene-id');
+		        const card = cardContainer.querySelector(`.scene-card[data-scene-id="${sceneId}"]`);
+		        if (card && confirm('Delete this scene card?')) {
+		            card.remove();
+		            syncCardsToEditor();
+		        }
+		    } else if (e.target.closest('.share-card-btn')) {
+		        const sceneId = e.target.closest('.share-card-btn').getAttribute('data-scene-id');
+		        shareSceneCard(sceneId);
+		    } else if (e.target.closest('.add-card-btn-mobile')) {
+		        // UPDATED: Pass current scene ID to add card below
+		        const sceneId = e.target.closest('.add-card-btn-mobile').getAttribute('data-scene-id');
+		        addNewSceneCard(sceneId);
+		    }
+		}
+        
+
 
         const textareas = cardContainer.querySelectorAll('.card-description');
         textareas.forEach(textarea => {
@@ -700,43 +704,60 @@ function switchView(view) {
         setTimeout(() => { isUpdatingFromSync = false; }, 100);
     }
 
-    function addNewSceneCard() {
-        const cardContainer = document.getElementById('card-container');
-        if (!cardContainer) return;
+  // UPDATED: Add New Scene Card - Insert Below Current Card
+	function addNewSceneCard(afterSceneId = null) {
+	    const cardContainer = document.getElementById('card-container');
+	    if (!cardContainer) return;
 
-        const allScenes = projectData.projectInfo.scenes;
-        const newSceneNumber = allScenes.length + 1;
+	    const allScenes = projectData.projectInfo.scenes;
+	    const newSceneNumber = allScenes.length + 1;
 
-        // Add to data
-        const newScene = {
-            number: newSceneNumber,
-            heading: 'INT. NEW SCENE - DAY',
-            sceneType: 'INT.',
-            location: 'NEW SCENE',
-            timeOfDay: 'DAY',
-            description: [],
-            characters: [],
-            fullText: 'INT. NEW SCENE - DAY\n'
-        };
-        
-        projectData.projectInfo.scenes.push(newScene);
-        
-        // Re-render to show new card
-        renderEnhancedCardView();
-        bindCardEditingEvents();
-        
-        // Scroll to new card
-        setTimeout(() => {
-            const newCard = cardContainer.querySelector(`.scene-card[data-scene-number="${newSceneNumber}"]`);
-            if (newCard) {
-                newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                const titleElement = newCard.querySelector('.card-scene-title');
-                if (titleElement) titleElement.focus();
-            }
-        }, 100);
+	    // Create new scene object
+	    const newScene = {
+	        number: newSceneNumber,
+	        heading: 'INT. NEW SCENE - DAY',
+	        sceneType: 'INT.',
+	        location: 'NEW SCENE',
+	        timeOfDay: 'DAY',
+	        description: [],
+	        characters: [],
+	        fullText: 'INT. NEW SCENE - DAY\n'
+	    };
+    
+	    // If afterSceneId is provided, insert after that scene
+	    if (afterSceneId) {
+	        const insertIndex = allScenes.findIndex(s => s.number == afterSceneId);
+	        if (insertIndex !== -1) {
+	            allScenes.splice(insertIndex + 1, 0, newScene);
+	            // Renumber scenes
+	            allScenes.forEach((scene, index) => {
+	                scene.number = index + 1;
+	            });
+	        } else {
+	            allScenes.push(newScene);
+	        }
+	    } else {
+	        allScenes.push(newScene);
+	    }
+    
+	    projectData.projectInfo.scenes = allScenes;
+    
+	    // Re-render to show new card
+	    renderEnhancedCardView();
+	    bindCardEditingEvents();
+    
+	    // Scroll to new card
+	    setTimeout(() => {
+	        const newCard = cardContainer.querySelector(`.scene-card[data-scene-number="${newSceneNumber}"]`);
+	        if (newCard) {
+	            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	            const titleElement = newCard.querySelector('.card-scene-title');
+	            if (titleElement) titleElement.focus();
+	        }
+	    }, 100);
 
-        syncCardsToEditor();
-    }
+	    syncCardsToEditor();
+	}
 
     // Original Card Design
     async function generateCardImageBlob(cardElement) {
@@ -826,66 +847,240 @@ function switchView(view) {
     }
 
     // Original Card PDF Export
-    async function saveAllCardsAsImages() {
-        console.log('Generating PDF for all scene cards...');
+	// UPDATED: Save All Cards - Show Options Modal
+	function showSaveCardsModal() {
+	    const modal = document.getElementById('save-cards-modal');
+	    if (!modal) {
+	        // Create modal if it doesn't exist
+	        const modalHtml = `
+	            <div id="save-cards-modal" class="modal">
+	                <div class="modal-content">
+	                    <div class="modal-header">
+	                        <h2>Save Scene Cards</h2>
+	                        <button class="icon-btn close-modal-btn">&times;</button>
+	                    </div>
+	                    <div class="modal-body">
+	                        <p>Choose which cards to save as PDF:</p>
+	                    </div>
+	                    <div class="modal-footer" style="display: flex; gap: 10px; justify-content: center;">
+	                        <button id="save-visible-cards-btn" class="main-action-btn">
+	                            Save Visible Cards
+	                        </button>
+	                        <button id="save-all-cards-modal-btn" class="main-action-btn secondary">
+	                            Save All Cards
+	                        </button>
+	                    </div>
+	                </div>
+	            </div>
+	        `;
+	        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+	        // Setup event listeners
+	        const saveVisibleBtn = document.getElementById('save-visible-cards-btn');
+	        const saveAllModalBtn = document.getElementById('save-all-cards-modal-btn');
+	        const closeBtn = document.querySelector('#save-cards-modal .close-modal-btn');
+	        const saveModal = document.getElementById('save-cards-modal');
+        
+	        if (saveVisibleBtn) {
+	            saveVisibleBtn.addEventListener('click', () => {
+	                saveModal.classList.remove('open');
+	                saveVisibleCardsAsPDF();
+	            });
+	        }
+        
+	        if (saveAllModalBtn) {
+	            saveAllModalBtn.addEventListener('click', () => {
+	                saveModal.classList.remove('open');
+	                saveAllCardsAsImages();
+	            });
+	        }
+        
+	        if (closeBtn) {
+	            closeBtn.addEventListener('click', () => {
+	                saveModal.classList.remove('open');
+	            });
+	        }
+        
+	        saveModal.addEventListener('click', (e) => {
+	            if (e.target === saveModal) {
+	                saveModal.classList.remove('open');
+	            }
+	        });
+	    }
+    
+	    document.getElementById('save-cards-modal').classList.add('open');
+	}
+	
 
-        if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
-            alert('PDF generation library is not loaded. Cannot create PDF.');
-            return;
-        }
+	// NEW: Save Only Visible Cards
+	async function saveVisibleCardsAsPDF() {
+	    console.log('Saving visible cards as PDF...');
 
-        const cards = document.querySelectorAll('.card-for-export');
-        if (cards.length === 0) {
-            alert('No cards to save.');
-            return;
-        }
+	    if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
+	        alert('PDF generation library is not loaded. Cannot create PDF.');
+	        return;
+	    }
 
-        alert(`Preparing to generate a PDF with ${cards.length} cards. This may take a moment...`);
+	    const visibleCards = document.querySelectorAll('.card-for-export');
+	    if (visibleCards.length === 0) {
+	        alert('No visible cards to save.');
+	        return;
+	    }
 
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-        });
+	    // Get scene numbers of visible cards
+	    const visibleSceneNumbers = Array.from(visibleCards).map(card => 
+	        card.getAttribute('data-scene-number')
+	    );
+	    const firstScene = visibleSceneNumbers[0];
+	    const lastScene = visibleSceneNumbers[visibleSceneNumbers.length - 1];
+    
+	    // Generate filename
+	    const projectName = projectData.projectInfo.projectName || 'Untitled';
+	    const filename = `${projectName}-Scene${firstScene}to${lastScene}.pdf`;
 
-        const cardWidthMM = 127;
-        const cardHeightMM = 76;
-        const pageHeightMM = 297;
-        const pageWidthMM = 210;
-        const topMarginMM = 15;
-        const leftMarginMM = (pageWidthMM - cardWidthMM) / 2;
-        const gapMM = 15;
+	    alert(`Preparing to generate PDF with ${visibleCards.length} visible cards...`);
 
-        let x = leftMarginMM;
-        let y = topMarginMM;
+	    const { jsPDF } = window.jspdf;
+	    const doc = new jsPDF({
+	        orientation: 'portrait',
+	        unit: 'mm',
+	        format: 'a4'
+	    });
 
-        try {
-            for (let i = 0; i < cards.length; i++) {
-                const blob = await generateCardImageBlob(cards[i]);
-                if (!blob) continue;
+	    const cardWidthMM = 127;
+	    const cardHeightMM = 76;
+	    const pageHeightMM = 297;
+	    const pageWidthMM = 210;
+	    const topMarginMM = 15;
+	    const leftMarginMM = (pageWidthMM - cardWidthMM) / 2;
+	    const gapMM = 15;
 
-                const dataUrl = URL.createObjectURL(blob);
+	    let x = leftMarginMM;
+	    let y = topMarginMM;
 
-                if (y + cardHeightMM > pageHeightMM - topMarginMM) {
-                    doc.addPage();
-                    y = topMarginMM;
-                }
+	    try {
+	        for (let i = 0; i < visibleCards.length; i++) {
+	            const blob = await generateCardImageBlob(visibleCards[i]);
+	            if (!blob) continue;
 
-                doc.addImage(dataUrl, 'PNG', x, y, cardWidthMM, cardHeightMM);
-                URL.revokeObjectURL(dataUrl);
+	            const dataUrl = URL.createObjectURL(blob);
 
-                y += cardHeightMM + gapMM;
-            }
+	            if (y + cardHeightMM > pageHeightMM - topMarginMM) {
+	                doc.addPage();
+	                y = topMarginMM;
+	            }
 
-            doc.save('ToscripT-AllCards.pdf');
-            alert(`PDF created successfully with ${cards.length} cards!`);
-        } catch (error) {
-            console.error('Failed to generate PDF', error);
-            alert('An error occurred while creating the PDF. Please check the console for details.');
-        }
-    }
+	            doc.addImage(dataUrl, 'PNG', x, y, cardWidthMM, cardHeightMM);
+	            URL.revokeObjectURL(dataUrl);
 
+	            y += cardHeightMM + gapMM;
+	        }
+
+	        doc.save(filename);
+	        alert(`PDF created successfully: ${filename}`);
+	    } catch (error) {
+	        console.error('Failed to generate PDF', error);
+	        alert('An error occurred while creating the PDF.');
+	    }
+	}
+	
+	// UPDATED: Save All Cards with Proper Filename
+	async function saveAllCardsAsImages() {
+	    console.log('Generating PDF for all scene cards...');
+
+	    if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
+	        alert('PDF generation library is not loaded. Cannot create PDF.');
+	        return;
+	    }
+
+	    const allScenes = projectData.projectInfo.scenes;
+	    if (allScenes.length === 0) {
+	        alert('No cards to save.');
+	        return;
+	    }
+
+	    // Generate filename
+	    const projectName = projectData.projectInfo.projectName || 'Untitled';
+	    const firstScene = 1;
+	    const lastScene = allScenes.length;
+	    const filename = `${projectName}-Scene${firstScene}to${lastScene}.pdf`;
+
+	    alert(`Preparing to generate PDF with ${allScenes.length} cards...`);
+
+	    // Temporarily render all cards
+	    const cardContainer = document.getElementById('card-container');
+	    if (!cardContainer) return;
+    
+	    const originalPage = currentPage;
+	    currentPage = 0;
+    
+	    // Render all cards temporarily
+	    cardContainer.innerHTML = allScenes.map(scene => `
+	        <div class="scene-card card-for-export temp-export-card" data-scene-id="${scene.number}" data-scene-number="${scene.number}">
+	            <div class="scene-card-content">
+	                <div class="card-header">
+	                    <div class="card-scene-title">${scene.heading}</div>
+	                    <input class="card-scene-number" type="text" value="${scene.number}" maxlength="4">
+	                </div>
+	                <div class="card-body">
+	                    <textarea class="card-description">${scene.description.join('\n')}</textarea>
+	                </div>
+	                <div class="card-watermark">TO SCRIPT</div>
+	            </div>
+	        </div>
+	    `).join('');
+
+	    const cards = document.querySelectorAll('.temp-export-card');
+
+	    const { jsPDF } = window.jspdf;
+	    const doc = new jsPDF({
+	        orientation: 'portrait',
+	        unit: 'mm',
+	        format: 'a4'
+	    });
+
+	    const cardWidthMM = 127;
+	    const cardHeightMM = 76;
+	    const pageHeightMM = 297;
+	    const pageWidthMM = 210;
+	    const topMarginMM = 15;
+	    const leftMarginMM = (pageWidthMM - cardWidthMM) / 2;
+	    const gapMM = 15;
+
+	    let x = leftMarginMM;
+	    let y = topMarginMM;
+
+	    try {
+	        for (let i = 0; i < cards.length; i++) {
+	            const blob = await generateCardImageBlob(cards[i]);
+	            if (!blob) continue;
+
+	            const dataUrl = URL.createObjectURL(blob);
+
+	            if (y + cardHeightMM > pageHeightMM - topMarginMM) {
+	                doc.addPage();
+	                y = topMarginMM;
+	            }
+
+	            doc.addImage(dataUrl, 'PNG', x, y, cardWidthMM, cardHeightMM);
+	            URL.revokeObjectURL(dataUrl);
+
+	            y += cardHeightMM + gapMM;
+	        }
+
+	        doc.save(filename);
+	        alert(`PDF created successfully: ${filename}`);
+	    } catch (error) {
+	        console.error('Failed to generate PDF', error);
+	        alert('An error occurred while creating the PDF.');
+	    } finally {
+	        // Restore original view
+	        currentPage = originalPage;
+	        renderEnhancedCardView();
+	        bindCardEditingEvents();
+	    }
+	}
+    
     // Action Button Handler
     function handleActionBtn(action) {
         if (!fountainInput) return;
@@ -1667,16 +1862,16 @@ function switchView(view) {
         }
 
         // Add new card
-        const addNewCardBtn = document.getElementById('add-new-card-btn');
-        if (addNewCardBtn) {
-            addNewCardBtn.addEventListener('click', addNewSceneCard);
-        }
+		const saveAllCardsBtn = document.getElementById('save-all-cards-btn');
+		    if (saveAllCardsBtn) {
+		        saveAllCardsBtn.addEventListener('click', showSaveCardsModal);
+		    }
 
         // Save all cards
-        const saveAllCardsBtn = document.getElementById('save-all-cards-btn');
-        if (saveAllCardsBtn) {
-            saveAllCardsBtn.addEventListener('click', saveAllCardsAsImages);
-        }
+		const saveAllCardsBtn = document.getElementById('save-all-cards-btn');
+		    if (saveAllCardsBtn) {
+		        saveAllCardsBtn.addEventListener('click', showSaveCardsModal);
+		    }
 
         // Menu handlers
         const newBtn = document.getElementById('new-btn');
