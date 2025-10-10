@@ -1417,3 +1417,53 @@ textarea::-webkit-scrollbar-thumb,
     background-color: var(--border-color);
     border-radius: 20px;
 }
+
+/* Smaller Modal Width for Info and About */
+#info-modal .modal-content,
+#about-modal .modal-content {
+    max-width: 600px;
+    width: 90%;
+}
+
+#about-modal .modal-content {
+    max-width: 550px;
+}
+
+/* Mobile: Even smaller */
+@media (max-width: 768px) {
+    #info-modal .modal-content,
+    #about-modal .modal-content {
+        max-width: 95vw;
+        width: 95vw;
+    }
+}
+
+/* Better scrolling for info modal */
+#info-modal .modal-body {
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+#info-modal .modal-body h3 {
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+#info-modal .modal-body ul {
+    margin-top: 5px;
+    margin-bottom: 15px;
+}
+
+#info-modal .modal-body code {
+    background: var(--background-color);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier Prime', monospace;
+    color: var(--primary-color);
+}
+
+/* About modal link styling */
+#about-modal a {
+    -webkit-tap-highlight-color: transparent;
+}
+
