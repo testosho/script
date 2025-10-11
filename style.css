@@ -54,15 +54,13 @@ body.fullscreen-active #desktop-side-toolbar {
     z-index: 9999 !important;
 }
 
-/* ADDED: Override when switching views */
-body:not(.fullscreen-active) #card-header {
-    display: flex !important;
+/* Default header state - Let JS control visibility */
+#main-header,
+#script-header,
+#card-header {
+    display: none; /* Hidden by default, JavaScript shows the correct one */
 }
 
-body:not(.fullscreen-active) #main-header,
-body:not(.fullscreen-active) #script-header {
-    display: none; /* Hidden by default, shown by JS */
-}
 
 .page-header {
     display: flex;
