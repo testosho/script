@@ -105,49 +105,36 @@ FADE OUT.`;
     };
 
     // Mobile Keyboard Detection
-    function setupKeyboardDetection() {
-        let initialHeight = window.innerHeight;
-
-        function handleKeyboardToggle() {
-            const currentHeight = window.innerHeight;
-            const heightDiff = initialHeight - currentHeight;
-            const keyboardOpen = heightDiff > 150;
-
-            if (keyboardOpen && currentView === 'write' && window.innerWidth < 768) {
-                showMobileToolbar();
-            } else if (!document.activeElement?.closest('.mobile-keyboard-toolbar')) {
-                hideMobileToolbar();
-            }
-        }
-
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', handleKeyboardToggle);
-        } else {
-            window.addEventListener('resize', handleKeyboardToggle);
-        }
-
+   function setupKeyboardDetection() {
+    // Toolbar is now always shown in write mode on mobile
+    // No keyboard detection needed
+    if (window.innerWidth <= 768) {
         if (fountainInput) {
             fountainInput.addEventListener('focus', () => {
-                clearPlaceholder();
-                setTimeout(() => {
-                    if (currentView === 'write' && window.innerWidth < 768) showMobileToolbar();
-                }, 300);
-            });
-
-            fountainInput.addEventListener('blur', () => {
-                setPlaceholder();
-                setTimeout(() => {
-                    if (!document.activeElement?.closest('.mobile-keyboard-toolbar')) hideMobileToolbar();
-                }, 200);
+                showMobileToolbar();
             });
         }
     }
+}
 
-    function showMobileToolbar() {
-        if (mobileToolbar && window.innerWidth < 768) {
-            mobileToolbar.classList.add('show');
-        }
+
+   // UPDATED: Modern Mobile Toolbar - Always visible in write mode on mobile
+function showMobileToolbar() {
+    if (!mobileToolbar) return;
+    
+    // Only show in write mode on mobile
+    if (window.innerWidth <= 768 && currentView === 'write') {
+        mobileToolbar.classList.add('show');
+        console.log('Mobile toolbar shown');
     }
+}
+
+function hideMobileToolbar() {
+    if (!mobileToolbar) return;
+    mobileToolbar.classList.remove('show');
+    console.log('Mobile toolbar hidden');
+}
+
 
     function hideMobileToolbar() {
         if (mobileToolbar) {
@@ -478,24 +465,27 @@ function getElementType(line, nextLine, inDialogue) {
                }
            }, 100);
         
-       } else {
-           writeView?.classList.add('active');
-           if (mainHeader && !isFullscreen) {
-               mainHeader.style.display = 'flex';
-           }
-        
-           setTimeout(() => {
-               if (fountainInput) {
-                   if (!isPlaceholder()) {
-                       fountainInput.classList.remove('placeholder');
-                   }
-                   fountainInput.focus();
-                   if (window.innerWidth <= 768 && currentView === 'write') {
-                       showMobileToolbar();
-                   }
-               }
-           }, 200);
-       }
+      } else {
+    // Write mode
+    writeView?.classList.add('active');
+    if (mainHeader && !isFullscreen) {
+        mainHeader.style.display = 'flex';
+    }
+    
+    setTimeout(() => {
+        if (fountainInput) {
+            if (!isPlaceholder()) {
+                fountainInput.classList.remove('placeholder');
+            }
+            fountainInput.focus();
+            
+            // UPDATED: Always show toolbar in write mode on mobile
+            if (window.innerWidth <= 768) {
+                showMobileToolbar();
+            }
+        }
+    }, 200);
+}
    }
    
 
@@ -2914,6 +2904,13 @@ document.addEventListener('webkitfullscreenchange', () => {
             }, 200);
         });
 
+		  // ADDED: Auto-show mobile toolbar on load if mobile
+    setTimeout(() => {
+        if (window.innerWidth <= 768 && currentView === 'write') {
+            showMobileToolbar();
+        }
+    }, 500);
+    
         console.log('ToscripT initialized successfully');
     }
 
