@@ -639,75 +639,111 @@ body.fullscreen-active #desktop-side-toolbar {
     flex-shrink: 0;
 }
 
-/* Mobile Keyboard Toolbar */
+/* Modern Mobile Keyboard Toolbar - Always Visible */
 .mobile-keyboard-toolbar {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, var(--surface-color), var(--background-color));
-    border-top: 2px solid var(--primary-color);
+    background: linear-gradient(135deg, rgba(31, 41, 55, 0.98), rgba(17, 24, 39, 0.98));
+    border-top: 1px solid var(--primary-color);
     z-index: 9999;
-    padding: 8px 16px;
+    padding: 8px 12px;
     padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: none;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(100%);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform;
-    display: none;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
+/* Show toolbar with smooth fade */
 .mobile-keyboard-toolbar.show {
     display: block;
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
 }
 
+/* Always render on mobile devices */
 @media (max-width: 768px) {
     .mobile-keyboard-toolbar {
         display: block;
     }
+
+     /* Add padding to write view so text doesn't hide behind toolbar */
+    #write-view {
+        padding-bottom: 70px;
+    }
+    
+    #fountain-input {
+        padding-bottom: 80px;
+    }
 }
 
+/* Modern toolbar content */
 .keyboard-toolbar-content {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     max-width: 100%;
-    height: 50px;
+    height: auto;
+    padding: 4px 0;
 }
 
+
+/* Modern compact buttons */
 .keyboard-btn {
-    background: linear-gradient(135deg, var(--primary-color), #2563eb);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(37, 99, 235, 0.9));
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 12px 16px;
+    padding: 10px 12px;
     border-radius: 8px;
     cursor: pointer;
-    font-weight: bold;
-    font-size: 14px;
+    font-weight: 700;
+    font-size: 13px;
     flex: 1;
-    max-width: 70px;
-    min-height: 44px;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+    max-width: 65px;
+    min-height: 42px;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
+    letter-spacing: 0.3px;
 }
 
 .keyboard-btn:active {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    transform: scale(0.95);
-    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 1), rgba(29, 78, 216, 1));
+    transform: scale(0.96);
+    box-shadow: 0 1px 4px rgba(59, 130, 246, 0.5);
+}
+
+/* Modern glass effect */
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    .mobile-keyboard-toolbar {
+        background: linear-gradient(135deg, rgba(31, 41, 55, 0.85), rgba(17, 24, 39, 0.85));
+    }
+}
+
+/* Smooth appearance animation */
+@keyframes toolbarFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mobile-keyboard-toolbar.show {
+    animation: toolbarFadeIn 0.3s ease-out;
 }
 
 .preview-area {
