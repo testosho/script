@@ -540,152 +540,189 @@ function getElementType(line, nextLine, inDialogue) {
 }
 
     // Enhanced Card View with Mobile Pagination
-    function renderEnhancedCardView() {
-        const cardContainer = document.getElementById('card-container');
-        console.log('=== RENDERING CARD VIEW ===');
-        
-        if (!cardContainer) {
-            console.error('Card container not found');
-            return;
-        }
-
-        const scenes = projectData.projectInfo.scenes;
-        console.log('Scenes to render:', scenes.length);
-        const isMobile = window.innerWidth < 768;
-
-        if (scenes.length === 0) {
-            cardContainer.innerHTML = `
-                <div style="grid-column: 1 / -1; text-align: center; padding: 4rem; color: var(--muted-text-color);">
-                    <i class="fas fa-film" style="font-size: 4rem; margin-bottom: 2rem; opacity: 0.3;"></i>
-                    <h3>No scenes found</h3>
-                    <p>Write some scenes in the editor with INT. or EXT. headings</p>
-                    <p style="font-size: 0.9rem; margin-top: 1rem;">Example: INT. OFFICE - DAY</p>
-                </div>`;
-            return;
-        }
-
-        let scenesToShow = scenes;
-        if (isMobile) {
-            const startIdx = currentPage * cardsPerPage;
-            const endIdx = startIdx + cardsPerPage;
-            scenesToShow = scenes.slice(startIdx, endIdx);
-        }
-
-        cardContainer.innerHTML = scenesToShow.map(scene => `
-            <div class="scene-card card-for-export" data-scene-id="${scene.number}" data-scene-number="${scene.number}">
-                <div class="scene-card-content">
-                    <div class="card-header">
-                        <div class="card-scene-title" contenteditable="true" data-placeholder="Enter scene heading...">${scene.heading}</div>
-                        <input class="card-scene-number" type="text" value="${scene.number}" maxlength="4" data-scene-id="${scene.number}">
-                    </div>
-                    <div class="card-body">
-                        <textarea class="card-description" placeholder="Enter scene description (action only)..." data-scene-id="${scene.number}">${scene.description.join('\n')}</textarea>
-                    </div>
-                    <div class="card-watermark">TO SCRIPT</div>
-                </div>
-                <div class="card-actions">
-                    <button class="icon-btn share-card-btn" title="Share Scene" data-scene-id="${scene.number}">
-                        <i class="fas fa-share-alt"></i>
-                    </button>
-                    <button class="icon-btn delete-card-btn" title="Delete Scene" data-scene-id="${scene.number}">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                    ${isMobile ? `<button class="icon-btn add-card-btn-mobile" title="Add New Scene" data-scene-id="${scene.number}">
-                        <i class="fas fa-plus"></i>
-                    </button>` : ''}
-                </div>
-            </div>
-        `).join('');
-
-        if (isMobile && scenes.length > cardsPerPage) {
-            const totalPages = Math.ceil(scenes.length / cardsPerPage);
-            let paginationHtml = '<div class="mobile-pagination">';
-            
-            for (let i = 0; i < totalPages; i++) {
-                const startNum = i * cardsPerPage + 1;
-                const endNum = Math.min((i + 1) * cardsPerPage, scenes.length);
-                const isActive = i === currentPage;
-                paginationHtml += `
-                    <button class="pagination-btn ${isActive ? 'active' : ''}" data-page="${i}">
-                        ${startNum}-${endNum}
-                    </button>
-                `;
-            }
-            
-            paginationHtml += '</div>';
-            cardContainer.insertAdjacentHTML('beforeend', paginationHtml);
-            
-            document.querySelectorAll('.pagination-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    currentPage = parseInt(e.target.dataset.page);
-                    renderEnhancedCardView();
-                    bindCardEditingEvents();
-                    
-                    if (window.innerWidth < 768) {
-                        setTimeout(() => setupMobileCardActions(), 100);
-                    }
-                });
-            });
-        }
-
-        console.log('Cards rendered successfully');
-        
-        if (isMobile) {
-            setTimeout(() => {
-                setupMobileCardActions();
-            }, 100);
-        }
+   // Enhanced Card View with Mobile Pagination
+function renderEnhancedCardView() {
+    const cardContainer = document.getElementById('card-container');
+    console.log('=== RENDERING CARD VIEW ===');
+    
+    if (!cardContainer) {
+        console.error('Card container not found');
+        return;
     }
+
+    const scenes = projectData.projectInfo.scenes;
+    console.log('Scenes to render:', scenes.length);
+    const isMobile = window.innerWidth < 768;
+
+    if (scenes.length === 0) {
+        cardContainer.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 4rem; color: var(--muted-text-color);">
+                <i class="fas fa-film" style="font-size: 4rem; margin-bottom: 2rem; opacity: 0.3;"></i>
+                <h3>No scenes found</h3>
+                <p>Write some scenes in the editor with INT. or EXT. headings</p>
+                <p style="font-size: 0.9rem; margin-top: 1rem;">Example: INT. OFFICE - DAY</p>
+            </div>`;
+        return;
+    }
+
+    let scenesToShow = scenes;
+    if (isMobile) {
+        const startIdx = currentPage * cardsPerPage;
+        const endIdx = startIdx + cardsPerPage;
+        scenesToShow = scenes.slice(startIdx, endIdx);
+    }
+
+    cardContainer.innerHTML = scenesToShow.map(scene => `
+        <div class="scene-card card-for-export" data-scene-id="${scene.number}" data-scene-number="${scene.number}">
+            <div class="scene-card-content">
+                <div class="card-header">
+                    <div class="card-scene-title" contenteditable="true" data-placeholder="Enter scene heading...">${scene.heading}</div>
+                    <input class="card-scene-number" type="text" value="${scene.number}" maxlength="4" data-scene-id="${scene.number}">
+                </div>
+                <div class="card-body">
+                    <textarea class="card-description" placeholder="Enter scene description (action only)..." data-scene-id="${scene.number}">${scene.description.join('\n')}</textarea>
+                </div>
+                <div class="card-watermark">TO SCRIPT</div>
+            </div>
+            <div class="card-actions">
+                <button class="icon-btn share-card-btn" title="Share Scene" data-scene-id="${scene.number}">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+                <button class="icon-btn delete-card-btn" title="Delete Scene" data-scene-id="${scene.number}">
+                    <i class="fas fa-trash"></i>
+                </button>
+                ${isMobile ? `<button class="icon-btn add-card-btn-mobile" title="Add New Scene" data-scene-id="${scene.number}">
+                    <i class="fas fa-plus"></i>
+                </button>` : ''}
+            </div>
+        </div>
+    `).join('');
+
+    if (isMobile && scenes.length > cardsPerPage) {
+        const totalPages = Math.ceil(scenes.length / cardsPerPage);
+        let paginationHtml = '<div class="mobile-pagination">';
+        
+        for (let i = 0; i < totalPages; i++) {
+            const startNum = i * cardsPerPage + 1;
+            const endNum = Math.min((i + 1) * cardsPerPage, scenes.length);
+            const isActive = i === currentPage;
+            paginationHtml += `
+                <button class="pagination-btn ${isActive ? 'active' : ''}" data-page="${i}">
+                    ${startNum}-${endNum}
+                </button>
+            `;
+        }
+        
+        paginationHtml += '</div>';
+        cardContainer.insertAdjacentHTML('beforeend', paginationHtml);
+        
+        document.querySelectorAll('.pagination-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                currentPage = parseInt(e.target.dataset.page);
+                renderEnhancedCardView();
+                bindCardEditingEvents();
+                
+                // FIXED: Ensure header stays visible after pagination
+                if (cardHeader && currentView === 'card') {
+                    cardHeader.style.display = 'flex';
+                }
+                
+                if (window.innerWidth < 768) {
+                    setTimeout(() => setupMobileCardActions(), 100);
+                }
+            });
+        });
+    }
+
+    console.log('Cards rendered successfully');
+    
+    // FIXED: Always ensure card header is visible after rendering
+    if (cardHeader && currentView === 'card') {
+        cardHeader.style.display = 'flex';
+    }
+    
+    if (isMobile) {
+        setTimeout(() => {
+            setupMobileCardActions();
+        }, 100);
+    }
+}
+
 
     // Card Editing Functions - UPDATED
-    function bindCardEditingEvents() {
-        const cardContainer = document.getElementById('card-container');
-        if (!cardContainer) return;
+   // Card Editing Functions - UPDATED with Header Fix
+function bindCardEditingEvents() {
+    const cardContainer = document.getElementById('card-container');
+    if (!cardContainer) return;
 
-        cardContainer.removeEventListener('input', handleCardInput);
-        cardContainer.removeEventListener('blur', handleCardBlur, true);
-        cardContainer.removeEventListener('click', handleCardClick);
+    cardContainer.removeEventListener('input', handleCardInput);
+    cardContainer.removeEventListener('blur', handleCardBlur, true);
+    cardContainer.removeEventListener('click', handleCardClick);
 
-        cardContainer.addEventListener('input', handleCardInput);
-        cardContainer.addEventListener('blur', handleCardBlur, true);
-        cardContainer.addEventListener('click', handleCardClick);
+    cardContainer.addEventListener('input', handleCardInput);
+    cardContainer.addEventListener('blur', handleCardBlur, true);
+    cardContainer.addEventListener('click', handleCardClick);
 
-        function handleCardInput(e) {
-            if (e.target.classList.contains('card-scene-title') || 
-                e.target.classList.contains('card-description') || 
-                e.target.classList.contains('card-scene-number')) {
-                clearTimeout(handleCardInput.timeout);
-                handleCardInput.timeout = setTimeout(() => {
-                    syncCardsToEditor();
-                }, 800);
-            }
-        }
-
-        function handleCardBlur(e) {
-            if (e.target.classList.contains('card-scene-title') || 
-                e.target.classList.contains('card-description') || 
-                e.target.classList.contains('card-scene-number')) {
+    function handleCardInput(e) {
+        if (e.target.classList.contains('card-scene-title') || 
+            e.target.classList.contains('card-description') || 
+            e.target.classList.contains('card-scene-number')) {
+            clearTimeout(handleCardInput.timeout);
+            handleCardInput.timeout = setTimeout(() => {
                 syncCardsToEditor();
-            }
-        }
-
-        function handleCardClick(e) {
-            if (e.target.closest('.delete-card-btn')) {
-                const sceneId = e.target.closest('.delete-card-btn').getAttribute('data-scene-id');
-                const card = cardContainer.querySelector(`.scene-card[data-scene-id="${sceneId}"]`);
-                if (card && confirm('Delete this scene card?')) {
-                    card.remove();
-                    syncCardsToEditor();
-                }
-            } else if (e.target.closest('.share-card-btn')) {
-                const sceneId = e.target.closest('.share-card-btn').getAttribute('data-scene-id');
-                shareSceneCard(sceneId);
-            } else if (e.target.closest('.add-card-btn-mobile')) {
-                const sceneId = e.target.closest('.add-card-btn-mobile').getAttribute('data-scene-id');
-                addNewSceneCard(sceneId);
-            }
+            }, 800);
         }
     }
+
+    function handleCardBlur(e) {
+        if (e.target.classList.contains('card-scene-title') || 
+            e.target.classList.contains('card-description') || 
+            e.target.classList.contains('card-scene-number')) {
+            syncCardsToEditor();
+        }
+    }
+
+    function handleCardClick(e) {
+        if (e.target.closest('.delete-card-btn')) {
+            const sceneId = e.target.closest('.delete-card-btn').getAttribute('data-scene-id');
+            const card = cardContainer.querySelector(`.scene-card[data-scene-id="${sceneId}"]`);
+            if (card && confirm('Delete this scene card?')) {
+                // Remove from DOM
+                card.remove();
+                
+                // Update scene numbers in projectData
+                const allScenes = projectData.projectInfo.scenes;
+                const sceneIndex = allScenes.findIndex(s => s.number == sceneId);
+                if (sceneIndex !== -1) {
+                    allScenes.splice(sceneIndex, 1);
+                    // Renumber remaining scenes
+                    allScenes.forEach((scene, index) => {
+                        scene.number = index + 1;
+                    });
+                    projectData.projectInfo.scenes = allScenes;
+                }
+                
+                // Re-render to show updated scene numbers
+                renderEnhancedCardView();
+                bindCardEditingEvents();
+                
+                // FIXED: Ensure header stays visible after delete
+                if (cardHeader && currentView === 'card') {
+                    cardHeader.style.display = 'flex';
+                }
+                
+                syncCardsToEditor();
+            }
+        } else if (e.target.closest('.share-card-btn')) {
+            const sceneId = e.target.closest('.share-card-btn').getAttribute('data-scene-id');
+            shareSceneCard(sceneId);
+        } else if (e.target.closest('.add-card-btn-mobile')) {
+            const sceneId = e.target.closest('.add-card-btn-mobile').getAttribute('data-scene-id');
+            addNewSceneCard(sceneId);
+        }
+    }
+}
+
 
     function syncCardsToEditor() {
         const cardContainer = document.getElementById('card-container');
@@ -731,54 +768,62 @@ function getElementType(line, nextLine, inDialogue) {
     }
 
     // UPDATED: Add New Scene Card - Insert Below Current
-    function addNewSceneCard(afterSceneId = null) {
-        const cardContainer = document.getElementById('card-container');
-        if (!cardContainer) return;
+   // UPDATED: Add New Scene Card - Preserves Header
+function addNewSceneCard(afterSceneId = null) {
+    const cardContainer = document.getElementById('card-container');
+    if (!cardContainer) return;
 
-        const allScenes = projectData.projectInfo.scenes;
-        const newSceneNumber = allScenes.length + 1;
+    const allScenes = projectData.projectInfo.scenes;
+    const newSceneNumber = allScenes.length + 1;
 
-        const newScene = {
-            number: newSceneNumber,
-            heading: 'INT. NEW SCENE - DAY',
-            sceneType: 'INT.',
-            location: 'NEW SCENE',
-            timeOfDay: 'DAY',
-            description: [],
-            characters: [],
-            fullText: 'INT. NEW SCENE - DAY\n'
-        };
-        
-        if (afterSceneId) {
-            const insertIndex = allScenes.findIndex(s => s.number == afterSceneId);
-            if (insertIndex !== -1) {
-                allScenes.splice(insertIndex + 1, 0, newScene);
-                allScenes.forEach((scene, index) => {
-                    scene.number = index + 1;
-                });
-            } else {
-                allScenes.push(newScene);
-            }
+    const newScene = {
+        number: newSceneNumber,
+        heading: 'INT. NEW SCENE - DAY',
+        sceneType: 'INT.',
+        location: 'NEW SCENE',
+        timeOfDay: 'DAY',
+        description: [],
+        characters: [],
+        fullText: 'INT. NEW SCENE - DAY\n'
+    };
+    
+    if (afterSceneId) {
+        const insertIndex = allScenes.findIndex(s => s.number == afterSceneId);
+        if (insertIndex !== -1) {
+            allScenes.splice(insertIndex + 1, 0, newScene);
+            allScenes.forEach((scene, index) => {
+                scene.number = index + 1;
+            });
         } else {
             allScenes.push(newScene);
         }
-        
-        projectData.projectInfo.scenes = allScenes;
-        
-        renderEnhancedCardView();
-        bindCardEditingEvents();
-        
-        setTimeout(() => {
-            const newCard = cardContainer.querySelector(`.scene-card[data-scene-number="${newSceneNumber}"]`);
-            if (newCard) {
-                newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                const titleElement = newCard.querySelector('.card-scene-title');
-                if (titleElement) titleElement.focus();
-            }
-        }, 100);
-
-        syncCardsToEditor();
+    } else {
+        allScenes.push(newScene);
     }
+    
+    projectData.projectInfo.scenes = allScenes;
+    
+    // Re-render and ensure header stays visible
+    renderEnhancedCardView();
+    bindCardEditingEvents();
+    
+    // FIXED: Ensure card header stays visible
+    if (cardHeader && currentView === 'card') {
+        cardHeader.style.display = 'flex';
+    }
+    
+    setTimeout(() => {
+        const newCard = cardContainer.querySelector(`.scene-card[data-scene-number="${newSceneNumber}"]`);
+        if (newCard) {
+            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const titleElement = newCard.querySelector('.card-scene-title');
+            if (titleElement) titleElement.focus();
+        }
+    }, 100);
+
+    syncCardsToEditor();
+}
+
 
     // NEW: Save Cards Modal
     function showSaveCardsModal() {
@@ -1093,46 +1138,155 @@ function getElementType(line, nextLine, inDialogue) {
     }
 
     // Action Button Handler
-    function handleActionBtn(action) {
-        if (!fountainInput) return;
-        
-        clearPlaceholder();
+   // UPDATED: Action Button Handler with Smart Cycling
+function handleActionBtn(action) {
+    if (!fountainInput) return;
+    
+    clearPlaceholder();
 
-        const start = fountainInput.selectionStart;
-        const end = fountainInput.selectionEnd;
-        const text = fountainInput.value;
-        const selectedText = text.substring(start, end);
+    const start = fountainInput.selectionStart;
+    const end = fountainInput.selectionEnd;
+    const text = fountainInput.value;
+    const beforeCursor = text.substring(0, start);
+    const afterCursor = text.substring(end);
+    
+    // Get current line
+    const lineStart = beforeCursor.lastIndexOf('\n') + 1;
+    const lineEnd = text.indexOf('\n', end);
+    const currentLine = text.substring(lineStart, lineEnd === -1 ? text.length : lineEnd);
+    const selectedText = text.substring(start, end);
 
-        let newText = text;
-        let newCursorPos = start;
+    let newText = '';
+    let newCursorPos = start;
+    let replaceWholeLine = false;
 
-        if (action === 'scene') {
-            newText = cycleText(selectedText, ['INT.', 'EXT.', 'INT./EXT.', 'EXT./INT.']);
-        } else if (action === 'time') {
-            newText = cycleText(selectedText, ['DAY', 'NIGHT', 'MORNING', 'EVENING', 'DAWN', 'DUSK', 'CONTINUOUS']);
-        } else if (action === 'caps') {
-            newText = selectedText === selectedText.toUpperCase() ? selectedText.toLowerCase() : selectedText.toUpperCase();
-        } else if (action === 'parens') {
-            newText = `(${selectedText})`;
-        } else if (action === 'transition') {
-            newText = cycleText(selectedText, ['CUT TO:', 'FADE TO:', 'DISSOLVE TO:', 'FADE OUT.', 'FADE IN:']);
+    if (action === 'scene') {
+        // Smart cycling: INT. → EXT. → INT./EXT. → INT.
+        if (selectedText) {
+            newText = cycleSceneType(selectedText);
+        } else if (currentLine.trim().match(/^(INT\.|EXT\.|INT\.\/EXT\.)/i)) {
+            // If cursor is on a scene heading line, cycle the whole line
+            newText = cycleSceneType(currentLine.trim());
+            replaceWholeLine = true;
+        } else {
+            // Insert INT. at cursor
+            newText = 'INT. ';
         }
+    } else if (action === 'time') {
+        // Smart cycling: - DAY → - NIGHT → - DAY
+        if (selectedText) {
+            newText = cycleTimeOfDay(selectedText);
+        } else if (currentLine.match(/-(DAY|NIGHT)/i)) {
+            // If line already has time, cycle it
+            newText = cycleTimeOfDay(currentLine);
+            replaceWholeLine = true;
+        } else {
+            // Insert - DAY at cursor
+            newText = ' - DAY';
+        }
+    } else if (action === 'caps') {
+        // Toggle CAPS for selected text
+        if (selectedText) {
+            newText = selectedText === selectedText.toUpperCase() 
+                ? selectedText.toLowerCase() 
+                : selectedText.toUpperCase();
+        } else {
+            // No selection, do nothing
+            return;
+        }
+    } else if (action === 'parens') {
+        // Add parentheses around selected text or insert empty parens
+        if (selectedText) {
+            newText = `(${selectedText})`;
+        } else {
+            newText = '()';
+            // Position cursor inside parentheses
+            fountainInput.value = beforeCursor + newText + afterCursor;
+            fountainInput.setSelectionRange(start + 1, start + 1);
+            fountainInput.focus();
+            history.add(fountainInput.value);
+            saveProjectData();
+            return;
+        }
+    } else if (action === 'transition') {
+        // Smart cycling: CUT TO: → FADE IN: → FADE OUT: → FADE TO BLACK: → DISSOLVE TO: → CUT TO:
+        if (selectedText) {
+            newText = cycleTransition(selectedText);
+        } else if (currentLine.trim().match(/(CUT TO:|FADE IN:|FADE OUT:|FADE TO BLACK:|DISSOLVE TO:)/i)) {
+            // If line is a transition, cycle it
+            newText = cycleTransition(currentLine.trim());
+            replaceWholeLine = true;
+        } else {
+            // Insert CUT TO: at cursor
+            newText = 'CUT TO:';
+        }
+    }
 
-        fountainInput.value = text.substring(0, start) + newText + text.substring(end);
+    // Apply changes
+    if (replaceWholeLine) {
+        fountainInput.value = text.substring(0, lineStart) + newText + text.substring(lineEnd === -1 ? text.length : lineEnd);
+        newCursorPos = lineStart + newText.length;
+    } else {
+        fountainInput.value = beforeCursor + newText + afterCursor;
         newCursorPos = start + newText.length;
-        fountainInput.setSelectionRange(newCursorPos, newCursorPos);
-        fountainInput.focus();
-
-        history.add(fountainInput.value);
-        saveProjectData();
     }
 
-    function cycleText(text, options) {
-        const trimmed = text.trim().toUpperCase();
-        const currentIndex = options.findIndex(opt => trimmed.includes(opt));
-        if (currentIndex === -1) return options[0];
-        return options[(currentIndex + 1) % options.length];
+    fountainInput.setSelectionRange(newCursorPos, newCursorPos);
+    fountainInput.focus();
+
+    history.add(fountainInput.value);
+    saveProjectData();
+}
+
+
+// UPDATED: Cycle Scene Type (INT. → EXT. → INT./EXT. → INT.)
+function cycleSceneType(text) {
+    const trimmed = text.trim().toUpperCase();
+    
+    if (trimmed.startsWith('INT./EXT.') || trimmed.includes('INT./EXT.')) {
+        return text.replace(/INT\.\/EXT\./i, 'INT.');
+    } else if (trimmed.startsWith('EXT.') || trimmed.includes('EXT.')) {
+        return text.replace(/EXT\./i, 'INT./EXT.');
+    } else if (trimmed.startsWith('INT.') || trimmed.includes('INT.')) {
+        return text.replace(/INT\./i, 'EXT.');
+    } else {
+        return 'INT. ' + text;
     }
+}
+
+	// UPDATED: Cycle Time of Day (- DAY → - NIGHT → - DAY)
+function cycleTimeOfDay(text) {
+    const trimmed = text.trim().toUpperCase();
+    
+    if (trimmed.includes('- NIGHT') || trimmed.includes('-NIGHT')) {
+        return text.replace(/\s*-\s*NIGHT/i, ' - DAY');
+    } else if (trimmed.includes('- DAY') || trimmed.includes('-DAY')) {
+        return text.replace(/\s*-\s*DAY/i, ' - NIGHT');
+    } else {
+        return text + ' - DAY';
+    }
+}
+
+	// UPDATED: Cycle Transitions (CUT TO: → FADE IN: → FADE OUT: → FADE TO BLACK: → DISSOLVE TO: → CUT TO:)
+function cycleTransition(text) {
+    const trimmed = text.trim().toUpperCase();
+    
+    if (trimmed.includes('CUT TO:')) {
+        return text.replace(/CUT TO:/i, 'FADE IN:');
+    } else if (trimmed.includes('FADE IN:')) {
+        return text.replace(/FADE IN:/i, 'FADE OUT:');
+    } else if (trimmed.includes('FADE OUT:')) {
+        return text.replace(/FADE OUT:/i, 'FADE TO BLACK:');
+    } else if (trimmed.includes('FADE TO BLACK:')) {
+        return text.replace(/FADE TO BLACK:/i, 'DISSOLVE TO:');
+    } else if (trimmed.includes('DISSOLVE TO:')) {
+        return text.replace(/DISSOLVE TO:/i, 'CUT TO:');
+    } else {
+        return 'CUT TO:';
+    }
+}
+	
+	
     // Scene Navigator with Drag & Drop
     function updateSceneNavigator() {
         if (!sceneList) return;
@@ -2194,21 +2348,29 @@ function getElementType(line, nextLine, inDialogue) {
             });
         }
 
-        const desktopActionBtns = document.querySelectorAll('#desktop-side-toolbar .action-btn');
-        desktopActionBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const action = btn.getAttribute('data-action');
-                handleActionBtn(action);
-            });
-        });
 
-        const mobileKeyboardBtns = document.querySelectorAll('.keyboard-btn');
-        mobileKeyboardBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const action = btn.getAttribute('data-action');
-                handleActionBtn(action);
-            });
+      // ***** ADD THIS CODE HERE *****
+    // Desktop Side Toolbar Buttons
+    const desktopActionBtns = document.querySelectorAll('#desktop-side-toolbar .action-btn');
+    desktopActionBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const action = btn.getAttribute('data-action');
+            handleActionBtn(action);
         });
+    });
+
+    // Mobile Keyboard Buttons - FIXED
+    const mobileKeyboardBtns = document.querySelectorAll('.keyboard-btn');
+    mobileKeyboardBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const action = btn.getAttribute('data-action');
+            console.log('Mobile button clicked:', action); // Debug log
+            handleActionBtn(action);
+        });
+    });
+    // ***** END OF NEW CODE *****
 
         document.addEventListener('click', e => {
             if (menuPanel && !e.target.closest('#menu-panel') && !e.target.closest('[id^="hamburger-btn"]')) {
