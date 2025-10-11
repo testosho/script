@@ -858,77 +858,92 @@ function addNewSceneCard(afterSceneId = null) {
 }
 
 
-    // NEW: Save Cards Modal
-	function showSaveCardsModal() {
-	    const isMobile = window.innerWidth < 768;
+ // NEW: Save All Cards Modal with TXT Option
+function showSaveCardsModal() {
+    const isMobile = window.innerWidth < 768;
     
-	    let modal = document.getElementById('save-cards-modal');
+    let modal = document.getElementById('save-cards-modal');
     
-	    if (!modal) {
-	        const mobileNotice = isMobile ? 
-	            `<p style="background: #2563eb; color: white; padding: 10px; border-radius: 6px; font-size: 0.9rem;">
-	                <strong>📱 Mobile Mode:</strong> Using fast export method for better performance.
-	            </p>` : '';
+    if (!modal) {
+        const mobileNotice = isMobile ? 
+            `<p style="background: #2563eb; color: white; padding: 10px; border-radius: 6px; font-size: 0.9rem; margin-bottom: 15px;">
+                <strong>📱 Mobile Mode:</strong> Using fast export method for better performance.
+            </p>` : '';
         
-	        const modalHtml = `
-	            <div id="save-cards-modal" class="modal">
-	                <div class="modal-content">
-	                    <div class="modal-header">
-	                        <h2>Save Scene Cards</h2>
-	                        <button class="icon-btn close-modal-btn">&times;</button>
-	                    </div>
-	                    <div class="modal-body">
-	                        ${mobileNotice}
-	                        <p>Choose which cards to save as PDF:</p>
-	                    </div>
-	                    <div class="modal-footer" style="display: flex; gap: 10px; justify-content: center;">
-	                        <button id="save-visible-cards-btn" class="main-action-btn">
-	                            Save Visible Cards
-	                        </button>
-	                        <button id="save-all-cards-modal-btn" class="main-action-btn secondary">
-	                            Save All Cards
-	                        </button>
-	                    </div>
-	                </div>
-	            </div>
-	        `;
-	        document.body.insertAdjacentHTML('beforeend', modalHtml);
-	        modal = document.getElementById('save-cards-modal');
-            
-            const saveVisibleBtn = document.getElementById('save-visible-cards-btn');
-            const saveAllModalBtn = document.getElementById('save-all-cards-modal-btn');
-            const closeBtn = modal.querySelector('.close-modal-btn');
-            
-            if (saveVisibleBtn) {
-                saveVisibleBtn.addEventListener('click', () => {
-                    modal.classList.remove('open');
-                    saveVisibleCardsAsPDF();
-                });
-            }
-            
-            if (saveAllModalBtn) {
-                saveAllModalBtn.addEventListener('click', () => {
-                    modal.classList.remove('open');
-                    saveAllCardsAsImages();
-                });
-            }
-            
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    modal.classList.remove('open');
-                });
-            }
-            
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.remove('open');
-                }
+        const modalHtml = `
+            <div id="save-cards-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Save Scene Cards</h2>
+                        <button class="icon-btn close-modal-btn">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        ${mobileNotice}
+                        <p>Choose how to save your scene cards:</p>
+                    </div>
+                    <div class="modal-footer" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="display: flex; gap: 10px; justify-content: center;">
+                            <button id="save-visible-cards-btn" class="main-action-btn" style="flex: 1;">
+                                📄 Save Visible Cards (PDF)
+                            </button>
+                            <button id="save-all-cards-modal-btn" class="main-action-btn secondary" style="flex: 1;">
+                                📚 Save All Cards (PDF)
+                            </button>
+                        </div>
+                        <button id="save-cards-as-txt-btn" class="main-action-btn" style="background: linear-gradient(135deg, #10b981, #059669); width: 100%;">
+                            📝 Save All Cards as TXT
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        modal = document.getElementById('save-cards-modal');
+        
+        // Setup event listeners
+        const saveVisibleBtn = document.getElementById('save-visible-cards-btn');
+        const saveAllModalBtn = document.getElementById('save-all-cards-modal-btn');
+        const saveTxtBtn = document.getElementById('save-cards-as-txt-btn');
+        const closeBtn = modal.querySelector('.close-modal-btn');
+        
+        if (saveVisibleBtn) {
+            saveVisibleBtn.addEventListener('click', () => {
+                modal.classList.remove('open');
+                saveVisibleCardsAsPDF();
             });
         }
         
-        modal.classList.add('open');
+        if (saveAllModalBtn) {
+            saveAllModalBtn.addEventListener('click', () => {
+                modal.classList.remove('open');
+                saveAllCardsAsImages();
+            });
+        }
+        
+        // NEW: TXT button listener
+        if (saveTxtBtn) {
+            saveTxtBtn.addEventListener('click', () => {
+                modal.classList.remove('open');
+                saveAllCardsAsTXT();
+            });
+        }
+        
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.remove('open');
+            });
+        }
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('open');
+            }
+        });
     }
-	
+    
+    modal.classList.add('open');
+}
+
 	// OPTIMIZED: Save Only Visible Cards as PDF - Hybrid Method
 	async function saveVisibleCardsAsPDF() {
 	    console.log('Saving visible cards as PDF...');
@@ -1238,6 +1253,73 @@ const confirmMsg = `This will create ${totalFiles} PDF files with up to 27 cards
             }, 100);
         }, 100);
     }
+}
+
+	// NEW: Save All Cards as TXT File
+function saveAllCardsAsTXT() {
+    console.log('Saving all cards as TXT...');
+
+    const allScenes = projectData.projectInfo.scenes;
+    if (allScenes.length === 0) {
+        alert('No cards to save.');
+        return;
+    }
+
+    const projectName = projectData.projectInfo.projectName || 'Untitled';
+    const filename = `${projectName}-SceneCards.txt`;
+
+    // Build text content
+    let txtContent = '';
+    
+    // Header
+    txtContent += '═'.repeat(70) + '\n';
+    txtContent += `  ${projectName.toUpperCase()} - SCENE CARDS\n`;
+    txtContent += `  Generated: ${new Date().toLocaleString()}\n`;
+    txtContent += `  Total Scenes: ${allScenes.length}\n`;
+    txtContent += '═'.repeat(70) + '\n\n';
+
+    // Add each scene
+    allScenes.forEach((scene, index) => {
+        // Scene header with number
+        txtContent += '─'.repeat(70) + '\n';
+        txtContent += `SCENE ${scene.number}: ${scene.heading}\n`;
+        txtContent += '─'.repeat(70) + '\n\n';
+
+        // Scene description
+        if (scene.description && scene.description.length > 0) {
+            const description = scene.description.join('\n');
+            txtContent += description + '\n';
+        } else {
+            txtContent += '(No description)\n';
+        }
+
+        // Characters (if any)
+        if (scene.characters && scene.characters.length > 0) {
+            txtContent += '\n';
+            txtContent += 'CHARACTERS: ' + scene.characters.join(', ') + '\n';
+        }
+
+        // Scene metadata
+        txtContent += '\n';
+        txtContent += `TYPE: ${scene.sceneType || 'N/A'}\n`;
+        txtContent += `LOCATION: ${scene.location || 'N/A'}\n`;
+        txtContent += `TIME: ${scene.timeOfDay || 'N/A'}\n`;
+
+        // Add spacing between scenes
+        txtContent += '\n\n';
+    });
+
+    // Footer
+    txtContent += '═'.repeat(70) + '\n';
+    txtContent += `  END OF SCENE CARDS\n`;
+    txtContent += `  ${allScenes.length} scenes exported\n`;
+    txtContent += '═'.repeat(70) + '\n';
+
+    // Create and download file
+    const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+    downloadBlob(blob, filename);
+
+    alert(`✅ TXT file created successfully!\n\n${allScenes.length} scenes exported to:\n${filename}\n\nFile format: Plain text with scene cards`);
 }
 
 
