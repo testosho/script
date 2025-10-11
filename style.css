@@ -629,12 +629,12 @@ body.fullscreen-active #desktop-side-toolbar {
     flex-shrink: 0;
 }
 
-/* Mobile Keyboard Toolbar */
+/* Mobile Keyboard Toolbar - FIXED */
 .mobile-keyboard-toolbar {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: env(keyboard-inset-height, 0px);
+    bottom: 0;
     background: linear-gradient(135deg, var(--surface-color), var(--background-color));
     border-top: 2px solid var(--primary-color);
     z-index: 9999;
@@ -648,12 +648,22 @@ body.fullscreen-active #desktop-side-toolbar {
     transform: translateY(100%);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform;
+    display: none; /* Hidden by default */
 }
 
+/* Show toolbar */
 .mobile-keyboard-toolbar.show {
+    display: block; /* Show when active */
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
+}
+
+/* Mobile responsive - always available on mobile */
+@media (max-width: 768px) {
+    .mobile-keyboard-toolbar {
+        display: block; /* Always rendered on mobile */
+    }
 }
 
 .keyboard-toolbar-content {
