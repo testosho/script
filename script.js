@@ -212,39 +212,71 @@ FADE OUT.`;
         updateAutoSaveIndicator();
     }
 
-	// Helper function to determine element type
+
+// Helper function to determine element type
 function getElementType(line, nextLine, inDialogue) {
     if (!line) return 'empty';
     
+    // Title page elements
     if (/^(TITLE|AUTHOR|CREDIT|SOURCE):/i.test(line)) {
         return 'title-page';
     }
     
-    if (line.toUpperCase().startsWith('INT.') || line.toUpperCase().startsWith('EXT.')) {
+    // Scene headings
+    if (line.toUpperCase().startsWith('INT.') || 
+        line.toUpperCase().startsWith('EXT.') ||
+        line.toUpperCase().startsWith('INT./EXT.') ||
+        line.toUpperCase().startsWith('EXT./INT.')) {
         return 'scene-heading';
     }
     
-    if (line.toUpperCase().endsWith('TO:') || 
-        line.toUpperCase() === 'FADE OUT.' || 
-        line.toUpperCase() === 'FADE IN:' || 
-        line.toUpperCase() === 'FADE TO BLACK:') {
+    // Transitions - More comprehensive detection
+    const upperLine = line.toUpperCase().trim();
+    
+    // Standard transitions
+    if (upperLine.endsWith('TO:') ||                  // CUT TO:, DISSOLVE TO:, etc.
+        upperLine === 'FADE OUT.' ||                  // FADE OUT.
+        upperLine === 'FADE OUT' ||                   // FADE OUT (without period)
+        upperLine === 'FADE IN:' ||                   // FADE IN:
+        upperLine === 'FADE IN' ||                    // FADE IN (without colon)
+        upperLine === 'FADE TO BLACK:' ||             // FADE TO BLACK:
+        upperLine === 'FADE TO BLACK' ||              // FADE TO BLACK (without colon)
+        upperLine === 'FADE TO WHITE:' ||             // FADE TO WHITE:
+        upperLine === 'SMASH CUT TO:' ||              // SMASH CUT TO:
+        upperLine === 'JUMP CUT TO:' ||               // JUMP CUT TO:
+        upperLine === 'MATCH CUT TO:' ||              // MATCH CUT TO:
+        upperLine === 'THE END' ||                    // THE END
+        upperLine === 'END' ||                        // END
+        upperLine.startsWith('FADE TO') ||            // Any FADE TO variant
+        upperLine.startsWith('CUT TO') ||             // Any CUT TO variant
+        upperLine.startsWith('DISSOLVE TO')) {        // Any DISSOLVE TO variant
         return 'transition';
     }
     
-    if (line === line.toUpperCase() && !line.startsWith('!') && line.length > 0 && nextLine) {
+    // Character names (all caps, followed by content)
+    if (line === line.toUpperCase() && 
+        !line.startsWith('!') && 
+        line.length > 0 && 
+        nextLine &&
+        !upperLine.includes('.') &&                   // Not a scene heading
+        !upperLine.endsWith('TO:')) {                 // Not a transition
         return 'character';
     }
     
+    // Parentheticals
     if (inDialogue && line.startsWith('(')) {
         return 'parenthetical';
     }
     
+    // Dialogue
     if (inDialogue) {
         return 'dialogue';
     }
     
+    // Default to action
     return 'action';
 }
+
 
     // Parser Function
     function parseFountain(input) {
