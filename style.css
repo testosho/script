@@ -37,7 +37,7 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Fullscreen mode */
+/* Fullscreen mode - UPDATED */
 body.fullscreen-active #main-header,
 body.fullscreen-active #script-header,
 body.fullscreen-active #card-header {
@@ -52,6 +52,16 @@ body.fullscreen-active #mobile-keyboard-toolbar,
 body.fullscreen-active #desktop-side-toolbar {
     display: flex !important;
     z-index: 9999 !important;
+}
+
+/* ADDED: Override when switching views */
+body:not(.fullscreen-active) #card-header {
+    display: flex !important;
+}
+
+body:not(.fullscreen-active) #main-header,
+body:not(.fullscreen-active) #script-header {
+    display: none; /* Hidden by default, shown by JS */
 }
 
 .page-header {
