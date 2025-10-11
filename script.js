@@ -212,6 +212,40 @@ FADE OUT.`;
         updateAutoSaveIndicator();
     }
 
+	// Helper function to determine element type
+function getElementType(line, nextLine, inDialogue) {
+    if (!line) return 'empty';
+    
+    if (/^(TITLE|AUTHOR|CREDIT|SOURCE):/i.test(line)) {
+        return 'title-page';
+    }
+    
+    if (line.toUpperCase().startsWith('INT.') || line.toUpperCase().startsWith('EXT.')) {
+        return 'scene-heading';
+    }
+    
+    if (line.toUpperCase().endsWith('TO:') || 
+        line.toUpperCase() === 'FADE OUT.' || 
+        line.toUpperCase() === 'FADE IN:' || 
+        line.toUpperCase() === 'FADE TO BLACK:') {
+        return 'transition';
+    }
+    
+    if (line === line.toUpperCase() && !line.startsWith('!') && line.length > 0 && nextLine) {
+        return 'character';
+    }
+    
+    if (inDialogue && line.startsWith('(')) {
+        return 'parenthetical';
+    }
+    
+    if (inDialogue) {
+        return 'dialogue';
+    }
+    
+    return 'action';
+}
+
     // Parser Function
     function parseFountain(input) {
         if (!input || !input.trim() || input === placeholderText) {
@@ -505,39 +539,6 @@ function renderEnhancedScript() {
     screenplayOutput.innerHTML = scriptHtml;
 }
 
-// Helper function to determine element type
-function getElementType(line, nextLine, inDialogue) {
-    if (!line) return 'empty';
-    
-    if (/^(TITLE|AUTHOR|CREDIT|SOURCE):/i.test(line)) {
-        return 'title-page';
-    }
-    
-    if (line.toUpperCase().startsWith('INT.') || line.toUpperCase().startsWith('EXT.')) {
-        return 'scene-heading';
-    }
-    
-    if (line.toUpperCase().endsWith('TO:') || 
-        line.toUpperCase() === 'FADE OUT.' || 
-        line.toUpperCase() === 'FADE IN:' || 
-        line.toUpperCase() === 'FADE TO BLACK:') {
-        return 'transition';
-    }
-    
-    if (line === line.toUpperCase() && !line.startsWith('!') && line.length > 0 && nextLine) {
-        return 'character';
-    }
-    
-    if (inDialogue && line.startsWith('(')) {
-        return 'parenthetical';
-    }
-    
-    if (inDialogue) {
-        return 'dialogue';
-    }
-    
-    return 'action';
-}
 
     // Enhanced Card View with Mobile Pagination
    // Enhanced Card View with Mobile Pagination
