@@ -1275,6 +1275,81 @@ function hideProgressModal() {
         });
     }
 
+	async function generateSimpleCardBlob(scene) {
+        const canvas = document.createElement('canvas');
+        const scale = 2; // Good quality
+        canvas.width = 1440 * scale;
+        canvas.height = 864 * scale;
+        const ctx = canvas.getContext('2d');
+        
+        // Scale for high DPI
+        ctx.scale(scale, scale);
+        
+        // White background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 1440, 864);
+        
+        // Outer border
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(10, 10, 1420, 844);
+        
+        // Header line
+        ctx.beginPath();
+        ctx.moveTo(30, 100);
+        ctx.lineTo(1410, 100);
+        ctx.stroke();
+        
+        // Scene heading (bold, uppercase)
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 42px "Courier New", monospace';
+        ctx.fillText(scene.heading.toUpperCase(), 40, 70);
+        
+        // Scene number (right aligned)
+        ctx.textAlign = 'right';
+        ctx.fillText(scene.number.toString(), 1400, 70);
+        ctx.textAlign = 'left';
+        
+        // Description text (wrapped)
+        ctx.font = '32px "Courier New", monospace';
+        const description = scene.description.join('\n');
+        const maxWidth = 1340;
+        const lineHeight = 45;
+        let y = 150;
+        
+        // Word wrap
+        const words = description.split(' ');
+        let line = '';
+        
+        for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            
+            if (metrics.width > maxWidth && n > 0) {
+                ctx.fillText(line, 40, y);
+                line = words[n] + ' ';
+                y += lineHeight;
+                
+                // Stop if we run out of space
+                if (y > 760) break;
+            } else {
+                line = testLine;
+            }
+        }
+        ctx.fillText(line, 40, y);
+        
+        // Watermark
+        ctx.font = 'italic 24px Arial';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.textAlign = 'right';
+        ctx.fillText('ToscripT', 1400, 830);
+        
+        // Convert to blob
+        return new Promise(resolve => {
+            canvas.toBlob(resolve, 'image/png', 0.9);
+        });
+    }
+
     async function shareSceneCard(sceneId) {
         const cardElement = document.querySelector(`.card-for-export[data-scene-id="${sceneId}"]`);
         if (!cardElement) {
