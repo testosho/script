@@ -37,7 +37,7 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Fullscreen mode - UPDATED */
+/* Fullscreen mode */
 body.fullscreen-active #main-header,
 body.fullscreen-active #script-header,
 body.fullscreen-active #card-header {
@@ -63,8 +63,6 @@ body.fullscreen-active #desktop-side-toolbar {
 #card-header {
     display: none; /* Hidden by default, shown by JS when switching views */
 }
-
-
 
 .page-header {
     display: flex;
@@ -641,7 +639,7 @@ body.fullscreen-active #desktop-side-toolbar {
     flex-shrink: 0;
 }
 
-/* Mobile Keyboard Toolbar - FIXED */
+/* Mobile Keyboard Toolbar */
 .mobile-keyboard-toolbar {
     position: fixed;
     left: 0;
@@ -660,21 +658,19 @@ body.fullscreen-active #desktop-side-toolbar {
     transform: translateY(100%);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform;
-    display: none; /* Hidden by default */
+    display: none;
 }
 
-/* Show toolbar */
 .mobile-keyboard-toolbar.show {
-    display: block; /* Show when active */
+    display: block;
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
 }
 
-/* Mobile responsive - always available on mobile */
 @media (max-width: 768px) {
     .mobile-keyboard-toolbar {
-        display: block; /* Always rendered on mobile */
+        display: block;
     }
 }
 
@@ -739,10 +735,13 @@ body.fullscreen-active #desktop-side-toolbar {
     margin-bottom: 0.5rem;
 }
 
-/* Card View Styles */
+/* Card View Styles - FIXED */
 #card-view {
     overflow-y: auto;
+    overflow-x: hidden;
     width: 100%;
+    height: 100%;
+    padding-bottom: 80px;
 }
 
 #card-container {
@@ -751,12 +750,13 @@ body.fullscreen-active #desktop-side-toolbar {
     gap: 25px;
     padding: 20px;
     padding-right: 60px;
+    padding-bottom: 100px;
     justify-items: start;
     max-width: 1800px;
     margin: 0;
+    min-height: calc(100vh - 140px);
 }
 
-/* Compact Scene Card with No Wasted Space */
 .scene-card {
     background-color: var(--card-bg-color) !important;
     color: var(--card-text-color) !important;
@@ -796,7 +796,6 @@ body.fullscreen-active #desktop-side-toolbar {
     z-index: 1000;
 }
 
-/* Desktop Card Actions - All Grey */
 .card-actions {
     position: absolute;
     right: -60px;
@@ -840,7 +839,6 @@ body.fullscreen-active #desktop-side-toolbar {
     transform: scale(1.1);
 }
 
-/* Override all button colors to grey */
 .card-actions .share-card-btn,
 .card-actions .delete-card-btn,
 .card-actions .add-card-btn-mobile {
@@ -933,7 +931,6 @@ body.fullscreen-active #desktop-side-toolbar {
     height: auto;
 }
 
-/* Card Description - No Wasted Space */
 .card-description {
     width: 100%;
     border: 1px solid var(--card-border-color) !important;
@@ -982,7 +979,6 @@ body.fullscreen-active #desktop-side-toolbar {
     background: var(--text-color);
 }
 
-/* Card Watermark - Hidden on screen, visible when printing */
 .card-watermark {
     position: absolute;
     bottom: 4px;
@@ -997,15 +993,16 @@ body.fullscreen-active #desktop-side-toolbar {
     z-index: 1;
 }
 
-/* Mobile Card Pagination */
 .mobile-pagination {
     display: flex;
     gap: 10px;
     justify-content: center;
     padding: 20px;
+    padding-bottom: 40px;
     flex-wrap: wrap;
     grid-column: 1 / -1;
     width: 100%;
+    margin-top: 20px;
 }
 
 .pagination-btn {
@@ -1042,10 +1039,6 @@ body.fullscreen-active #desktop-side-toolbar {
         display: none;
     }
     
-    .mobile-keyboard-toolbar {
-        display: block;
-    }
-    
     .editor-area, .preview-area {
         padding: 0.25rem;
     }
@@ -1056,7 +1049,6 @@ body.fullscreen-active #desktop-side-toolbar {
         -webkit-text-size-adjust: 100%;
     }
     
-    /* Mobile Script Preview - Better Formatting */
     #screenplay-output {
         max-width: 100%;
         padding: 0.5in 0.25in;
@@ -1137,33 +1129,39 @@ body.fullscreen-active #desktop-side-toolbar {
         max-width: 90vw;
     }
     
-    /* Mobile Card View - Vertical Layout with Pagination */
+    /* Mobile Card View - FIXED */
+    #card-view {
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-bottom: 100px;
+    }
+    
     #card-container {
         display: flex;
         flex-direction: column;
         gap: 20px;
         padding: 15px;
-        padding-right: 70px;
+        padding-right: 15px;
+        padding-bottom: 120px;
         grid-template-columns: none;
+        min-height: auto;
     }
     
-    /* Mobile Scene Card - Compact */
     .scene-card {
-        width: 100% !important;
-        max-width: 100% !important;
+        width: calc(100% - 70px) !important;
+        max-width: calc(100% - 70px) !important;
         height: auto;
         min-height: auto;
         padding: 12px 12px 8px 12px;
         cursor: pointer;
+        margin-bottom: 10px;
     }
     
-    /* Mobile Card Description - Limited Height */
     .card-description {
         min-height: 150px;
         max-height: 250px;
     }
     
-    /* Mobile Card Actions - Hidden Until Tap, All Grey */
     .card-actions {
         position: absolute;
         right: -65px;
@@ -1178,7 +1176,6 @@ body.fullscreen-active #desktop-side-toolbar {
         z-index: 10;
     }
     
-    /* Show actions when card is active (tapped) */
     .scene-card.active .card-actions,
     .scene-card:focus-within .card-actions {
         opacity: 1;
@@ -1186,7 +1183,6 @@ body.fullscreen-active #desktop-side-toolbar {
         right: -60px;
     }
     
-    /* Beautiful consistent action buttons - All Grey */
     .card-actions .icon-btn {
         width: 48px;
         height: 48px;
@@ -1203,7 +1199,6 @@ body.fullscreen-active #desktop-side-toolbar {
         position: relative;
     }
     
-    /* All buttons grey - no color differentiation */
     .card-actions .share-card-btn,
     .card-actions .delete-card-btn,
     .card-actions .add-card-btn-mobile {
@@ -1240,10 +1235,13 @@ body.fullscreen-active #desktop-side-toolbar {
         padding: 0.1rem 0.3rem;
     }
     
-    /* Mobile Pagination Styling */
     .mobile-pagination {
-        padding: 15px 10px;
-        margin-right: -55px;
+        padding: 20px 10px;
+        padding-bottom: 60px;
+        margin-right: 0;
+        margin-top: 30px;
+        position: relative;
+        z-index: 5;
     }
     
     .pagination-btn {
@@ -1451,7 +1449,6 @@ textarea::-webkit-scrollbar-thumb,
     max-width: 550px;
 }
 
-/* Mobile: Even smaller */
 @media (max-width: 768px) {
     #info-modal .modal-content,
     #about-modal .modal-content {
@@ -1460,7 +1457,6 @@ textarea::-webkit-scrollbar-thumb,
     }
 }
 
-/* Better scrolling for info modal */
 #info-modal .modal-body {
     max-height: 65vh;
     overflow-y: auto;
@@ -1484,25 +1480,22 @@ textarea::-webkit-scrollbar-thumb,
     color: var(--primary-color);
 }
 
-/* About modal link styling */
 #about-modal a {
     -webkit-tap-highlight-color: transparent;
 }
 
-/* Save Cards Modal - Reduced Width on Mobile */
+/* Save Cards Modal */
 #save-cards-modal .modal-content {
     max-width: 500px;
     width: 90%;
 }
 
-/* Mobile - 15% narrower */
 @media (max-width: 768px) {
     #save-cards-modal .modal-content {
-        width: 85%; /* Reduced from 95% to 85% */
+        width: 85%;
         max-width: 400px;
     }
     
-    /* Make buttons stack vertically on very small screens */
     #save-cards-modal .modal-footer > div {
         flex-direction: column;
     }
@@ -1513,7 +1506,6 @@ textarea::-webkit-scrollbar-thumb,
     }
 }
 
-/* Very small screens - even narrower */
 @media (max-width: 480px) {
     #save-cards-modal .modal-content {
         width: 80%;
@@ -1529,4 +1521,3 @@ textarea::-webkit-scrollbar-thumb,
         gap: 8px;
     }
 }
-
