@@ -54,12 +54,16 @@ body.fullscreen-active #desktop-side-toolbar {
     z-index: 9999 !important;
 }
 
-/* Default header state - Let JS control visibility */
-#main-header,
+/* Default header state - Show write header on load, hide others */
+#main-header {
+    display: flex; /* Show by default (write mode) */
+}
+
 #script-header,
 #card-header {
-    display: none; /* Hidden by default, JavaScript shows the correct one */
+    display: none; /* Hidden by default, shown by JS when switching views */
 }
+
 
 
 .page-header {
