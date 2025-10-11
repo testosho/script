@@ -827,33 +827,41 @@ function addNewSceneCard(afterSceneId = null) {
 
 
     // NEW: Save Cards Modal
-    function showSaveCardsModal() {
-        let modal = document.getElementById('save-cards-modal');
+	function showSaveCardsModal() {
+	    const isMobile = window.innerWidth < 768;
+    
+	    let modal = document.getElementById('save-cards-modal');
+    
+	    if (!modal) {
+	        const mobileNotice = isMobile ? 
+	            `<p style="background: #2563eb; color: white; padding: 10px; border-radius: 6px; font-size: 0.9rem;">
+	                <strong>📱 Mobile Mode:</strong> Using fast export method for better performance.
+	            </p>` : '';
         
-        if (!modal) {
-            const modalHtml = `
-                <div id="save-cards-modal" class="modal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h2>Save Scene Cards</h2>
-                            <button class="icon-btn close-modal-btn">&times;</button>
-                        </div>
-                        <div class="modal-body">
-                            <p>Choose which cards to save as PDF:</p>
-                        </div>
-                        <div class="modal-footer" style="display: flex; gap: 10px; justify-content: center;">
-                            <button id="save-visible-cards-btn" class="main-action-btn">
-                                Save Visible Cards
-                            </button>
-                            <button id="save-all-cards-modal-btn" class="main-action-btn secondary">
-                                Save All Cards
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            modal = document.getElementById('save-cards-modal');
+	        const modalHtml = `
+	            <div id="save-cards-modal" class="modal">
+	                <div class="modal-content">
+	                    <div class="modal-header">
+	                        <h2>Save Scene Cards</h2>
+	                        <button class="icon-btn close-modal-btn">&times;</button>
+	                    </div>
+	                    <div class="modal-body">
+	                        ${mobileNotice}
+	                        <p>Choose which cards to save as PDF:</p>
+	                    </div>
+	                    <div class="modal-footer" style="display: flex; gap: 10px; justify-content: center;">
+	                        <button id="save-visible-cards-btn" class="main-action-btn">
+	                            Save Visible Cards
+	                        </button>
+	                        <button id="save-all-cards-modal-btn" class="main-action-btn secondary">
+	                            Save All Cards
+	                        </button>
+	                    </div>
+	                </div>
+	            </div>
+	        `;
+	        document.body.insertAdjacentHTML('beforeend', modalHtml);
+	        modal = document.getElementById('save-cards-modal');
             
             const saveVisibleBtn = document.getElementById('save-visible-cards-btn');
             const saveAllModalBtn = document.getElementById('save-all-cards-modal-btn');
@@ -888,98 +896,116 @@ function addNewSceneCard(afterSceneId = null) {
         
         modal.classList.add('open');
     }
-    // NEW: Save Only Visible Cards as PDF
-   // OPTIMIZED: Save Only Visible Cards as PDF - Batch Processing
-async function saveVisibleCardsAsPDF() {
-    console.log('Saving visible cards as PDF...');
+	
+	// OPTIMIZED: Save Only Visible Cards as PDF - Hybrid Method
+	async function saveVisibleCardsAsPDF() {
+	    console.log('Saving visible cards as PDF...');
 
-    if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
-        alert('PDF generation library is not loaded. Cannot create PDF.');
-        return;
-    }
+	    if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
+	        alert('PDF generation library is not loaded. Cannot create PDF.');
+	        return;
+	    }
 
-    const visibleCards = document.querySelectorAll('.card-for-export');
-    if (visibleCards.length === 0) {
-        alert('No visible cards to save.');
-        return;
-    }
+	    const visibleCards = document.querySelectorAll('.card-for-export');
+	    if (visibleCards.length === 0) {
+	        alert('No visible cards to save.');
+	        return;
+	    }
 
-    const visibleSceneNumbers = Array.from(visibleCards).map(card => 
-        card.getAttribute('data-scene-number')
-    );
-    const firstScene = visibleSceneNumbers[0];
-    const lastScene = visibleSceneNumbers[visibleSceneNumbers.length - 1];
+	    const visibleSceneNumbers = Array.from(visibleCards).map(card => 
+	        card.getAttribute('data-scene-number')
+	    );
+	    const firstScene = visibleSceneNumbers[0];
+	    const lastScene = visibleSceneNumbers[visibleSceneNumbers.length - 1];
     
-    const projectName = projectData.projectInfo.projectName || 'Untitled';
-    const filename = `${projectName}-Scene${firstScene}to${lastScene}.pdf`;
+	    const projectName = projectData.projectInfo.projectName || 'Untitled';
+	    const filename = `${projectName}-Scene${firstScene}to${lastScene}.pdf`;
 
-    // Show progress indicator
-    showProgressModal(`Generating PDF: 0/${visibleCards.length} cards...`);
+	    // Detect mobile/desktop
+	    const isMobile = window.innerWidth < 768;
+	    const methodText = isMobile ? '(Fast Mobile Mode)' : '(High Quality)';
+    
+	    // Show progress indicator
+	    showProgressModal(`Generating PDF ${methodText}: 0/${visibleCards.length} cards...`);
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-    });
+	    const { jsPDF } = window.jspdf;
+	    const doc = new jsPDF({
+	        orientation: 'portrait',
+	        unit: 'mm',
+	        format: 'a4'
+	    });
 
-    const cardWidthMM = 127;
-    const cardHeightMM = 76;
-    const pageHeightMM = 297;
-    const pageWidthMM = 210;
-    const topMarginMM = 15;
-    const leftMarginMM = (pageWidthMM - cardWidthMM) / 2;
-    const gapMM = 15;
+	    const cardWidthMM = 127;
+	    const cardHeightMM = 76;
+	    const pageHeightMM = 297;
+	    const pageWidthMM = 210;
+	    const topMarginMM = 15;
+	    const leftMarginMM = (pageWidthMM - cardWidthMM) / 2;
+	    const gapMM = 15;
 
-    let x = leftMarginMM;
-    let y = topMarginMM;
+	    let x = leftMarginMM;
+	    let y = topMarginMM;
 
-    try {
-        // Process cards in batches of 10 to avoid memory issues
-        const batchSize = 10;
-        const totalCards = visibleCards.length;
+	    try {
+	        // Process cards in batches of 10 to avoid memory issues
+	        const batchSize = 10;
+	        const totalCards = visibleCards.length;
         
-        for (let i = 0; i < totalCards; i += batchSize) {
-            const batch = Array.from(visibleCards).slice(i, Math.min(i + batchSize, totalCards));
+	        for (let i = 0; i < totalCards; i += batchSize) {
+	            const batch = Array.from(visibleCards).slice(i, Math.min(i + batchSize, totalCards));
             
-            for (let j = 0; j < batch.length; j++) {
-                const cardIndex = i + j;
-                updateProgressModal(`Generating PDF: ${cardIndex + 1}/${totalCards} cards...`);
+	            for (let j = 0; j < batch.length; j++) {
+	                const cardIndex = i + j;
+	                updateProgressModal(`Generating PDF ${methodText}: ${cardIndex + 1}/${totalCards} cards...`);
                 
-                const blob = await generateCardImageBlob(batch[j]);
-                if (!blob) continue;
-
-                const dataUrl = URL.createObjectURL(blob);
-
-                if (y + cardHeightMM > pageHeightMM - topMarginMM) {
-                    doc.addPage();
-                    y = topMarginMM;
-                }
-
-                doc.addImage(dataUrl, 'PNG', x, y, cardWidthMM, cardHeightMM);
-                URL.revokeObjectURL(dataUrl);
-
-                y += cardHeightMM + gapMM;
+	                // HYBRID LOGIC: Choose method based on device
+	                let blob;
+	                if (isMobile) {
+	                    // Fast canvas method for mobile
+	                    const sceneNumber = batch[j].getAttribute('data-scene-number');
+	                    const scene = projectData.projectInfo.scenes.find(s => s.number == sceneNumber);
+	                    if (scene) {
+	                        blob = await generateSimpleCardBlob(scene);
+	                    }
+	                } else {
+	                    // High quality html2canvas for desktop
+	                    blob = await generateCardImageBlob(batch[j]);
+	                }
                 
-                // Small delay to prevent browser freeze
-                await new Promise(resolve => setTimeout(resolve, 50));
-            }
+	                if (!blob) continue;
+
+	                const dataUrl = URL.createObjectURL(blob);
+
+	                if (y + cardHeightMM > pageHeightMM - topMarginMM) {
+	                    doc.addPage();
+	                    y = topMarginMM;
+	                }
+
+	                doc.addImage(dataUrl, 'PNG', x, y, cardWidthMM, cardHeightMM);
+	                URL.revokeObjectURL(dataUrl);
+
+	                y += cardHeightMM + gapMM;
+                
+	                // Small delay to prevent browser freeze (shorter on mobile)
+	                await new Promise(resolve => setTimeout(resolve, isMobile ? 30 : 50));
+	            }
             
-            // Clear memory between batches
-            if (i + batchSize < totalCards) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-        }
+	            // Clear memory between batches
+	            if (i + batchSize < totalCards) {
+	                await new Promise(resolve => setTimeout(resolve, isMobile ? 50 : 100));
+	            }
+	        }
 
-        doc.save(filename);
-        hideProgressModal();
-        alert(`✅ PDF created successfully!\n${totalCards} cards exported to ${filename}`);
-    } catch (error) {
-        console.error('Failed to generate PDF', error);
-        hideProgressModal();
-        alert('❌ An error occurred while creating the PDF. Try reducing the number of cards or refresh the page.');
-    }
-}
+	        doc.save(filename);
+	        hideProgressModal();
+	        alert(`✅ PDF created successfully!\n${totalCards} cards exported to ${filename}\n\nMethod: ${isMobile ? 'Fast Mobile' : 'High Quality Desktop'}`);
+	    } catch (error) {
+	        console.error('Failed to generate PDF', error);
+	        hideProgressModal();
+	        alert('❌ An error occurred while creating the PDF. Try reducing the number of cards or refresh the page.');
+	    }
+	}
+    
 
    
    // OPTIMIZED: Save All Cards as PDF - Batch Processing with Progress
@@ -1086,11 +1112,22 @@ const confirmMsg = `This will create ${totalFiles} PDF files with up to 27 cards
             let y = topMarginMM;
 
             try {
+                const isMobile = window.innerWidth < 768;
+                
                 for (let i = 0; i < cards.length; i++) {
                     updateProgressModal(`Creating file ${partNumber}/${totalFiles}...\n${filename}\n\nCard ${i + 1}/${cards.length} (Scene ${startIdx + i + 1})`);
 
-                    const blob = await generateCardImageBlob(cards[i]);
+                    let blob;
+                    if (isMobile) {
+                        // Fast canvas method for mobile
+                        blob = await generateSimpleCardBlob(scenesChunk[i]);
+                    } else {
+                        // High quality html2canvas for desktop
+                        blob = await generateCardImageBlob(cards[i]);
+                    }
+                    
                     if (!blob) continue;
+            
 
                     const dataUrl = URL.createObjectURL(blob);
 
@@ -1350,18 +1387,33 @@ function hideProgressModal() {
         });
     }
 
-    async function shareSceneCard(sceneId) {
-        const cardElement = document.querySelector(`.card-for-export[data-scene-id="${sceneId}"]`);
-        if (!cardElement) {
-            alert('Could not find the card to share.');
-            return;
-        }
+  async function shareSceneCard(sceneId) {
+      const cardElement = document.querySelector(`.card-for-export[data-scene-id="${sceneId}"]`);
+      if (!cardElement) {
+          alert('Could not find the card to share.');
+          return;
+      }
 
-        const blob = await generateCardImageBlob(cardElement);
-        if (!blob) {
-            alert('Failed to create card image.');
-            return;
-        }
+      const isMobile = window.innerWidth < 768;
+      let blob;
+    
+      if (isMobile) {
+          // Fast canvas method for mobile
+          const scene = projectData.projectInfo.scenes.find(s => s.number == sceneId);
+          if (scene) {
+              blob = await generateSimpleCardBlob(scene);
+          }
+      } else {
+          // High quality html2canvas for desktop
+          blob = await generateCardImageBlob(cardElement);
+      }
+    
+      if (!blob) {
+          alert('Failed to create card image.');
+          return;
+      }
+  
+   
 
         const sceneNumber = cardElement.querySelector('.card-scene-number')?.value || '';
         const sceneHeading = cardElement.querySelector('.card-scene-title')?.textContent || 'Scene';
