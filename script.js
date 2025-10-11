@@ -2871,6 +2871,11 @@ document.addEventListener('webkitfullscreenchange', () => {
     function initialize() {
         console.log('Initializing ToscripT...');
 
+		// ADDED: Show write header immediately on load
+    if (mainHeader && currentView === 'write') {
+        mainHeader.style.display = 'flex';
+    }
+
         setupEventListeners();
         setupKeyboardDetection();
         loadProjectData();
