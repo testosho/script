@@ -426,55 +426,78 @@ function getElementType(line, nextLine, inDialogue) {
         return reconstructedText.trim();
     }
 
-    // Switch View Function
-    function switchView(view) {
-        console.log(`Switching to view: ${view}`);
-        currentView = view;
-        
-        [writeView, scriptView, cardView].forEach(v => v?.classList.remove('active'));
-        [mainHeader, scriptHeader, cardHeader].forEach(h => {
-            if (h) h.style.display = 'none';
-        });
-        hideMobileToolbar();
+   // Switch View Function
+   function switchView(view) {
+       console.log(`Switching to view: ${view}`);
+       currentView = view;
+    
+       // Hide all views and headers first
+       [writeView, scriptView, cardView].forEach(v => v?.classList.remove('active'));
+       [mainHeader, scriptHeader, cardHeader].forEach(h => {
+           if (h) h.style.display = 'none';
+       });
+       hideMobileToolbar();
 
-        if (view === 'script') {
-            scriptView?.classList.add('active');
-            if (scriptHeader) scriptHeader.style.display = 'flex';
-            renderEnhancedScript();
+       // Check if in fullscreen mode
+       const isFullscreen = document.fullscreenElement || document.body.classList.contains('fullscreen-active');
+
+       if (view === 'script') {
+           scriptView?.classList.add('active');
+           if (scriptHeader && !isFullscreen) {
+               scriptHeader.style.display = 'flex';
+           }
+           renderEnhancedScript();
+        
+       } else if (view === 'card') {
+           if (fountainInput && !isPlaceholder()) {
+               console.log('Extracting scenes for card view...');
+               projectData.projectInfo.scenes = extractScenesFromText(fountainInput.value);
+               console.log('Scenes extracted:', projectData.projectInfo.scenes.length);
+           }
+        
+           cardView?.classList.add('active');
+        
+           // FIXED: Always show card header unless in fullscreen
+           if (cardHeader) {
+               if (isFullscreen) {
+                   cardHeader.style.display = 'none';
+               } else {
+                   cardHeader.style.display = 'flex';
+               }
+           }
+        
+           currentPage = 0;
+           renderEnhancedCardView();
+        
+           setTimeout(() => {
+               bindCardEditingEvents();
             
-        } else if (view === 'card') {
-            if (fountainInput && !isPlaceholder()) {
-                console.log('Extracting scenes for card view...');
-                projectData.projectInfo.scenes = extractScenesFromText(fountainInput.value);
-                console.log('Scenes extracted:', projectData.projectInfo.scenes.length);
-            }
-            
-            cardView?.classList.add('active');
-            if (cardHeader) cardHeader.style.display = 'flex';
-            currentPage = 0;
-            renderEnhancedCardView();
-            
-            setTimeout(() => {
-                bindCardEditingEvents();
-            }, 100);
-            
-        } else {
-            writeView?.classList.add('active');
-            if (mainHeader) mainHeader.style.display = 'flex';
-            
-            setTimeout(() => {
-                if (fountainInput) {
-                    if (!isPlaceholder()) {
-                        fountainInput.classList.remove('placeholder');
-                    }
-                    fountainInput.focus();
-                    if (window.innerWidth <= 768 && currentView === 'write') {
-                        showMobileToolbar();
-                    }
-                }
-            }, 200);
-        }
-    }
+               // EXTRA FIX: Ensure header stays visible after render
+               if (cardHeader && !isFullscreen) {
+                   cardHeader.style.display = 'flex';
+               }
+           }, 100);
+        
+       } else {
+           writeView?.classList.add('active');
+           if (mainHeader && !isFullscreen) {
+               mainHeader.style.display = 'flex';
+           }
+        
+           setTimeout(() => {
+               if (fountainInput) {
+                   if (!isPlaceholder()) {
+                       fountainInput.classList.remove('placeholder');
+                   }
+                   fountainInput.focus();
+                   if (window.innerWidth <= 768 && currentView === 'write') {
+                       showMobileToolbar();
+                   }
+               }
+           }, 200);
+       }
+   }
+   
 
     // Enhanced Script Rendering
     // Enhanced Script Rendering with Industry Standard Spacing
@@ -2745,20 +2768,36 @@ function cycleTransition(text) {
             redoBtnTop.addEventListener('click', () => history.redo());
         }
 
-        const fullscreenBtnMain = document.getElementById('fullscreen-btn-main');
-        if (fullscreenBtnMain) {
-            fullscreenBtnMain.addEventListener('click', () => {
-                if (!document.fullscreenElement) {
-                    document.documentElement.requestFullscreen();
-                    document.body.classList.add('fullscreen-active');
-                } else {
-                    if (document.exitFullscreen) {
-                        document.exitFullscreen();
-                        document.body.classList.remove('fullscreen-active');
-                    }
-                }
-            });
-        }
+	   const fullscreenBtnMain = document.getElementById('fullscreen-btn-main');
+	   if (fullscreenBtnMain) {
+	       fullscreenBtnMain.addEventListener('click', () => {
+	           if (!document.fullscreenElement) {
+	               // Entering fullscreen
+	               document.documentElement.requestFullscreen();
+	               document.body.classList.add('fullscreen-active');
+            
+	               // Hide current header
+	               if (currentView === 'write' && mainHeader) mainHeader.style.display = 'none';
+	               if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'none';
+	               if (currentView === 'card' && cardHeader) cardHeader.style.display = 'none';
+            
+	           } else {
+	               // Exiting fullscreen
+	               if (document.exitFullscreen) {
+	                   document.exitFullscreen();
+	               }
+	               document.body.classList.remove('fullscreen-active');
+            
+	               // Restore current header
+	               setTimeout(() => {
+	                   if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
+	                   if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
+	                   if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
+	               }, 100);
+	           }
+	       });
+	   }
+       
 
 
       // ***** ADD THIS CODE HERE *****
@@ -2795,6 +2834,38 @@ function cycleTransition(text) {
 
         console.log('Event listeners setup complete');
     }
+
+// FIXED: Handle fullscreen exit (ESC key or browser exit)
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) {
+        // Fullscreen was exited
+        document.body.classList.remove('fullscreen-active');
+        
+        // Restore appropriate header based on current view
+        setTimeout(() => {
+            if (currentView === 'write' && mainHeader) {
+                mainHeader.style.display = 'flex';
+            } else if (currentView === 'script' && scriptHeader) {
+                scriptHeader.style.display = 'flex';
+            } else if (currentView === 'card' && cardHeader) {
+                cardHeader.style.display = 'flex';
+            }
+        }, 100);
+    }
+});
+
+// For different browsers
+document.addEventListener('webkitfullscreenchange', () => {
+    if (!document.webkitFullscreenElement) {
+        document.body.classList.remove('fullscreen-active');
+        setTimeout(() => {
+            if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
+            else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
+            else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
+        }, 100);
+    }
+});
+
 
     // INITIALIZATION
     function initialize() {
