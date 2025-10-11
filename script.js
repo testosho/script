@@ -1001,7 +1001,6 @@ async function saveAllCardsAsImages() {
     const lastScene = allScenes.length;
     const filename = `${projectName}-Scene${firstScene}to${lastScene}.pdf`;
 
-    // Show progress
     showProgressModal(`Preparing ${allScenes.length} cards for export...`);
 
     const cardContainer = document.getElementById('card-container');
@@ -1011,7 +1010,7 @@ async function saveAllCardsAsImages() {
     }
     
     const originalPage = currentPage;
-    const originalHTML = cardContainer.innerHTML;
+    // DON'T save original HTML - we'll re-render fresh
     
     // Render all cards in a hidden container
     const tempContainer = document.createElement('div');
@@ -1056,7 +1055,6 @@ async function saveAllCardsAsImages() {
     let y = topMarginMM;
 
     try {
-        // Process cards in batches of 10
         const batchSize = 10;
         const totalCards = cards.length;
         
@@ -1082,11 +1080,9 @@ async function saveAllCardsAsImages() {
 
                 y += cardHeightMM + gapMM;
                 
-                // Small delay between cards
                 await new Promise(resolve => setTimeout(resolve, 50));
             }
             
-            // Longer delay between batches for memory cleanup
             if (i + batchSize < totalCards) {
                 await new Promise(resolve => setTimeout(resolve, 200));
             }
@@ -1100,17 +1096,86 @@ async function saveAllCardsAsImages() {
         hideProgressModal();
         alert('❌ An error occurred while creating the PDF.\n\nTry these solutions:\n1. Export in smaller batches (use "Save Visible Cards")\n2. Refresh the page and try again\n3. Close other browser tabs to free memory');
     } finally {
-        // Cleanup
-        document.body.removeChild(tempContainer);
-        currentPage = originalPage;
-        cardContainer.innerHTML = originalHTML;
-        renderEnhancedCardView();
-        bindCardEditingEvents();
-        
-        // Ensure header stays visible
-        if (cardHeader && currentView === 'card') {
-            cardHeader.style.display = 'flex';
+        // FIXED: Cleanup and restore properly
+        try {
+            document.body.removeChild(tempContainer);
+        } catch (e) {
+            console.warn('Temp container already removed');
         }
+        
+        // Restore original page
+        currentPage = originalPage;
+        
+        // Re-render cards fresh
+        setTimeout(() => {
+            renderEnhancedCardView();
+            
+            // Re-bind event listeners
+            setTimeout(() => {
+                bindCardEditingEvents();
+                
+                // Ensure header is visible
+                if (cardHeader && currentView === 'card') {
+                    cardHeader.style.display = 'flex';
+                }
+                
+                // Setup mobile actions if on mobile
+                if (window.innerWidth < 768) {
+                    setupMobileCardActions();
+                }
+                
+                console.log('Card view restored after PDF export');
+            }, 100);
+        }, 100);
+    }
+}
+
+	// NEW: Progress Modal Functions
+function showProgressModal(message) {
+    let progressModal = document.getElementById('progress-modal');
+    
+    if (!progressModal) {
+        const modalHTML = `
+            <div id="progress-modal" class="modal open" style="z-index: 9999;">
+                <div class="modal-content" style="max-width: 400px; text-align: center;">
+                    <div class="modal-body">
+                        <div style="margin: 20px 0;">
+                            <div style="width: 50px; height: 50px; border: 5px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; margin: 0 auto 20px; animation: spin 1s linear infinite;"></div>
+                            <p id="progress-message" style="font-size: 1.1rem; font-weight: 600; color: var(--text-color); white-space: pre-line;">${message}</p>
+                            <p style="margin-top: 15px; font-size: 0.9rem; color: var(--muted-text-color);">Please wait, do not close this window...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        progressModal = document.getElementById('progress-modal');
+    } else {
+        progressModal.classList.add('open');
+        document.getElementById('progress-message').textContent = message;
+    }
+}
+
+function updateProgressModal(message) {
+    const progressMessage = document.getElementById('progress-message');
+    if (progressMessage) {
+        progressMessage.textContent = message;
+    }
+}
+
+function hideProgressModal() {
+    const progressModal = document.getElementById('progress-modal');
+    if (progressModal) {
+        progressModal.classList.remove('open');
+        setTimeout(() => {
+            progressModal.remove();
+        }, 300);
     }
 }
 
