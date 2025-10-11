@@ -1114,55 +1114,6 @@ async function saveAllCardsAsImages() {
     }
 }
 
-	/ NEW: Progress Modal Functions
-function showProgressModal(message) {
-    let progressModal = document.getElementById('progress-modal');
-    
-    if (!progressModal) {
-        const modalHTML = `
-            <div id="progress-modal" class="modal open" style="z-index: 9999;">
-                <div class="modal-content" style="max-width: 400px; text-align: center;">
-                    <div class="modal-body">
-                        <div style="margin: 20px 0;">
-                            <div style="width: 50px; height: 50px; border: 5px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; margin: 0 auto 20px; animation: spin 1s linear infinite;"></div>
-                            <p id="progress-message" style="font-size: 1.1rem; font-weight: 600; color: var(--text-color); white-space: pre-line;">${message}</p>
-                            <p style="margin-top: 15px; font-size: 0.9rem; color: var(--muted-text-color);">Please wait, do not close this window...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <style>
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            </style>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        progressModal = document.getElementById('progress-modal');
-    } else {
-        progressModal.classList.add('open');
-        document.getElementById('progress-message').textContent = message;
-    }
-}
-
-function updateProgressModal(message) {
-    const progressMessage = document.getElementById('progress-message');
-    if (progressMessage) {
-        progressMessage.textContent = message;
-    }
-}
-
-function hideProgressModal() {
-    const progressModal = document.getElementById('progress-modal');
-    if (progressModal) {
-        progressModal.classList.remove('open');
-        setTimeout(() => {
-            progressModal.remove();
-        }, 300);
-    }
-}
-
     // Generate Card Image Blob
     async function generateCardImageBlob(cardElement) {
         const sceneNumber = cardElement.querySelector('.card-scene-number')?.value || '1';
