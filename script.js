@@ -981,10 +981,11 @@ async function saveVisibleCardsAsPDF() {
     }
 }
 
-    // UPDATED: Save All Cards as PDF
+   
    // OPTIMIZED: Save All Cards as PDF - Batch Processing with Progress
+// OPTIMIZED: Save All Cards as Multiple PDF Files (9 cards per file = 3 pages)
 async function saveAllCardsAsImages() {
-    console.log('Generating PDF for all scene cards...');
+    console.log('Generating multiple PDF files for all scene cards...');
 
     if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
         alert('PDF generation library is not loaded. Cannot create PDF.');
@@ -998,138 +999,178 @@ async function saveAllCardsAsImages() {
     }
 
     const projectName = projectData.projectInfo.projectName || 'Untitled';
-    const firstScene = 1;
-    const lastScene = allScenes.length;
-    const filename = `${projectName}-Scene${firstScene}to${lastScene}.pdf`;
+    const cardsPerFile = 27; // 9 pages (3 cards per page)
+    const totalFiles = Math.ceil(allScenes.length / cardsPerFile);
 
-    showProgressModal(`Preparing ${allScenes.length} cards for export...`);
+    // Confirm with user
+const confirmMsg = `This will create ${totalFiles} PDF files with up to 27 cards each (9 pages).\n\n` +
+                   `Total scenes: ${allScenes.length}\n` +
+                   `Files to be created: ${totalFiles}\n\n` +
+                   `Files will be named:\n${projectName}-Part1-Scene1to27.pdf\n${projectName}-Part2-Scene28to54.pdf\netc.\n\n` +
+                   `Continue?`;
+
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+
+    showProgressModal(`Preparing to export ${allScenes.length} cards in ${totalFiles} files...`);
 
     const cardContainer = document.getElementById('card-container');
     if (!cardContainer) {
         hideProgressModal();
         return;
     }
-    
+
     const originalPage = currentPage;
-    // DON'T save original HTML - we'll re-render fresh
     
-    // Render all cards in a hidden container
+    // Create hidden container for rendering
     const tempContainer = document.createElement('div');
     tempContainer.style.position = 'absolute';
     tempContainer.style.left = '-9999px';
     tempContainer.style.top = '0';
     document.body.appendChild(tempContainer);
-    
-    tempContainer.innerHTML = allScenes.map(scene => `
-        <div class="scene-card card-for-export temp-export-card" data-scene-id="${scene.number}" data-scene-number="${scene.number}" style="margin-bottom: 20px;">
-            <div class="scene-card-content">
-                <div class="card-header">
-                    <div class="card-scene-title">${scene.heading}</div>
-                    <input class="card-scene-number" type="text" value="${scene.number}" maxlength="4">
-                </div>
-                <div class="card-body">
-                    <textarea class="card-description">${scene.description.join('\n')}</textarea>
-                </div>
-                <div class="card-watermark">TO SCRIPT</div>
-            </div>
-        </div>
-    `).join('');
-
-    const cards = tempContainer.querySelectorAll('.temp-export-card');
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-    });
-
-    const cardWidthMM = 127;
-    const cardHeightMM = 76;
-    const pageHeightMM = 297;
-    const pageWidthMM = 210;
-    const topMarginMM = 15;
-    const leftMarginMM = (pageWidthMM - cardWidthMM) / 2;
-    const gapMM = 15;
-
-    let x = leftMarginMM;
-    let y = topMarginMM;
 
     try {
-        const batchSize = 10;
-        const totalCards = cards.length;
-        
-        for (let i = 0; i < totalCards; i += batchSize) {
-            const batch = Array.from(cards).slice(i, Math.min(i + batchSize, totalCards));
+        let successCount = 0;
+        let failCount = 0;
+
+        // Split scenes into chunks of 9
+        for (let fileIndex = 0; fileIndex < totalFiles; fileIndex++) {
+            const startIdx = fileIndex * cardsPerFile;
+            const endIdx = Math.min(startIdx + cardsPerFile, allScenes.length);
+            const scenesChunk = allScenes.slice(startIdx, endIdx);
             
-            for (let j = 0; j < batch.length; j++) {
-                const cardIndex = i + j;
-                updateProgressModal(`Generating PDF: ${cardIndex + 1}/${totalCards} cards...\n${Math.round((cardIndex + 1) / totalCards * 100)}% complete`);
-                
-                const blob = await generateCardImageBlob(batch[j]);
-                if (!blob) continue;
+            const firstScene = startIdx + 1;
+            const lastScene = endIdx;
+            const partNumber = fileIndex + 1;
+            const filename = `${projectName}-Part${partNumber}-Scene${firstScene}to${lastScene}.pdf`;
 
-                const dataUrl = URL.createObjectURL(blob);
+            updateProgressModal(`Creating file ${partNumber}/${totalFiles}...\n${filename}\n\nProcessing scenes ${firstScene} to ${lastScene}...`);
 
-                if (y + cardHeightMM > pageHeightMM - topMarginMM) {
-                    doc.addPage();
-                    y = topMarginMM;
+            // Render this chunk of cards
+            tempContainer.innerHTML = scenesChunk.map(scene => `
+                <div class="scene-card card-for-export temp-export-card" data-scene-id="${scene.number}" data-scene-number="${scene.number}" style="margin-bottom: 20px;">
+                    <div class="scene-card-content">
+                        <div class="card-header">
+                            <div class="card-scene-title">${scene.heading}</div>
+                            <input class="card-scene-number" type="text" value="${scene.number}" maxlength="4">
+                        </div>
+                        <div class="card-body">
+                            <textarea class="card-description">${scene.description.join('\n')}</textarea>
+                        </div>
+                        <div class="card-watermark">TO SCRIPT</div>
+                    </div>
+                </div>
+            `).join('');
+
+            const cards = tempContainer.querySelectorAll('.temp-export-card');
+
+            // Create PDF for this chunk
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const cardWidthMM = 127;
+            const cardHeightMM = 76;
+            const pageHeightMM = 297;
+            const pageWidthMM = 210;
+            const topMarginMM = 15;
+            const leftMarginMM = (pageWidthMM - cardWidthMM) / 2;
+            const gapMM = 15;
+
+            let x = leftMarginMM;
+            let y = topMarginMM;
+
+            try {
+                for (let i = 0; i < cards.length; i++) {
+                    updateProgressModal(`Creating file ${partNumber}/${totalFiles}...\n${filename}\n\nCard ${i + 1}/${cards.length} (Scene ${startIdx + i + 1})`);
+
+                    const blob = await generateCardImageBlob(cards[i]);
+                    if (!blob) continue;
+
+                    const dataUrl = URL.createObjectURL(blob);
+
+                    if (y + cardHeightMM > pageHeightMM - topMarginMM) {
+                        doc.addPage();
+                        y = topMarginMM;
+                    }
+
+                    doc.addImage(dataUrl, 'PNG', x, y, cardWidthMM, cardHeightMM);
+                    URL.revokeObjectURL(dataUrl);
+
+                    y += cardHeightMM + gapMM;
+
+                    // Small delay between cards
+                    await new Promise(resolve => setTimeout(resolve, 100));
                 }
 
-                doc.addImage(dataUrl, 'PNG', x, y, cardWidthMM, cardHeightMM);
-                URL.revokeObjectURL(dataUrl);
-
-                y += cardHeightMM + gapMM;
+                // Save this PDF file
+                doc.save(filename);
+                successCount++;
                 
-                await new Promise(resolve => setTimeout(resolve, 50));
+                // Delay between files to allow download
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+            } catch (error) {
+                console.error(`Failed to create ${filename}`, error);
+                failCount++;
             }
+
+            // Clear temp container between files
+            tempContainer.innerHTML = '';
             
-            if (i + batchSize < totalCards) {
-                await new Promise(resolve => setTimeout(resolve, 200));
-            }
+            // Memory cleanup delay between files
+            await new Promise(resolve => setTimeout(resolve, 300));
         }
 
-        doc.save(filename);
         hideProgressModal();
-        alert(`✅ PDF created successfully!\n${totalCards} cards exported to ${filename}`);
+        
+        // Show summary
+        if (successCount === totalFiles) {
+            alert(`✅ Success!\n\n${successCount} PDF files created successfully!\n\nTotal scenes exported: ${allScenes.length}\n\nFiles are named:\n${projectName}-Part1-Scene1to9.pdf\n${projectName}-Part2-Scene10to18.pdf\netc.\n\nCheck your Downloads folder!`);
+        } else {
+            alert(`⚠️ Partial Success\n\n${successCount} of ${totalFiles} files created.\n${failCount} files failed.\n\nCheck your Downloads folder for completed files.`);
+        }
+
     } catch (error) {
-        console.error('Failed to generate PDF', error);
+        console.error('Failed to generate PDFs', error);
         hideProgressModal();
-        alert('❌ An error occurred while creating the PDF.\n\nTry these solutions:\n1. Export in smaller batches (use "Save Visible Cards")\n2. Refresh the page and try again\n3. Close other browser tabs to free memory');
+        alert('❌ An error occurred during export.\n\nPlease try:\n1. Refresh the page\n2. Close other tabs to free memory\n3. Try "Save Visible Cards" instead');
     } finally {
-        // FIXED: Cleanup and restore properly
+        // Cleanup
         try {
             document.body.removeChild(tempContainer);
         } catch (e) {
             console.warn('Temp container already removed');
         }
-        
-        // Restore original page
+
+        // Restore view
         currentPage = originalPage;
         
-        // Re-render cards fresh
         setTimeout(() => {
             renderEnhancedCardView();
             
-            // Re-bind event listeners
             setTimeout(() => {
                 bindCardEditingEvents();
                 
-                // Ensure header is visible
                 if (cardHeader && currentView === 'card') {
                     cardHeader.style.display = 'flex';
                 }
                 
-                // Setup mobile actions if on mobile
                 if (window.innerWidth < 768) {
                     setupMobileCardActions();
                 }
                 
-                console.log('Card view restored after PDF export');
+                console.log('Card view restored after multi-file PDF export');
             }, 100);
         }, 100);
     }
 }
+
 
 	// NEW: Progress Modal Functions
 function showProgressModal(message) {
