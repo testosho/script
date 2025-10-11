@@ -1477,3 +1477,44 @@ textarea::-webkit-scrollbar-thumb,
     -webkit-tap-highlight-color: transparent;
 }
 
+/* Save Cards Modal - Reduced Width on Mobile */
+#save-cards-modal .modal-content {
+    max-width: 500px;
+    width: 90%;
+}
+
+/* Mobile - 15% narrower */
+@media (max-width: 768px) {
+    #save-cards-modal .modal-content {
+        width: 85%; /* Reduced from 95% to 85% */
+        max-width: 400px;
+    }
+    
+    /* Make buttons stack vertically on very small screens */
+    #save-cards-modal .modal-footer > div {
+        flex-direction: column;
+    }
+    
+    #save-cards-modal .modal-footer button {
+        width: 100% !important;
+        flex: none !important;
+    }
+}
+
+/* Very small screens - even narrower */
+@media (max-width: 480px) {
+    #save-cards-modal .modal-content {
+        width: 80%;
+        max-width: 340px;
+        padding: 1rem;
+    }
+    
+    #save-cards-modal .modal-header h2 {
+        font-size: 1.2rem;
+    }
+    
+    #save-cards-modal .modal-footer {
+        gap: 8px;
+    }
+}
+
