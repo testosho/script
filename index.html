@@ -20,10 +20,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Floating Focus Mode Toggle Button (Shows in Fullscreen Only) -->
-<button id="focus-mode-toggle-btn" class="focus-mode-toggle" style="display: none;" title="Toggle Focus Mode">
-    <i class="fas fa-eye" id="focus-mode-icon"></i>
-</button>
+    
     <header id="main-header" class="page-header write-mode-header">
         <div class="header-left">
             <button id="hamburger-btn" class="icon-btn" title="Menu"><i class="fas fa-bars"></i></button>
@@ -114,9 +111,9 @@
                     <button class="action-btn" data-action="caps" title="Toggle Case (UPPER/lower)">Aa</button>
                     <button class="action-btn" data-action="parens" title="Add Parentheses">()</button>
                     <button class="action-btn" data-action="transition" title="Cycle Transition">TO:</button>
-                    <!-- NEW: Fullscreen toggle button (shown in fullscreen only) -->
-    <button id="toggle-toolbar-mobile-btn" class="keyboard-btn" style="display: none; width: 100%; margin-top: 8px; background: linear-gradient(135deg, #f59e0b, #d97706);">
-        <i class="fas fa-arrows-alt-v"></i> Toggle
+          <!-- NEW: Focus Mode Button (Shows in Fullscreen Only) -->
+    <button id="focus-mode-btn" class="action-btn" style="display: none; background: linear-gradient(135deg, #f59e0b, #d97706); margin-top: 10px; font-size: 0.85rem;" title="Toggle Focus Mode">
+        Focus
     </button>
                 </div>
             </div>
