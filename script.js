@@ -2857,79 +2857,75 @@ function updateFocusModeButton() {
             redoBtnTop.addEventListener('click', () => history.redo());
         }
 
-	   // Fullscreen button - UPDATED with toolbar button visibility
-	   const fullscreenBtnMain = document.getElementById('fullscreen-btn-main');
-	   if (fullscreenBtnMain) {
-	       fullscreenBtnMain.addEventListener('click', () => {
-	           if (!document.fullscreenElement) {
-	               document.documentElement.requestFullscreen();
-	               document.body.classList.add('fullscreen-active');
+	  // Fullscreen button - UPDATED with focus mode
+	  const fullscreenBtnMain = document.getElementById('fullscreen-btn-main');
+	  if (fullscreenBtnMain) {
+	      fullscreenBtnMain.addEventListener('click', () => {
+	          if (!document.fullscreenElement) {
+	              document.documentElement.requestFullscreen();
+	              document.body.classList.add('fullscreen-active');
             
-	               if (currentView === 'write' && mainHeader) mainHeader.style.display = 'none';
-	               if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'none';
-	               if (currentView === 'card' && cardHeader) cardHeader.style.display = 'none';
+	              if (currentView === 'write' && mainHeader) mainHeader.style.display = 'none';
+	              if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'none';
+	              if (currentView === 'card' && cardHeader) cardHeader.style.display = 'none';
             
-	               // Show toolbar toggle button
-	               updateFullscreenToolbarButton();
-	           } else {
-	               if (document.exitFullscreen) {
-	                   document.exitFullscreen();
-	               }
-	               document.body.classList.remove('fullscreen-active');
+	              // Show focus mode toggle button
+	              updateFocusModeButton();
+	          } else {
+	              if (document.exitFullscreen) {
+	                  document.exitFullscreen();
+	              }
+	              document.body.classList.remove('fullscreen-active');
             
-	               setTimeout(() => {
-	                   if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
-	                   if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
-	                   if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
+	              setTimeout(() => {
+	                  if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
+	                  if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
+	                  if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
                 
-	                   // Hide toolbar toggle button
-	                   updateFullscreenToolbarButton();
-	               }, 100);
-	           }
-	       });
-	   }
+	                  // Hide focus mode toggle button
+	                  updateFocusModeButton();
+	              }, 100);
+	          }
+	      });
+	  }
+	  
 
-	   // NEW: Toolbar position toggle buttons
-	   const toggleToolbarBtn = document.getElementById('toggle-toolbar-position-btn');
-	   if (toggleToolbarBtn) {
-	       toggleToolbarBtn.addEventListener('click', toggleToolbarPosition);
-	   }
+	 // NEW: Focus Mode Toggle Button
+	 const focusModeToggleBtn = document.getElementById('focus-mode-toggle-btn');
+	 if (focusModeToggleBtn) {
+	     focusModeToggleBtn.addEventListener('click', toggleFocusMode);
+	 }
 
-	   const toggleToolbarMobileBtn = document.getElementById('toggle-toolbar-mobile-btn');
-	   if (toggleToolbarMobileBtn) {
-	       toggleToolbarMobileBtn.addEventListener('click', toggleToolbarPosition);
-	   }
-
-	   // Fullscreen change events - UPDATED
-	   document.addEventListener('fullscreenchange', () => {
-	       if (!document.fullscreenElement) {
-	           document.body.classList.remove('fullscreen-active');
-	           setTimeout(() => {
-	               if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
-	               else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
-	               else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
+	 // Fullscreen change events - UPDATED
+	 document.addEventListener('fullscreenchange', () => {
+	     if (!document.fullscreenElement) {
+	         document.body.classList.remove('fullscreen-active');
+	         setTimeout(() => {
+	             if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
+	             else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
+	             else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
             
-	               updateFullscreenToolbarButton();
-	           }, 100);
-	       } else {
-	           updateFullscreenToolbarButton();
-	       }
-	   });
+	             updateFocusModeButton();
+	         }, 100);
+	     } else {
+	         updateFocusModeButton();
+	     }
+	 });
 
-	   document.addEventListener('webkitfullscreenchange', () => {
-	       if (!document.webkitFullscreenElement) {
-	           document.body.classList.remove('fullscreen-active');
-	           setTimeout(() => {
-	               if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
-	               else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
-	               else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
+	 document.addEventListener('webkitfullscreenchange', () => {
+	     if (!document.webkitFullscreenElement) {
+	         document.body.classList.remove('fullscreen-active');
+	         setTimeout(() => {
+	             if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
+	             else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
+	             else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
             
-	               updateFullscreenToolbarButton();
-	           }, 100);
-	       } else {
-	           updateFullscreenToolbarButton();
-	       }
-	   });
+	             updateFocusModeButton();
+	         }, 100);
+	     } else {
+	         updateFocusModeButton();
+	     }
+	 });
 	   
        
 
