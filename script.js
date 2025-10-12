@@ -395,22 +395,22 @@ FADE OUT.`;
         fileInput?.addEventListener('change', handleFileSelect);
         
         // Close panels on outside click
-        document.addEventListener('click', (e) => {
-            if (menuPanel?.classList.contains('open') && 
-                !menuPanel.contains(e.target) && 
-                !hamburgerBtn.contains(e.target) &&
-                !hamburgerBtnScript.contains(e.target) &&
-                !hamburgerBtnCard.contains(e.target)) {
-                closeMenu();
-            }
-            
-            if (sceneNavigatorPanel?.classList.contains('open') && 
-                !sceneNavigatorPanel.contains(e.target) && 
-                !sceneNavigatorBtn.contains(e.target) &&
-                !sceneNavigatorBtnScript.contains(e.target)) {
-                closeSceneNavigator();
-            }
-        });
+		document.addEventListener('click', (e) => {
+		    if (menuPanel?.classList.contains('open') && 
+		        !menuPanel.contains(e.target) && 
+		        !hamburgerBtn?.contains(e.target) &&
+		        !hamburgerBtnScript?.contains(e.target) &&
+		        !hamburgerBtnCard?.contains(e.target)) {
+		        closeMenu();
+		    }
+    
+		    if (sceneNavigatorPanel?.classList.contains('open') && 
+		        !sceneNavigatorPanel.contains(e.target) && 
+		        !sceneNavigatorBtn?.contains(e.target) &&
+		        !sceneNavigatorBtnScript?.contains(e.target)) {
+		        closeSceneNavigator();
+		    }
+		});
         
         // Fullscreen change detection
         document.addEventListener('fullscreenchange', handleFullscreenChange);
