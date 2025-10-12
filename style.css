@@ -1,3 +1,8 @@
+/* ========================================
+   ToscripT - Professional Screenwriting App
+   Optimized for Android WebView
+   ======================================== */
+
 :root {
     --primary-color: #3b82f6;
     --background-color: #111827;
@@ -7,6 +12,7 @@
     --border-color: #374151;
     --danger-color: #ef4444;
     --success-color: #22c55e;
+    --warning-color: #f59e0b;
     --card-bg-color: #1f2937;
     --card-text-color: #f3f4f6;
     --card-border-color: #374151;
@@ -14,12 +20,15 @@
 
 * {
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 html {
     height: 100%;
     height: 100vh;
     -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
 }
 
 body {
@@ -33,11 +42,97 @@ body {
     margin: 0;
     padding: 0;
     position: relative;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Fullscreen mode */
+/* ========================================
+   SPLASH SCREEN (Android App Loading)
+   ======================================== */
+.splash-screen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeOut 0.5s ease-out 1.5s forwards;
+}
+
+.splash-content {
+    text-align: center;
+    animation: slideUp 0.6s ease-out;
+}
+
+.splash-logo {
+    font-size: 4rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.splash-screen h1 {
+    font-size: 2.5rem;
+    margin: 0.5rem 0;
+    color: var(--text-color);
+    font-weight: 700;
+}
+
+.splash-screen p {
+    font-size: 1rem;
+    color: var(--muted-text-color);
+    margin: 0.5rem 0 2rem 0;
+}
+
+.splash-loader {
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    margin: 0 auto;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+body.loaded .splash-screen {
+    display: none;
+}
+
+/* ========================================
+   FULLSCREEN MODE
+   ======================================== */
 body.fullscreen-active #main-header,
 body.fullscreen-active #script-header,
 body.fullscreen-active #card-header {
@@ -54,14 +149,112 @@ body.fullscreen-active #desktop-side-toolbar {
     z-index: 9999 !important;
 }
 
-/* Default header state - Show write header on load, hide others */
+body.fullscreen-active #focus-mode-btn {
+    display: flex !important;
+}
+
+/* ========================================
+   FOCUS MODE (Enhanced)
+   ======================================== */
+body.focus-mode-active #main-header,
+body.focus-mode-active #script-header,
+body.focus-mode-active #card-header,
+body.focus-mode-active #main-toolbar {
+    display: none !important;
+}
+
+body.focus-mode-active #desktop-side-toolbar {
+    display: none !important;
+}
+
+body.focus-mode-active #mobile-keyboard-toolbar {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 9999 !important;
+}
+
+body.focus-mode-active .main-content {
+    height: 100vh;
+}
+
+body.focus-mode-active .editor-area {
+    padding: 0;
+    padding-bottom: 80px;
+}
+
+body.focus-mode-active #fountain-input {
+    padding: 2rem;
+    height: calc(100vh - 80px);
+    border: none;
+    border-radius: 0;
+}
+
+body.focus-mode-active #focus-exit-btn {
+    display: flex !important;
+}
+
+/* Focus Mode Exit Button */
+.focus-exit-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(220, 38, 38, 0.95));
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5);
+    cursor: pointer;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.focus-exit-btn:hover,
+.focus-exit-btn:active {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(239, 68, 68, 0.7);
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.95), rgba(185, 28, 28, 0.95));
+}
+
+.focus-exit-btn:active {
+    transform: scale(0.95);
+}
+
+/* Focus Mode Button in Sidebar */
+.focus-btn {
+    background: linear-gradient(135deg, var(--warning-color), #d97706) !important;
+    color: white !important;
+    font-weight: 700;
+    margin-top: 12px;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.focus-btn:hover,
+.focus-btn:active {
+    background: linear-gradient(135deg, #d97706, #b45309) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
+}
+
+/* ========================================
+   HEADER STYLES
+   ======================================== */
 #main-header {
-    display: flex; /* Show by default (write mode) */
+    display: flex;
 }
 
 #script-header,
 #card-header {
-    display: none; /* Hidden by default, shown by JS when switching views */
+    display: none;
 }
 
 .page-header {
@@ -99,7 +292,9 @@ body.fullscreen-active #desktop-side-toolbar {
     justify-content: center;
 }
 
-/* Screenplay Preview Formatting - Industry Standard */
+/* ========================================
+   SCREENPLAY OUTPUT - INDUSTRY STANDARD
+   ======================================== */
 #screenplay-output {
     background-color: #ffffff;
     color: #000000;
@@ -121,14 +316,12 @@ body.fullscreen-active #desktop-side-toolbar {
     white-space: pre-wrap;
 }
 
-/* Empty line spacer for proper screenplay spacing */
 .empty-line {
     height: 12px;
     margin: 0;
     padding: 0;
 }
 
-/* Scene Heading - Industry Standard Spacing */
 .scene-heading {
     display: flex;
     justify-content: space-between;
@@ -146,7 +339,6 @@ body.fullscreen-active #desktop-side-toolbar {
     margin-left: auto;
 }
 
-/* Character Name */
 .character { 
     text-transform: uppercase !important; 
     margin-left: 37% !important; 
@@ -155,7 +347,6 @@ body.fullscreen-active #desktop-side-toolbar {
     margin-bottom: 0;
 }
 
-/* Dialogue */
 .dialogue { 
     margin-left: 25% !important; 
     margin-right: 15% !important; 
@@ -165,7 +356,6 @@ body.fullscreen-active #desktop-side-toolbar {
     margin-bottom: 0;
 }
 
-/* Parenthetical */
 .parenthetical { 
     margin-left: 30% !important; 
     color: #000000 !important;
@@ -174,13 +364,11 @@ body.fullscreen-active #desktop-side-toolbar {
     margin-bottom: 0;
 }
 
-/* Action/Description */
 .action { 
     color: #000000 !important;
     margin: 0 0 12px 0;
 }
 
-/* Transition - Industry Standard */
 .transition { 
     text-align: right !important; 
     text-transform: uppercase !important; 
@@ -189,7 +377,6 @@ body.fullscreen-active #desktop-side-toolbar {
     margin: 12px 0;
 }
 
-/* Title Page Elements */
 .title-page-element {
     color: #000000 !important;
     font-weight: bold;
@@ -200,6 +387,9 @@ body.fullscreen-active #desktop-side-toolbar {
     font-size: 12pt;
 }
 
+/* ========================================
+   BUTTONS
+   ======================================== */
 .icon-btn {
     background: none;
     border: none;
@@ -212,6 +402,9 @@ body.fullscreen-active #desktop-side-toolbar {
     touch-action: manipulation;
     min-width: 44px;
     min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .icon-btn:hover,
@@ -267,6 +460,9 @@ body.fullscreen-active #desktop-side-toolbar {
     background: none;
 }
 
+/* ========================================
+   MAIN CONTENT
+   ======================================== */
 .main-content {
     flex-grow: 1;
     display: flex;
@@ -286,6 +482,9 @@ body.fullscreen-active #desktop-side-toolbar {
     display: flex;
 }
 
+/* ========================================
+   SIDE MENU (HAMBURGER)
+   ======================================== */
 .side-menu {
     position: fixed;
     top: 55px;
@@ -342,6 +541,7 @@ body.fullscreen-active #desktop-side-toolbar {
     background-color: var(--success-color);
 }
 
+/* Dropdown Menu */
 .dropdown-container .dropdown-toggle::after {
     content: ' ▸';
 }
@@ -365,11 +565,9 @@ body.fullscreen-active #desktop-side-toolbar {
     display: block;
 }
 
-.pro-feature {
-    color: #f59e0b !important;
-    font-weight: bold;
-}
-
+/* ========================================
+   SCENE NAVIGATOR PANEL
+   ======================================== */
 .side-panel {
     position: fixed;
     top: 0;
@@ -475,7 +673,7 @@ body.fullscreen-active #desktop-side-toolbar {
     color: var(--muted-text-color);
 }
 
-/* Enhanced Scene List */
+/* Scene List */
 #scene-list {
     flex-grow: 1;
     overflow-y: auto;
@@ -552,6 +750,9 @@ body.fullscreen-active #desktop-side-toolbar {
     background: var(--surface-color);
 }
 
+/* ========================================
+   TOOLBAR & EDITOR
+   ======================================== */
 #main-toolbar {
     background-color: var(--background-color);
     padding: 0.5rem;
@@ -574,6 +775,9 @@ body.fullscreen-active #desktop-side-toolbar {
     touch-action: manipulation;
     min-width: 44px;
     min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .toolbar-btn:hover,
@@ -613,7 +817,6 @@ body.fullscreen-active #desktop-side-toolbar {
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -webkit-appearance: none;
-    -moz-appearance: textfield;
 }
 
 #fountain-input:focus {
@@ -634,23 +837,20 @@ body.fullscreen-active #desktop-side-toolbar {
     z-index: 25;
 }
 
-.bottom-bar {
-    padding: 0.5rem;
-    flex-shrink: 0;
-}
-
-/* Mobile Keyboard Toolbar - FIXED for mobile */
+/* ========================================
+   MOBILE KEYBOARD TOOLBAR
+   ======================================== */
 .mobile-keyboard-toolbar {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
     background: linear-gradient(135deg, rgba(31, 41, 55, 0.98), rgba(17, 24, 39, 0.98));
-    border-top: 1px solid var(--primary-color);
+    border-top: 2px solid var(--primary-color);
     z-index: 9999;
-    padding: 8px 12px;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-    box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.5);
+    padding: 10px 12px;
+    padding-bottom: 10px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     display: none;
@@ -665,90 +865,51 @@ body.fullscreen-active #desktop-side-toolbar {
     visibility: visible;
 }
 
-* FIXED: Always show on mobile */
-@media (max-width: 768px) {
-    .mobile-keyboard-toolbar {
-        display: block !important; /* Force display on mobile */
-    }
-    
-    #write-view.active ~ .mobile-keyboard-toolbar {
-        opacity: 1;
-        visibility: visible;
-    }
-    
-    #fountain-input {
-        padding-bottom: 80px !important;
-    }
-}
-
-/* Modern toolbar content */
 .keyboard-toolbar-content {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     max-width: 100%;
     height: auto;
     padding: 4px 0;
 }
 
-
-/* Modern compact buttons */
 .keyboard-btn {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(37, 99, 235, 0.9));
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(37, 99, 235, 0.95));
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 11px 14px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 700;
-    font-size: 13px;
+    font-size: 14px;
     flex: 1;
-    max-width: 65px;
-    min-height: 42px;
+    max-width: 70px;
+    min-height: 46px;
     transition: all 0.15s ease;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 3px 10px rgba(59, 130, 246, 0.4);
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
 }
 
 .keyboard-btn:active {
     background: linear-gradient(135deg, rgba(37, 99, 235, 1), rgba(29, 78, 216, 1));
     transform: scale(0.96);
-    box-shadow: 0 1px 4px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.6);
 }
 
-/* Modern glass effect */
-@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
-    .mobile-keyboard-toolbar {
-        background: linear-gradient(135deg, rgba(31, 41, 55, 0.85), rgba(17, 24, 39, 0.85));
-    }
-}
-
-/* Smooth appearance animation */
-@keyframes toolbarFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.mobile-keyboard-toolbar.show {
-    animation: toolbarFadeIn 0.3s ease-out;
-}
-
+/* ========================================
+   PREVIEW AREA
+   ======================================== */
 .preview-area {
     flex-grow: 1;
     padding: 0.5rem;
-    overflow: hidden;
+    overflow: auto;
     background-color: var(--background-color);
 }
 
@@ -770,7 +931,9 @@ body.fullscreen-active #desktop-side-toolbar {
     margin-bottom: 0.5rem;
 }
 
-/* Card View Styles - FIXED */
+/* ========================================
+   CARD VIEW
+   ======================================== */
 #card-view {
     overflow-y: auto;
     overflow-x: hidden;
@@ -874,21 +1037,6 @@ body.fullscreen-active #desktop-side-toolbar {
     transform: scale(1.1);
 }
 
-.card-actions .share-card-btn,
-.card-actions .delete-card-btn,
-.card-actions .add-card-btn-mobile {
-    background: rgba(55, 65, 81, 0.9);
-    border-color: var(--border-color);
-    color: var(--muted-text-color);
-}
-
-.card-actions .share-card-btn:hover,
-.card-actions .delete-card-btn:hover,
-.card-actions .add-card-btn-mobile:hover {
-    background: rgba(75, 85, 99, 1);
-    color: var(--text-color);
-}
-
 .scene-card-content {
     width: 100%;
     height: 100%;
@@ -929,12 +1077,6 @@ body.fullscreen-active #desktop-side-toolbar {
     border-color: var(--primary-color);
     background-color: rgba(59, 130, 246, 0.1);
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-}
-
-.card-scene-title[contenteditable="true"]:empty:before {
-    content: attr(data-placeholder);
-    color: var(--muted-text-color);
-    font-style: italic;
 }
 
 .card-scene-number {
@@ -993,25 +1135,6 @@ body.fullscreen-active #desktop-side-toolbar {
 .card-description::placeholder {
     color: var(--muted-text-color) !important;
     font-style: italic;
-    font-family: 'Courier New', 'Courier Prime', monospace;
-}
-
-.card-description::-webkit-scrollbar {
-    width: 8px;
-}
-
-.card-description::-webkit-scrollbar-track {
-    background: rgba(55, 65, 81, 0.3);
-    border-radius: 4px;
-}
-
-.card-description::-webkit-scrollbar-thumb {
-    background: var(--muted-text-color);
-    border-radius: 4px;
-}
-
-.card-description::-webkit-scrollbar-thumb:hover {
-    background: var(--text-color);
 }
 
 .card-watermark {
@@ -1028,50 +1151,114 @@ body.fullscreen-active #desktop-side-toolbar {
     z-index: 1;
 }
 
-.mobile-pagination {
+/* ========================================
+   MODALS
+   ======================================== */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    align-items: flex-start;
+    justify-content: flex-start;
+    z-index: 200;
+    padding: 1rem;
+}
+
+.modal.open {
+    display: flex;
+}
+
+.modal-content {
+    background-color: var(--surface-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    max-width: 500px;
+    width: 100%;
+    position: relative;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: var(--primary-color);
+}
+
+.modal-body {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.modal-body .form-group {
+    margin-bottom: 1rem;
+}
+
+.modal-body label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.modal-body input,
+.modal-body textarea,
+.modal-body select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.75rem;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-size: 16px;
+}
+
+.modal-body input:focus,
+.modal-body textarea:focus,
+.modal-body select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.modal-footer {
+    margin-top: 1.5rem;
+    text-align: right;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    flex-shrink: 0;
     display: flex;
     gap: 10px;
-    justify-content: center;
-    padding: 20px;
-    padding-bottom: 40px;
-    flex-wrap: wrap;
-    grid-column: 1 / -1;
-    width: 100%;
-    margin-top: 20px;
+    justify-content: flex-end;
 }
 
-.pagination-btn {
-    background: linear-gradient(135deg, var(--surface-color), var(--background-color));
-    color: var(--text-color);
-    border: 2px solid var(--border-color);
-    padding: 12px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 14px;
-    transition: all 0.3s ease;
-    min-width: 80px;
-    touch-action: manipulation;
-}
-
-.pagination-btn:hover {
-    border-color: var(--primary-color);
-    background: var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
-}
-
-.pagination-btn.active {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-}
-
-/* Mobile Responsive Styles */
+/* ========================================
+   MOBILE RESPONSIVE
+   ======================================== */
 @media (max-width: 768px) {
     #desktop-side-toolbar {
         display: none;
+    }
+    
+    .mobile-keyboard-toolbar {
+        display: block !important;
+    }
+    
+    #write-view.active ~ .mobile-keyboard-toolbar {
+        opacity: 1;
+        visibility: visible;
     }
     
     .editor-area, .preview-area {
@@ -1081,7 +1268,7 @@ body.fullscreen-active #desktop-side-toolbar {
     #fountain-input {
         padding: 1rem;
         font-size: 16px;
-        -webkit-text-size-adjust: 100%;
+        padding-bottom: 100px !important;
     }
     
     #screenplay-output {
@@ -1137,23 +1324,6 @@ body.fullscreen-active #desktop-side-toolbar {
         font-size: 1rem;
     }
     
-    .mobile-modal .modal-content {
-        max-width: 95vw;
-        width: 95vw;
-        margin: 1rem;
-        max-height: 70vh;
-        position: fixed;
-        top: 10px;
-        left: 10px;
-        right: 10px;
-    }
-    
-    .mobile-modal {
-        align-items: flex-start;
-        justify-content: flex-start;
-        padding: 0;
-    }
-    
     .side-menu {
         width: 280px;
         max-width: 85vw;
@@ -1164,7 +1334,7 @@ body.fullscreen-active #desktop-side-toolbar {
         max-width: 90vw;
     }
     
-    /* Mobile Card View - FIXED */
+    /* Mobile Card View */
     #card-view {
         overflow-y: auto;
         overflow-x: hidden;
@@ -1226,160 +1396,19 @@ body.fullscreen-active #desktop-side-toolbar {
         border: 2px solid var(--border-color);
         background: rgba(55, 65, 81, 0.95);
         color: var(--text-color);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        transition: all 0.2s ease;
-        position: relative;
     }
     
-    .card-actions .share-card-btn,
-    .card-actions .delete-card-btn,
-    .card-actions .add-card-btn-mobile {
-        background: rgba(55, 65, 81, 0.95);
-        border-color: var(--border-color);
-        color: var(--text-color);
-    }
-    
-    .card-actions .share-card-btn:active,
-    .card-actions .delete-card-btn:active,
-    .card-actions .add-card-btn-mobile:active {
-        background: rgba(75, 85, 99, 1);
-        transform: scale(0.95);
-        color: white;
-    }
-    
-    .card-scene-title {
-        margin-right: 8px;
-        font-size: 12px;
-    }
-    
-    #scene-list li {
-        font-size: 12px;
-        padding: 0.6rem 0.8rem;
-    }
-    
-    .scene-number {
-        font-size: 0.7rem;
-        padding: 0.15rem 0.4rem;
-    }
-    
-    .scene-time {
-        font-size: 0.65rem;
-        padding: 0.1rem 0.3rem;
-    }
-    
-    .mobile-pagination {
-        padding: 20px 10px;
-        padding-bottom: 60px;
-        margin-right: 0;
-        margin-top: 30px;
-        position: relative;
-        z-index: 5;
-    }
-    
-    .pagination-btn {
-        min-width: 70px;
-        padding: 10px 16px;
-        font-size: 13px;
+    .modal-content {
+        max-width: 95vw;
+        width: 95vw;
+        margin: 1rem;
+        max-height: 70vh;
     }
 }
 
-@supports (-webkit-touch-callout: none) {
-    .mobile-keyboard-toolbar {
-        bottom: max(env(keyboard-inset-height, 0px), env(safe-area-inset-bottom, 0px));
-    }
-}
-
-/* Modal Styles */
-.modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.8);
-    display: none;
-    align-items: flex-start;
-    justify-content: flex-start;
-    z-index: 200;
-    padding: 1rem;
-}
-
-.modal.open {
-    display: flex;
-}
-
-.modal-content {
-    background-color: var(--surface-color);
-    border-radius: 12px;
-    padding: 1.5rem;
-    max-width: 500px;
-    width: 100%;
-    position: relative;
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    border: 1px solid var(--border-color);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 1rem;
-}
-
-.modal-header h2 {
-    margin: 0;
-    color: var(--primary-color);
-}
-
-.modal-body {
-    flex-grow: 1;
-    overflow-y: auto;
-}
-
-.modal-body .form-group {
-    margin-bottom: 1rem;
-}
-
-.modal-body label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-}
-
-.modal-body input,
-.modal-body textarea {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0.75rem;
-    background-color: var(--background-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    color: var(--text-color);
-    font-size: 16px;
-    -webkit-font-smoothing: antialiased;
-}
-
-.modal-body input:focus,
-.modal-body textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-}
-
-.modal-footer {
-    margin-top: 1.5rem;
-    text-align: right;
-    border-top: 1px solid var(--border-color);
-    padding-top: 1rem;
-    flex-shrink: 0;
-}
-
-/* Print Styles */
+/* ========================================
+   PRINT STYLES (for Card Export)
+   ======================================== */
 @media print {
     * {
         -webkit-print-color-adjust: exact !important;
@@ -1400,222 +1429,67 @@ body.fullscreen-active #desktop-side-toolbar {
         padding: 15px !important;
     }
     
-    .scene-card-content {
-        background: white !important;
-        color: black !important;
-    }
-    
-    .card-actions,
-    .mobile-pagination {
+    .card-actions {
         display: none !important;
-    }
-    
-    .card-scene-title {
-        font-size: 11pt !important;
-        font-weight: bold !important;
-        color: black !important;
-        background: white !important;
-        border: none !important;
-        text-transform: uppercase !important;
-    }
-    
-    .card-description {
-        font-size: 10pt !important;
-        border: none !important;
-        background: white !important;
-        color: black !important;
-    }
-    
-    .card-scene-number {
-        background: white !important;
-        border: 1px solid #000 !important;
-        font-weight: bold !important;
-        color: black !important;
-        width: 40px !important;
-        font-size: 10pt !important;
     }
     
     .card-watermark {
         opacity: 0.3 !important;
         visibility: visible !important;
-        font-size: 7pt !important;
-        color: #666 !important;
-    }
-    
-    .card-header {
-        border-bottom: 1px solid #000 !important;
     }
 }
 
-/* Scrollbar Styles */
-textarea::-webkit-scrollbar,
-#screenplay-output::-webkit-scrollbar,
-#scene-list::-webkit-scrollbar,
-.card-body::-webkit-scrollbar,
-.modal-body::-webkit-scrollbar {
+/* ========================================
+   SCROLLBAR STYLES
+   ======================================== */
+::-webkit-scrollbar {
     width: 8px;
+    height: 8px;
 }
 
-textarea::-webkit-scrollbar-track,
-#screenplay-output::-webkit-scrollbar-track,
-#scene-list::-webkit-scrollbar-track,
-.card-body::-webkit-scrollbar-track,
-.modal-body::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
     background: transparent;
 }
 
-textarea::-webkit-scrollbar-thumb,
-#screenplay-output::-webkit-scrollbar-thumb,
-#scene-list::-webkit-scrollbar-thumb,
-.card-body::-webkit-scrollbar-thumb,
-.modal-body::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-thumb {
     background-color: var(--border-color);
     border-radius: 20px;
 }
 
-/* Smaller Modal Width for Info and About */
-#info-modal .modal-content,
-#about-modal .modal-content {
-    max-width: 600px;
-    width: 90%;
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted-text-color);
 }
 
-#about-modal .modal-content {
-    max-width: 550px;
-}
-
-@media (max-width: 768px) {
-    #info-modal .modal-content,
-    #about-modal .modal-content {
-        max-width: 95vw;
-        width: 95vw;
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+@keyframes toolbarFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-#info-modal .modal-body {
-    max-height: 65vh;
-    overflow-y: auto;
+.mobile-keyboard-toolbar.show {
+    animation: toolbarFadeIn 0.3s ease-out;
 }
 
-#info-modal .modal-body h3 {
-    margin-top: 15px;
-    margin-bottom: 10px;
-}
-
-#info-modal .modal-body ul {
-    margin-top: 5px;
-    margin-bottom: 15px;
-}
-
-#info-modal .modal-body code {
-    background: var(--background-color);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Courier Prime', monospace;
-    color: var(--primary-color);
-}
-
-#about-modal a {
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* Save Cards Modal */
-#save-cards-modal .modal-content {
-    max-width: 500px;
-    width: 90%;
-}
-
-@media (max-width: 768px) {
-    #save-cards-modal .modal-content {
-        width: 85%;
-        max-width: 400px;
-    }
-    
-    #save-cards-modal .modal-footer > div {
-        flex-direction: column;
-    }
-    
-    #save-cards-modal .modal-footer button {
-        width: 100% !important;
-        flex: none !important;
-    }
-}
-
-@media (max-width: 480px) {
-    #save-cards-modal .modal-content {
-        width: 80%;
-        max-width: 340px;
-        padding: 1rem;
-    }
-    
-    #save-cards-modal .modal-header h2 {
-        font-size: 1.2rem;
-    }
-    
-    #save-cards-modal .modal-footer {
-        gap: 8px;
-    }
-}
-
-/* Focus Mode - Exit Button at Top Right */
-.focus-exit-btn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    background: rgba(239, 68, 68, 0.95);
-    color: white;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
-    cursor: pointer;
-    z-index: 10000;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    font-weight: bold;
-    transition: all 0.2s ease;
-}
-
-.focus-exit-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
-    background: rgba(220, 38, 38, 0.95);
-}
-
-.focus-exit-btn:active {
-    transform: scale(0.95);
-}
-
-/* Hide all UI in focus mode */
-body.focus-mode-active #main-header,
-body.focus-mode-active #script-header,
-body.focus-mode-active #card-header,
-body.focus-mode-active #desktop-side-toolbar,
-body.focus-mode-active #main-toolbar {
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+.hidden {
     display: none !important;
 }
 
-/* Show only mobile toolbar at bottom in focus mode */
-body.focus-mode-active #mobile-keyboard-toolbar {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
+.text-center {
+    text-align: center;
 }
 
-body.focus-mode-active .main-content {
-    height: 100vh;
-}
-
-body.focus-mode-active .editor-area {
-    padding: 0;
-    padding-bottom: 80px;
-}
-
-body.focus-mode-active #fountain-input {
-    padding: 2rem;
-    height: calc(100vh - 80px);
-}
-
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
