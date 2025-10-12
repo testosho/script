@@ -18,8 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let isUpdatingFromSync = false;
     let currentPage = 0;
     const cardsPerPage = 5;
-	let focusModeActive = false;
-	let focusExitBtn = null;
 
     // DOM elements
     const fountainInput = document.getElementById('fountain-input');
@@ -1616,32 +1614,19 @@ function handleActionBtn(action) {
                 newText = ' - DAY';
             }
         }
-	} else if (action === 'caps') {
-	    // FIXED: Toggle between UPPERCASE and lowercase
-	    if (selectedText) {
-	        const isUpperCase = selectedText === selectedText.toUpperCase() && selectedText !== selectedText.toLowerCase();
-        
-	        if (isUpperCase) {
-	            newText = selectedText.toLowerCase();
-	        } else {
-	            newText = selectedText.toUpperCase();
-	        }
-        
-	        console.log(`Caps toggle: "${selectedText}" → "${newText}"`);
-	    } else {
-	        if (currentLine.trim().length > 0) {
-	            const lineText = currentLine.trim();
-	            const isUpperCase = lineText === lineText.toUpperCase() && lineText !== lineText.toLowerCase();
-            
-	            newText = isUpperCase ? lineText.toLowerCase() : lineText.toUpperCase();
-	            replaceWholeLine = true;
-            
-	            console.log(`Caps toggle (line): "${lineText}" → "${newText}"`);
-	        } else {
-	            return;
-	        }
-	    }
-	
+    } else if (action === 'caps') {
+        // FIXED: Toggle between UPPERCASE and lowercase
+        if (selectedText) {
+            // Check if already uppercase
+            if (selectedText === selectedText.toUpperCase()) {
+                newText = selectedText.toLowerCase();
+            } else {
+                newText = selectedText.toUpperCase();
+            }
+        } else {
+            // No selection, do nothing
+            return;
+        }
     } else if (action === 'parens') {
         if (selectedText) {
             newText = `(${selectedText})`;
@@ -1730,15 +1715,14 @@ function cycleTransition(text) {
     }
 }
 
-// UPDATED: Focus Mode Toggle
+// UPDATED: Focus Mode Toggle (Fullscreen + Clean UI)
 let focusModeActive = false;
-let focusExitBtn = null;
 
 function toggleFocusMode() {
     const body = document.body;
     const mobileToolbar = document.getElementById('mobile-keyboard-toolbar');
     const desktopToolbar = document.getElementById('desktop-side-toolbar');
-    const focusBtn = document.getElementById('focus-mode-btn');
+    const focusIcon = document.getElementById('focus-mode-icon');
     
     focusModeActive = !focusModeActive;
     
@@ -1751,22 +1735,16 @@ function toggleFocusMode() {
             desktopToolbar.style.display = 'none';
         }
         
-        // Show mobile toolbar at bottom
+        // Show mobile toolbar at bottom with all buttons
         if (mobileToolbar) {
             mobileToolbar.classList.add('show');
             mobileToolbar.style.display = 'block';
         }
         
-        // Create exit button at top-right
-        if (!focusExitBtn) {
-            focusExitBtn = document.createElement('button');
-            focusExitBtn.className = 'focus-exit-btn';
-            focusExitBtn.innerHTML = '✕';
-            focusExitBtn.title = 'Exit Focus Mode';
-            focusExitBtn.addEventListener('click', toggleFocusMode);
-            document.body.appendChild(focusExitBtn);
+        // Change icon to "eye-slash" (hidden)
+        if (focusIcon) {
+            focusIcon.className = 'fas fa-eye-slash';
         }
-        focusExitBtn.style.display = 'flex';
         
         console.log('Focus Mode: ON - Distraction-free writing');
     } else {
@@ -1783,29 +1761,29 @@ function toggleFocusMode() {
             mobileToolbar.classList.remove('show');
         }
         
-        // Hide exit button
-        if (focusExitBtn) {
-            focusExitBtn.style.display = 'none';
+        // Change icon back to "eye" (visible)
+        if (focusIcon) {
+            focusIcon.className = 'fas fa-eye';
         }
         
         console.log('Focus Mode: OFF - All UI visible');
     }
 }
 
-// UPDATED: Show/hide focus button based on fullscreen
+/// UPDATED: Show/hide focus mode toggle based on fullscreen
 function updateFocusModeButton() {
     const isFullscreen = document.fullscreenElement || document.body.classList.contains('fullscreen-active');
-    const focusBtn = document.getElementById('focus-mode-btn');
+    const focusToggleBtn = document.getElementById('focus-mode-toggle-btn');
     
     if (isFullscreen && currentView === 'write') {
-        // Show focus button in fullscreen write mode
-        if (focusBtn) {
-            focusBtn.style.display = 'flex';
+        // Show focus mode toggle in fullscreen write mode
+        if (focusToggleBtn) {
+            focusToggleBtn.style.display = 'flex';
         }
     } else {
-        // Hide focus button in normal mode
-        if (focusBtn) {
-            focusBtn.style.display = 'none';
+        // Hide toggle button in normal mode
+        if (focusToggleBtn) {
+            focusToggleBtn.style.display = 'none';
         }
         
         // Reset focus mode when exiting fullscreen
@@ -1823,8 +1801,9 @@ function updateFocusModeButton() {
                 mobileToolbar.classList.remove('show');
             }
             
-            if (focusExitBtn) {
-                focusExitBtn.style.display = 'none';
+            const focusIcon = document.getElementById('focus-mode-icon');
+            if (focusIcon) {
+                focusIcon.className = 'fas fa-eye';
             }
         }
     }
@@ -2911,47 +2890,43 @@ function updateFocusModeButton() {
 	  }
 	  
 
-	 // *** ADD THE FOCUS MODE BUTTON LISTENER RIGHT HERE ***
-	     // NEW: Focus Mode Button
-	     const focusModeBtn = document.getElementById('focus-mode-btn');
-	     if (focusModeBtn) {
-	         focusModeBtn.addEventListener('click', (e) => {
-	             e.preventDefault();
-	             e.stopPropagation();
-	             toggleFocusMode();
-	         });
+	 // NEW: Focus Mode Toggle Button
+	 const focusModeToggleBtn = document.getElementById('focus-mode-toggle-btn');
+	 if (focusModeToggleBtn) {
+	     focusModeToggleBtn.addEventListener('click', toggleFocusMode);
+	 }
+
+	 // Fullscreen change events - UPDATED
+	 document.addEventListener('fullscreenchange', () => {
+	     if (!document.fullscreenElement) {
+	         document.body.classList.remove('fullscreen-active');
+	         setTimeout(() => {
+	             if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
+	             else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
+	             else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
+            
+	             updateFocusModeButton();
+	         }, 100);
+	     } else {
+	         updateFocusModeButton();
 	     }
+	 });
 
-	     // Fullscreen change events
-	     document.addEventListener('fullscreenchange', () => {
-	         if (!document.fullscreenElement) {
-	             document.body.classList.remove('fullscreen-active');
-	             setTimeout(() => {
-	                 if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
-	                 else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
-	                 else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
-                
-	                 updateFocusModeButton();
-	             }, 100);
-	         } else {
+	 document.addEventListener('webkitfullscreenchange', () => {
+	     if (!document.webkitFullscreenElement) {
+	         document.body.classList.remove('fullscreen-active');
+	         setTimeout(() => {
+	             if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
+	             else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
+	             else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
+            
 	             updateFocusModeButton();
-	         }
-	     });
-
-	     document.addEventListener('webkitfullscreenchange', () => {
-	         if (!document.webkitFullscreenElement) {
-	             document.body.classList.remove('fullscreen-active');
-	             setTimeout(() => {
-	                 if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
-	                 else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
-	                 else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
-                
-	                 updateFocusModeButton();
-	             }, 100);
-	         } else {
-	             updateFocusModeButton();
-	         }
-	     });
+	         }, 100);
+	     } else {
+	         updateFocusModeButton();
+	     }
+	 });
+	   
        
 
 
