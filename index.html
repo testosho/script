@@ -2,25 +2,54 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1f2937">
+    
     <title>ToscripT - Professional Screenwriting</title>
     
+    <!-- Preconnect to Google APIs for faster loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://apis.google.com">
+    <link rel="preconnect" href="https://www.dropbox.com">
+    
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@400;500;700&family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     
+    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/gh/mattdaly/Fountain.js@master/fountain.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js" defer></script>
     
+    <!-- Google API Client Library -->
+    <script src="https://apis.google.com/js/api.js" defer></script>
+    
+    <!-- Dropbox SDK -->
+    <script src="https://www.dropbox.com/static/api/2/dropins.js" id="dropboxjs" data-app-key="YOUR_DROPBOX_APP_KEY" defer></script>
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     
+    <!-- Splash Screen for Android App -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo">
+                <i class="fas fa-film"></i>
+            </div>
+            <h1>ToscripT</h1>
+            <p>Professional Screenwriting</p>
+            <div class="splash-loader"></div>
+        </div>
+    </div>
+    
+    <!-- Write Mode Header -->
     <header id="main-header" class="page-header write-mode-header">
         <div class="header-left">
             <button id="hamburger-btn" class="icon-btn" title="Menu"><i class="fas fa-bars"></i></button>
@@ -33,6 +62,7 @@
         </div>
     </header>
     
+    <!-- Script Mode Header -->
     <header id="script-header" class="page-header script-mode-header" style="display: none;">
         <div class="header-left">
             <button id="hamburger-btn-script" class="icon-btn" title="Menu"><i class="fas fa-bars"></i></button>
@@ -45,6 +75,7 @@
         </div>
     </header>
     
+    <!-- Card Mode Header -->
     <header id="card-header" class="page-header card-mode-header" style="display: none;">
         <div class="header-left">
             <button id="hamburger-btn-card" class="icon-btn" title="Menu"><i class="fas fa-bars"></i></button>
@@ -62,22 +93,38 @@
         </div>
     </header>
     
+    <!-- Menu Panel (Hamburger Menu) -->
     <div id="menu-panel" class="side-menu">
         <nav>
             <a href="#" id="new-btn"><i class="fas fa-file"></i> New Project</a>
             <a href="#" id="open-btn"><i class="fas fa-folder-open"></i> Open...</a>
             <a href="#" id="project-info-btn"><i class="fas fa-info-circle"></i> Project Info</a>
             <a href="#" id="title-page-btn"><i class="fas fa-book-open"></i> Title Page</a>
+            
+            <!-- Save As Dropdown -->
             <div class="dropdown-container">
                 <a href="#" id="save-menu-btn" class="dropdown-toggle"><i class="fas fa-save"></i> Save As...</a>
                 <div id="save-menu" class="dropdown-content">
                     <a href="#" id="save-fountain-btn">.fountain (Text)</a>
                     <a href="#" id="save-pdf-english-btn">.pdf (Selectable Text)</a>
                     <a href="#" id="save-pdf-unicode-btn">.pdf (Unicode Image)</a>
-                    <a href="#" id="save-filmproj-btn" class="pro-feature">.filmproj (for To Make/To Sched)</a>
+                    <a href="#" id="save-filmproj-btn">.filmproj (for To Make/To Sched)</a>
                 </div>
             </div>
-             <a href="#" id="auto-save-btn" class="flex-between">
+            
+            <!-- Cloud Storage Options -->
+            <div class="dropdown-container">
+                <a href="#" id="cloud-menu-btn" class="dropdown-toggle"><i class="fas fa-cloud"></i> Cloud Storage</a>
+                <div id="cloud-menu" class="dropdown-content">
+                    <a href="#" id="google-drive-save-btn"><i class="fab fa-google-drive"></i> Save to Google Drive</a>
+                    <a href="#" id="google-drive-open-btn"><i class="fab fa-google-drive"></i> Open from Google Drive</a>
+                    <a href="#" id="dropbox-save-btn"><i class="fab fa-dropbox"></i> Save to Dropbox</a>
+                    <a href="#" id="dropbox-open-btn"><i class="fab fa-dropbox"></i> Open from Dropbox</a>
+                    <a href="#" id="cloud-sync-btn"><i class="fas fa-sync"></i> Auto-Sync Settings</a>
+                </div>
+            </div>
+            
+            <a href="#" id="auto-save-btn" class="flex-between">
                 <span><i class="fas fa-sync-alt"></i> Auto-Save</span>
                 <span id="auto-save-indicator" class="indicator off"></span>
             </a>
@@ -93,7 +140,10 @@
         </nav>
     </div>
     
+    <!-- Main Content Area -->
     <main class="main-content">
+        
+        <!-- Write View -->
         <div id="write-view" class="view active">
             <div id="main-toolbar">
                 <button id="card-view-btn" class="toolbar-btn" title="Card View"><i class="fas fa-grip-vertical"></i></button>
@@ -105,39 +155,54 @@
             </div>
             <div class="editor-area">
                 <textarea id="fountain-input" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea>
+                
+                <!-- Desktop Side Toolbar -->
                 <div id="desktop-side-toolbar">
                     <button class="action-btn" data-action="scene" title="Cycle Scene (INT./EXT.)">I/E</button>
                     <button class="action-btn" data-action="time" title="Cycle Time of Day (DAY/NIGHT)">D/N</button>
                     <button class="action-btn" data-action="caps" title="Toggle Case (UPPER/lower)">Aa</button>
                     <button class="action-btn" data-action="parens" title="Add Parentheses">()</button>
                     <button class="action-btn" data-action="transition" title="Cycle Transition">TO:</button>
-          <!-- NEW: Focus Mode Button (Shows in Fullscreen Only) -->
-    <button id="focus-mode-btn" class="action-btn" style="display: none; background: linear-gradient(135deg, #f59e0b, #d97706); margin-top: 10px; font-size: 0.85rem;" title="Toggle Focus Mode">
-        Focus
-    </button>
+                    
+                    <!-- Focus Mode Button (Shows in Fullscreen Only) -->
+                    <button id="focus-mode-btn" class="action-btn focus-btn" style="display: none;" title="Toggle Focus Mode">
+                        <i class="fas fa-eye"></i>
+                    </button>
                 </div>
             </div>
         </div>
         
+        <!-- Script View (Preview) -->
         <div id="script-view" class="view">
-            <div class="preview-area"><div id="screenplay-output"></div></div>
+            <div class="preview-area">
+                <div id="screenplay-output"></div>
+            </div>
         </div>
         
+        <!-- Card View -->
         <div id="card-view" class="view">
-             <div id="card-container"></div>
+            <div id="card-container"></div>
         </div>
+        
     </main>
     
+    <!-- Mobile Keyboard Toolbar -->
     <div id="mobile-keyboard-toolbar" class="mobile-keyboard-toolbar">
-    <div class="keyboard-toolbar-content">
-        <button class="keyboard-btn" data-action="scene" title="INT/EXT">I/E</button>
-        <button class="keyboard-btn" data-action="time" title="DAY/NIGHT">D/N</button>
-        <button class="keyboard-btn" data-action="caps" title="CAPS">Aa</button>
-        <button class="keyboard-btn" data-action="parens" title="Parentheses">()</button>
-        <button class="keyboard-btn" data-action="transition" title="Transitions">TO:</button>
+        <div class="keyboard-toolbar-content">
+            <button class="keyboard-btn" data-action="scene" title="INT/EXT">I/E</button>
+            <button class="keyboard-btn" data-action="time" title="DAY/NIGHT">D/N</button>
+            <button class="keyboard-btn" data-action="caps" title="CAPS">Aa</button>
+            <button class="keyboard-btn" data-action="parens" title="Parentheses">()</button>
+            <button class="keyboard-btn" data-action="transition" title="Transitions">TO:</button>
+        </div>
     </div>
-</div>
     
+    <!-- Focus Mode Exit Button -->
+    <button id="focus-exit-btn" class="focus-exit-btn" style="display: none;" title="Exit Focus Mode">
+        <i class="fas fa-times"></i>
+    </button>
+    
+    <!-- Scene Navigator Panel -->
     <div id="scene-navigator-panel" class="side-panel">
         <div class="panel-header">
             <h2>Navigator & Filters</h2>
@@ -168,13 +233,17 @@
         </div>
     </div>
     
+    <!-- Modals -->
     <div id="info-modal" class="modal mobile-modal"></div>
     <div id="about-modal" class="modal mobile-modal"></div>
     <div id="title-page-modal" class="modal mobile-modal"></div>
     <div id="project-info-modal" class="modal mobile-modal"></div>
+    <div id="cloud-sync-modal" class="modal mobile-modal"></div>
     
+    <!-- File Input (Hidden) -->
     <input type="file" id="file-input" style="display: none;" accept=".fountain,.txt,.filmproj">
     
+    <!-- Main JavaScript -->
     <script src="script.js"></script>
 </body>
 </html>
