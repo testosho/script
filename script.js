@@ -436,39 +436,87 @@ FADE OUT.`;
     // ========================================
     // VIEW MANAGEMENT
     // ========================================
-    function switchView(viewName) {
-        currentView = viewName;
+	// Switch View Function - FIXED WITH SCENE EXTRACTION
+	function switchView(view) {
+	    console.log(`Switching to view: ${view}`);
+	    currentView = view;
+    
+	    // Hide all views and headers first
+	    [writeView, scriptView, cardView].forEach(v => v?.classList.remove('active'));
+	    [mainHeader, scriptHeader, cardHeader].forEach(h => {
+	        if (h) h.style.display = 'none';
+	    });
+	    hideMobileToolbar();
+
+	    // Check if in fullscreen mode
+	    const isFullscreen = document.fullscreenElement || document.body.classList.contains('fullscreen-active');
+
+	    if (view === 'script') {
+	        scriptView?.classList.add('active');
+	        if (scriptHeader && !isFullscreen) {
+	            scriptHeader.style.display = 'flex';
+	        }
+	        updatePreview(); // Use updatePreview instead of renderEnhancedScript
         
-        // Hide all views
-        writeView?.classList.remove('active');
-        scriptView?.classList.remove('active');
-        cardView?.classList.remove('active');
+	    } else if (view === 'card') {
+	        // CRITICAL FIX: Extract scenes BEFORE rendering cards
+	        if (fountainInput && !isPlaceholder) {
+	            console.log('Extracting scenes for card view...');
+	            projectData.projectInfo.scenes = extractAndDisplayScenes(); // This extracts scenes
+	            console.log('Scenes extracted:', projectData.projectInfo.scenes.length);
+	        }
         
-        // Hide all headers
-        mainHeader.style.display = 'none';
-        scriptHeader.style.display = 'none';
-        cardHeader.style.display = 'none';
+	        cardView?.classList.add('active');
         
-        // Show selected view and header
-        if (viewName === 'write') {
-            writeView?.classList.add('active');
-            mainHeader.style.display = 'flex';
-            if (isMobileDevice()) showMobileToolbar();
-        } else if (viewName === 'script') {
-            scriptView?.classList.add('active');
-            scriptHeader.style.display = 'flex';
-            updatePreview();
-            hideMobileToolbar();
-        } else if (viewName === 'card') {
-            cardView?.classList.add('active');
-            cardHeader.style.display = 'flex';
-            syncCardsWithScript();
-            hideMobileToolbar();
-        }
+	        // Show card header unless in fullscreen
+	        if (cardHeader) {
+	            if (isFullscreen) {
+	                cardHeader.style.display = 'none';
+	            } else {
+	                cardHeader.style.display = 'flex';
+	            }
+	        }
         
-        closeMenu();
-        closeSceneNavigator();
-    }
+	        currentPage = 0;
+	        renderEnhancedCardView();
+        
+	        setTimeout(() => {
+	            bindCardEditingEvents();
+            
+	            // Ensure header stays visible after render
+	            if (cardHeader && !isFullscreen) {
+	                cardHeader.style.display = 'flex';
+	            }
+	        }, 100);
+        
+	    } else {
+	        // Write mode
+	        writeView?.classList.add('active');
+	        if (mainHeader && !isFullscreen) {
+	            mainHeader.style.display = 'flex';
+	        }
+        
+	        setTimeout(() => {
+	            if (fountainInput) {
+	                if (!isPlaceholder) {
+	                    fountainInput.classList.remove('placeholder');
+	                }
+	                fountainInput.focus();
+                
+	                // Always show toolbar in write mode on mobile
+	                if (window.innerWidth <= 768) {
+	                    showMobileToolbar();
+	                }
+	            }
+	        }, 200);
+	    }
+	}
+    
+	// Helper: Check if placeholder
+	function isPlaceholder() {
+	    return isPlaceholderActive || (fountainInput && fountainInput.value === placeholderText);
+	}
+	
     
     // ========================================
     // MENU MANAGEMENT
