@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let isUpdatingFromSync = false;
     let currentPage = 0;
     const cardsPerPage = 5;
+	let focusModeActive = false;
+	let focusExitBtn = null;
 
     // DOM elements
     const fountainInput = document.getElementById('fountain-input');
@@ -1615,22 +1617,18 @@ function handleActionBtn(action) {
             }
         }
 	} else if (action === 'caps') {
-	    // FIXED: Toggle between UPPERCASE and lowercase for selected text
+	    // FIXED: Toggle between UPPERCASE and lowercase
 	    if (selectedText) {
-	        // Check if text is all uppercase
 	        const isUpperCase = selectedText === selectedText.toUpperCase() && selectedText !== selectedText.toLowerCase();
         
 	        if (isUpperCase) {
-	            // Convert to lowercase
 	            newText = selectedText.toLowerCase();
 	        } else {
-	            // Convert to uppercase
 	            newText = selectedText.toUpperCase();
 	        }
         
 	        console.log(`Caps toggle: "${selectedText}" → "${newText}"`);
 	    } else {
-	        // No selection - select current line and toggle
 	        if (currentLine.trim().length > 0) {
 	            const lineText = currentLine.trim();
 	            const isUpperCase = lineText === lineText.toUpperCase() && lineText !== lineText.toLowerCase();
@@ -1640,11 +1638,10 @@ function handleActionBtn(action) {
             
 	            console.log(`Caps toggle (line): "${lineText}" → "${newText}"`);
 	        } else {
-	            // Empty line, do nothing
 	            return;
 	        }
 	    }
-    
+	
     } else if (action === 'parens') {
         if (selectedText) {
             newText = `(${selectedText})`;
@@ -2924,27 +2921,6 @@ function updateFocusModeButton() {
 	             toggleFocusMode();
 	         });
 	     }
-
-	     // Desktop Side Toolbar Buttons
-	     const desktopActionBtns = document.querySelectorAll('#desktop-side-toolbar .action-btn');
-	     desktopActionBtns.forEach(btn => {
-	         btn.addEventListener('click', () => {
-	             const action = btn.getAttribute('data-action');
-	             handleActionBtn(action);
-	         });
-	     });
-
-	     // Mobile Keyboard Buttons - FIXED
-	     const mobileKeyboardBtns = document.querySelectorAll('.keyboard-btn');
-	     mobileKeyboardBtns.forEach(btn => {
-	         btn.addEventListener('click', (e) => {
-	             e.preventDefault();
-	             e.stopPropagation();
-	             const action = btn.getAttribute('data-action');
-	             console.log('Mobile button clicked:', action);
-	             handleActionBtn(action);
-	         });
-	     });
 
 	     // Fullscreen change events
 	     document.addEventListener('fullscreenchange', () => {
