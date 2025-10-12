@@ -1614,19 +1614,37 @@ function handleActionBtn(action) {
                 newText = ' - DAY';
             }
         }
-    } else if (action === 'caps') {
-        // FIXED: Toggle between UPPERCASE and lowercase
-        if (selectedText) {
-            // Check if already uppercase
-            if (selectedText === selectedText.toUpperCase()) {
-                newText = selectedText.toLowerCase();
-            } else {
-                newText = selectedText.toUpperCase();
-            }
-        } else {
-            // No selection, do nothing
-            return;
-        }
+	} else if (action === 'caps') {
+	    // FIXED: Toggle between UPPERCASE and lowercase for selected text
+	    if (selectedText) {
+	        // Check if text is all uppercase
+	        const isUpperCase = selectedText === selectedText.toUpperCase() && selectedText !== selectedText.toLowerCase();
+        
+	        if (isUpperCase) {
+	            // Convert to lowercase
+	            newText = selectedText.toLowerCase();
+	        } else {
+	            // Convert to uppercase
+	            newText = selectedText.toUpperCase();
+	        }
+        
+	        console.log(`Caps toggle: "${selectedText}" → "${newText}"`);
+	    } else {
+	        // No selection - select current line and toggle
+	        if (currentLine.trim().length > 0) {
+	            const lineText = currentLine.trim();
+	            const isUpperCase = lineText === lineText.toUpperCase() && lineText !== lineText.toLowerCase();
+            
+	            newText = isUpperCase ? lineText.toLowerCase() : lineText.toUpperCase();
+	            replaceWholeLine = true;
+            
+	            console.log(`Caps toggle (line): "${lineText}" → "${newText}"`);
+	        } else {
+	            // Empty line, do nothing
+	            return;
+	        }
+	    }
+    
     } else if (action === 'parens') {
         if (selectedText) {
             newText = `(${selectedText})`;
