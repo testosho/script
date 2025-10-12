@@ -1563,7 +1563,7 @@ function hideProgressModal() {
     }
 
     // Action Button Handler
-   // UPDATED: Action Button Handler with Smart Cycling
+
 function handleActionBtn(action) {
     if (!fountainInput) return;
     
@@ -1590,42 +1590,48 @@ function handleActionBtn(action) {
         if (selectedText) {
             newText = cycleSceneType(selectedText);
         } else if (currentLine.trim().match(/^(INT\.|EXT\.|INT\.\/EXT\.)/i)) {
-            // If cursor is on a scene heading line, cycle the whole line
             newText = cycleSceneType(currentLine.trim());
             replaceWholeLine = true;
         } else {
-            // Insert INT. at cursor
             newText = 'INT. ';
         }
     } else if (action === 'time') {
-        // Smart cycling: - DAY → - NIGHT → - DAY
+        // FIXED: Smart cycling for time
         if (selectedText) {
+            // If text is selected, cycle it
             newText = cycleTimeOfDay(selectedText);
-        } else if (currentLine.match(/-(DAY|NIGHT)/i)) {
-            // If line already has time, cycle it
-            newText = cycleTimeOfDay(currentLine);
-            replaceWholeLine = true;
         } else {
-            // Insert - DAY at cursor
-            newText = ' - DAY';
+            // Check if current line has time
+            const timeMatch = currentLine.match(/\s*-\s*(DAY|NIGHT)/i);
+            if (timeMatch) {
+                // Found time in current line, replace it
+                const currentTime = timeMatch[1].toUpperCase();
+                const newTime = currentTime === 'DAY' ? 'NIGHT' : 'DAY';
+                newText = currentLine.replace(/\s*-\s*(DAY|NIGHT)/i, ` - ${newTime}`);
+                replaceWholeLine = true;
+            } else {
+                // No time found, insert - DAY at cursor
+                newText = ' - DAY';
+            }
         }
     } else if (action === 'caps') {
-        // Toggle CAPS for selected text
+        // FIXED: Toggle between UPPERCASE and lowercase
         if (selectedText) {
-            newText = selectedText === selectedText.toUpperCase() 
-                ? selectedText.toLowerCase() 
-                : selectedText.toUpperCase();
+            // Check if already uppercase
+            if (selectedText === selectedText.toUpperCase()) {
+                newText = selectedText.toLowerCase();
+            } else {
+                newText = selectedText.toUpperCase();
+            }
         } else {
             // No selection, do nothing
             return;
         }
     } else if (action === 'parens') {
-        // Add parentheses around selected text or insert empty parens
         if (selectedText) {
             newText = `(${selectedText})`;
         } else {
             newText = '()';
-            // Position cursor inside parentheses
             fountainInput.value = beforeCursor + newText + afterCursor;
             fountainInput.setSelectionRange(start + 1, start + 1);
             fountainInput.focus();
@@ -1634,15 +1640,12 @@ function handleActionBtn(action) {
             return;
         }
     } else if (action === 'transition') {
-        // Smart cycling: CUT TO: → FADE IN: → FADE OUT: → FADE TO BLACK: → DISSOLVE TO: → CUT TO:
         if (selectedText) {
             newText = cycleTransition(selectedText);
         } else if (currentLine.trim().match(/(CUT TO:|FADE IN:|FADE OUT:|FADE TO BLACK:|DISSOLVE TO:)/i)) {
-            // If line is a transition, cycle it
             newText = cycleTransition(currentLine.trim());
             replaceWholeLine = true;
         } else {
-            // Insert CUT TO: at cursor
             newText = 'CUT TO:';
         }
     }
@@ -1662,6 +1665,7 @@ function handleActionBtn(action) {
     history.add(fountainInput.value);
     saveProjectData();
 }
+
 
 
 // UPDATED: Cycle Scene Type (INT. → EXT. → INT./EXT. → INT.)
@@ -1710,6 +1714,98 @@ function cycleTransition(text) {
         return 'CUT TO:';
     }
 }
+
+// NEW: Fullscreen Toolbar Toggle
+let toolbarPosition = 'side'; // 'side' or 'bottom'
+
+function toggleToolbarPosition() {
+    const desktopToolbar = document.getElementById('desktop-side-toolbar');
+    const mobileToolbar = document.getElementById('mobile-keyboard-toolbar');
+    const editorArea = document.querySelector('.editor-area');
+    
+    if (toolbarPosition === 'side') {
+        // Move to bottom
+        toolbarPosition = 'bottom';
+        
+        // Hide side toolbar
+        if (desktopToolbar) {
+            desktopToolbar.style.display = 'none';
+        }
+        
+        // Show mobile toolbar at bottom
+        if (mobileToolbar) {
+            mobileToolbar.classList.add('show');
+            mobileToolbar.style.display = 'block';
+        }
+        
+        // Add padding to editor
+        if (editorArea) {
+            editorArea.style.paddingBottom = '80px';
+        }
+        
+        console.log('Toolbar moved to bottom');
+    } else {
+        // Move to side
+        toolbarPosition = 'side';
+        
+        // Show side toolbar
+        if (desktopToolbar) {
+            desktopToolbar.style.display = 'flex';
+        }
+        
+        // Hide mobile toolbar
+        if (mobileToolbar) {
+            mobileToolbar.classList.remove('show');
+        }
+        
+        // Remove padding
+        if (editorArea) {
+            editorArea.style.paddingBottom = '0.5rem';
+        }
+        
+        console.log('Toolbar moved to side');
+    }
+}
+
+// Show/hide toggle button based on fullscreen state
+function updateFullscreenToolbarButton() {
+    const isFullscreen = document.fullscreenElement || document.body.classList.contains('fullscreen-active');
+    const desktopToggleBtn = document.getElementById('toggle-toolbar-position-btn');
+    const mobileToggleBtn = document.getElementById('toggle-toolbar-mobile-btn');
+    
+    if (isFullscreen && currentView === 'write') {
+        // Show toggle buttons in fullscreen
+        if (desktopToggleBtn) {
+            desktopToggleBtn.style.display = 'flex';
+        }
+        if (mobileToggleBtn) {
+            mobileToggleBtn.style.display = 'block';
+        }
+    } else {
+        // Hide toggle buttons in normal mode
+        if (desktopToggleBtn) {
+            desktopToggleBtn.style.display = 'none';
+        }
+        if (mobileToggleBtn) {
+            mobileToggleBtn.style.display = 'none';
+        }
+        
+        // Reset to side position when exiting fullscreen
+        if (!isFullscreen && toolbarPosition === 'bottom') {
+            toolbarPosition = 'side';
+            const desktopToolbar = document.getElementById('desktop-side-toolbar');
+            const mobileToolbar = document.getElementById('mobile-keyboard-toolbar');
+            
+            if (desktopToolbar) {
+                desktopToolbar.style.display = 'flex';
+            }
+            if (mobileToolbar && window.innerWidth > 768) {
+                mobileToolbar.classList.remove('show');
+            }
+        }
+    }
+}
+
 	
 	
     // Scene Navigator with Drag & Drop
@@ -2758,35 +2854,80 @@ function cycleTransition(text) {
             redoBtnTop.addEventListener('click', () => history.redo());
         }
 
+	   // Fullscreen button - UPDATED with toolbar button visibility
 	   const fullscreenBtnMain = document.getElementById('fullscreen-btn-main');
 	   if (fullscreenBtnMain) {
 	       fullscreenBtnMain.addEventListener('click', () => {
 	           if (!document.fullscreenElement) {
-	               // Entering fullscreen
 	               document.documentElement.requestFullscreen();
 	               document.body.classList.add('fullscreen-active');
             
-	               // Hide current header
 	               if (currentView === 'write' && mainHeader) mainHeader.style.display = 'none';
 	               if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'none';
 	               if (currentView === 'card' && cardHeader) cardHeader.style.display = 'none';
             
+	               // Show toolbar toggle button
+	               updateFullscreenToolbarButton();
 	           } else {
-	               // Exiting fullscreen
 	               if (document.exitFullscreen) {
 	                   document.exitFullscreen();
 	               }
 	               document.body.classList.remove('fullscreen-active');
             
-	               // Restore current header
 	               setTimeout(() => {
 	                   if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
 	                   if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
 	                   if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
+                
+	                   // Hide toolbar toggle button
+	                   updateFullscreenToolbarButton();
 	               }, 100);
 	           }
 	       });
 	   }
+
+	   // NEW: Toolbar position toggle buttons
+	   const toggleToolbarBtn = document.getElementById('toggle-toolbar-position-btn');
+	   if (toggleToolbarBtn) {
+	       toggleToolbarBtn.addEventListener('click', toggleToolbarPosition);
+	   }
+
+	   const toggleToolbarMobileBtn = document.getElementById('toggle-toolbar-mobile-btn');
+	   if (toggleToolbarMobileBtn) {
+	       toggleToolbarMobileBtn.addEventListener('click', toggleToolbarPosition);
+	   }
+
+	   // Fullscreen change events - UPDATED
+	   document.addEventListener('fullscreenchange', () => {
+	       if (!document.fullscreenElement) {
+	           document.body.classList.remove('fullscreen-active');
+	           setTimeout(() => {
+	               if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
+	               else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
+	               else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
+            
+	               updateFullscreenToolbarButton();
+	           }, 100);
+	       } else {
+	           updateFullscreenToolbarButton();
+	       }
+	   });
+
+	   document.addEventListener('webkitfullscreenchange', () => {
+	       if (!document.webkitFullscreenElement) {
+	           document.body.classList.remove('fullscreen-active');
+	           setTimeout(() => {
+	               if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
+	               else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
+	               else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
+            
+	               updateFullscreenToolbarButton();
+	           }, 100);
+	       } else {
+	           updateFullscreenToolbarButton();
+	       }
+	   });
+	   
        
 
 
