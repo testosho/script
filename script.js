@@ -1533,6 +1533,63 @@ FADE OUT.`;
     
        setTimeout(() => { isUpdatingFromSync = false; }, 100);
    }
+   
+   // ========================================
+   // MISSING CARD VIEW FUNCTIONS - ADD THESE
+   // ========================================
+
+   // Wrapper function for syncCardsToEditor
+   function syncCardsWithScript() {
+       renderEnhancedCardView();
+       bindCardEditingEvents();
+   }
+
+   // Wrapper for addNewSceneCard
+   function addNewCard() {
+       addNewSceneCard(null);
+   }
+
+   // Share individual scene card
+   function shareSceneCard(sceneId) {
+       const scene = projectData.projectInfo.scenes.find(s => s.number == sceneId);
+       if (!scene) return;
+    
+       const shareText = `Scene ${sceneId}: ${scene.heading}\n\n${scene.description.join('\n')}`;
+    
+       if (navigator.share) {
+           navigator.share({
+               title: `Scene ${sceneId}`,
+               text: shareText
+           }).then(() => {
+               showToast('Card shared');
+           }).catch(() => {
+               navigator.clipboard.writeText(shareText).then(() => {
+                   showToast('Card copied to clipboard');
+               });
+           });
+       } else {
+           navigator.clipboard.writeText(shareText).then(() => {
+               showToast('Card copied to clipboard');
+           });
+       }
+   }
+
+   // Setup mobile card actions
+   function setupMobileCardActions() {
+       const cards = document.querySelectorAll('.scene-card');
+       cards.forEach(card => {
+           card.addEventListener('touchstart', () => {
+               card.classList.add('active');
+           });
+        
+           card.addEventListener('touchend', () => {
+               setTimeout(() => {
+                   card.classList.remove('active');
+               }, 300);
+           });
+       });
+   }
+   
 
    // Add New Scene Card
    function addNewSceneCard(afterSceneId = null) {
