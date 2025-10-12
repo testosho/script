@@ -1313,273 +1313,281 @@ FADE OUT.`;
         showToast('Scene order exported');
     }
 	
-    // ========================================
-    // CARD VIEW - SYNC WITH SCRIPT
-    // ========================================
-    function syncCardsWithScript() {
-        if (currentView !== 'card' && !cardContainer.children.length) return;
-        
-        const scenes = projectData.projectInfo.scenes;
-        const existingCards = Array.from(cardContainer.querySelectorAll('.scene-card'));
-        
-        // Remove cards for deleted scenes
-        existingCards.forEach(card => {
-            const cardIndex = parseInt(card.getAttribute('data-scene-index'));
-            if (!scenes[cardIndex]) {
-                card.remove();
-            }
-        });
-        
-        // Update or create cards
-        scenes.forEach((scene, index) => {
-            let card = cardContainer.querySelector(`[data-scene-index="${index}"]`);
-            
-            if (!card) {
-                card = createSceneCard(scene, index);
-                cardContainer.appendChild(card);
-            } else {
-                updateSceneCard(card, scene, index);
-            }
-        });
-        
-        // Initialize sortable for cards
-        initializeCardSortable();
-    }
+   // ========================================
+   // CARD VIEW - ORIGINAL WORKING VERSION
+   // ========================================
+
+   // Enhanced Card View with Mobile Pagination
+   function renderEnhancedCardView() {
+       const cardContainer = document.getElementById('card-container');
+       console.log('=== RENDERING CARD VIEW ===');
     
-    function createSceneCard(scene, index) {
-        const card = document.createElement('div');
-        card.className = 'scene-card';
-        card.setAttribute('data-scene-index', index);
+       if (!cardContainer) {
+           console.error('Card container not found');
+           return;
+       }
+
+       const scenes = projectData.projectInfo.scenes;
+       console.log('Scenes to render:', scenes.length);
+       const isMobile = window.innerWidth < 768;
+
+       if (scenes.length === 0) {
+           cardContainer.innerHTML = `
+               <div style="grid-column: 1 / -1; text-align: center; padding: 4rem; color: var(--muted-text-color);">
+                   <i class="fas fa-film" style="font-size: 4rem; margin-bottom: 2rem; opacity: 0.3;"></i>
+                   <h3>No scenes found</h3>
+                   <p>Write some scenes in the editor with INT. or EXT. headings</p>
+                   <p style="font-size: 0.9rem; margin-top: 1rem;">Example: INT. OFFICE - DAY</p>
+               </div>`;
+           return;
+       }
+
+       let scenesToShow = scenes;
+       if (isMobile) {
+           const startIdx = currentPage * cardsPerPage;
+           const endIdx = startIdx + cardsPerPage;
+           scenesToShow = scenes.slice(startIdx, endIdx);
+       }
+
+       cardContainer.innerHTML = scenesToShow.map(scene => `
+           <div class="scene-card card-for-export" data-scene-id="${scene.number}" data-scene-number="${scene.number}">
+               <div class="scene-card-content">
+                   <div class="card-header">
+                       <div class="card-scene-title" contenteditable="true" data-placeholder="Enter scene heading...">${scene.heading}</div>
+                       <input class="card-scene-number" type="text" value="${scene.number}" maxlength="4" data-scene-id="${scene.number}">
+                   </div>
+                   <div class="card-body">
+                       <textarea class="card-description" placeholder="Enter scene description (action only)..." data-scene-id="${scene.number}">${scene.description.join('\n')}</textarea>
+                   </div>
+                   <div class="card-watermark">TO SCRIPT</div>
+               </div>
+               <div class="card-actions">
+                   <button class="icon-btn share-card-btn" title="Share Scene" data-scene-id="${scene.number}">
+                       <i class="fas fa-share-alt"></i>
+                   </button>
+                   <button class="icon-btn delete-card-btn" title="Delete Scene" data-scene-id="${scene.number}">
+                       <i class="fas fa-trash"></i>
+                   </button>
+                   ${isMobile ? `<button class="icon-btn add-card-btn-mobile" title="Add New Scene" data-scene-id="${scene.number}">
+                       <i class="fas fa-plus"></i>
+                   </button>` : ''}
+               </div>
+           </div>
+       `).join('');
+
+       if (isMobile && scenes.length > cardsPerPage) {
+           const totalPages = Math.ceil(scenes.length / cardsPerPage);
+           let paginationHtml = '<div class="mobile-pagination">';
         
-        const content = document.createElement('div');
-        content.className = 'scene-card-content';
+           for (let i = 0; i < totalPages; i++) {
+               const startNum = i * cardsPerPage + 1;
+               const endNum = Math.min((i + 1) * cardsPerPage, scenes.length);
+               const isActive = i === currentPage;
+               paginationHtml += `
+                   <button class="pagination-btn ${isActive ? 'active' : ''}" data-page="${i}">
+                       ${startNum}-${endNum}
+                   </button>
+               `;
+           }
         
-        // Card Header
-        const header = document.createElement('div');
-        header.className = 'card-header';
+           paginationHtml += '</div>';
+           cardContainer.insertAdjacentHTML('beforeend', paginationHtml);
         
-        const title = document.createElement('div');
-        title.className = 'card-scene-title';
-        title.contentEditable = 'true';
-        title.textContent = scene.text;
-        title.setAttribute('data-placeholder', 'Scene heading...');
-        
-        const sceneNumber = document.createElement('input');
-        sceneNumber.type = 'text';
-        sceneNumber.className = 'card-scene-number';
-        sceneNumber.value = index + 1;
-        sceneNumber.readOnly = true;
-        
-        header.appendChild(title);
-        header.appendChild(sceneNumber);
-        
-        // Card Body
-        const body = document.createElement('div');
-        body.className = 'card-body';
-        
-        const description = document.createElement('textarea');
-        description.className = 'card-description';
-        description.placeholder = 'Scene description, notes, or breakdown...';
-        description.value = scene.description || '';
-        
-        body.appendChild(description);
-        
-        // Card Actions (Side buttons)
-        const actions = document.createElement('div');
-        actions.className = 'card-actions';
-        
-        const shareBtn = document.createElement('button');
-        shareBtn.className = 'icon-btn share-card-btn';
-        shareBtn.innerHTML = '<i class="fas fa-share-alt"></i>';
-        shareBtn.title = 'Share Card';
-        shareBtn.onclick = (e) => {
-            e.stopPropagation();
-            shareCard(index);
-        };
-        
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'icon-btn delete-card-btn';
-        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-        deleteBtn.title = 'Delete Scene';
-        deleteBtn.onclick = (e) => {
-            e.stopPropagation();
-            deleteScene(index);
-        };
-        
-        actions.appendChild(shareBtn);
-        actions.appendChild(deleteBtn);
-        
-        // Watermark
-        const watermark = document.createElement('div');
-        watermark.className = 'card-watermark';
-        watermark.textContent = 'ToscripT';
-        
-        // Assemble card
-        content.appendChild(header);
-        content.appendChild(body);
-        content.appendChild(watermark);
-        card.appendChild(content);
-        card.appendChild(actions);
-        
-        // Event listeners
-        title.addEventListener('blur', () => updateCardTitle(index, title.textContent));
-        description.addEventListener('input', () => updateCardDescription(index, description.value));
-        
-        card.addEventListener('click', () => {
-            document.querySelectorAll('.scene-card').forEach(c => c.classList.remove('active'));
-            card.classList.add('active');
-        });
-        
-        return card;
-    }
+           document.querySelectorAll('.pagination-btn').forEach(btn => {
+               btn.addEventListener('click', (e) => {
+                   currentPage = parseInt(e.target.dataset.page);
+                   renderEnhancedCardView();
+                   bindCardEditingEvents();
+                
+                   if (cardHeader && currentView === 'card') {
+                       cardHeader.style.display = 'flex';
+                   }
+                
+                   if (window.innerWidth < 768) {
+                       setTimeout(() => setupMobileCardActions(), 100);
+                   }
+               });
+           });
+       }
+
+       console.log('Cards rendered successfully');
     
-    function updateSceneCard(card, scene, index) {
-        const title = card.querySelector('.card-scene-title');
-        const sceneNumber = card.querySelector('.card-scene-number');
-        
-        if (title && title.textContent !== scene.text) {
-            title.textContent = scene.text;
-        }
-        
-        if (sceneNumber) {
-            sceneNumber.value = index + 1;
-        }
-        
-        card.setAttribute('data-scene-index', index);
-    }
+       if (cardHeader && currentView === 'card') {
+           cardHeader.style.display = 'flex';
+       }
     
-    function updateCardTitle(index, newTitle) {
-        const scene = projectData.projectInfo.scenes[index];
-        if (scene) {
-            scene.text = newTitle;
-            
-            // Update in script
-            const lines = fountainInput.value.split('\n');
-            lines[scene.lineIndex] = newTitle;
-            
-            isUpdatingFromSync = true;
-            fountainInput.value = lines.join('\n');
-            isUpdatingFromSync = false;
-            
-            updatePreview();
-            extractAndDisplayScenes();
-            saveToLocalStorage();
-        }
-    }
+       if (isMobile) {
+           setTimeout(() => {
+               setupMobileCardActions();
+           }, 100);
+       }
+   }
+
+   // Bind Card Editing Events
+   function bindCardEditingEvents() {
+       const cardContainer = document.getElementById('card-container');
+       if (!cardContainer) return;
+
+       cardContainer.removeEventListener('input', handleCardInput);
+       cardContainer.removeEventListener('blur', handleCardBlur, true);
+       cardContainer.removeEventListener('click', handleCardClick);
+
+       cardContainer.addEventListener('input', handleCardInput);
+       cardContainer.addEventListener('blur', handleCardBlur, true);
+       cardContainer.addEventListener('click', handleCardClick);
+
+       function handleCardInput(e) {
+           if (e.target.classList.contains('card-scene-title') || 
+               e.target.classList.contains('card-description') || 
+               e.target.classList.contains('card-scene-number')) {
+               clearTimeout(handleCardInput.timeout);
+               handleCardInput.timeout = setTimeout(() => {
+                   syncCardsToEditor();
+               }, 800);
+           }
+       }
+
+       function handleCardBlur(e) {
+           if (e.target.classList.contains('card-scene-title') || 
+               e.target.classList.contains('card-description') || 
+               e.target.classList.contains('card-scene-number')) {
+               syncCardsToEditor();
+           }
+       }
+
+       function handleCardClick(e) {
+           if (e.target.closest('.delete-card-btn')) {
+               const sceneId = e.target.closest('.delete-card-btn').getAttribute('data-scene-id');
+               const card = cardContainer.querySelector(`.scene-card[data-scene-id="${sceneId}"]`);
+               if (card && confirm('Delete this scene card?')) {
+                   card.remove();
+                
+                   const allScenes = projectData.projectInfo.scenes;
+                   const sceneIndex = allScenes.findIndex(s => s.number == sceneId);
+                   if (sceneIndex !== -1) {
+                       allScenes.splice(sceneIndex, 1);
+                       allScenes.forEach((scene, index) => {
+                           scene.number = index + 1;
+                       });
+                       projectData.projectInfo.scenes = allScenes;
+                   }
+                
+                   renderEnhancedCardView();
+                   bindCardEditingEvents();
+                
+                   if (cardHeader && currentView === 'card') {
+                       cardHeader.style.display = 'flex';
+                   }
+                
+                   syncCardsToEditor();
+               }
+           } else if (e.target.closest('.share-card-btn')) {
+               const sceneId = e.target.closest('.share-card-btn').getAttribute('data-scene-id');
+               shareSceneCard(sceneId);
+           } else if (e.target.closest('.add-card-btn-mobile')) {
+               const sceneId = e.target.closest('.add-card-btn-mobile').getAttribute('data-scene-id');
+               addNewSceneCard(sceneId);
+           }
+       }
+   }
+
+   // Sync Cards to Editor
+   function syncCardsToEditor() {
+       const cardContainer = document.getElementById('card-container');
+       if (!cardContainer || !fountainInput) return;
+
+       isUpdatingFromSync = true;
     
-    function updateCardDescription(index, description) {
-        const scene = projectData.projectInfo.scenes[index];
-        if (scene) {
-            scene.description = description;
-            saveToLocalStorage();
-        }
-    }
+       let scriptText = '';
+       const cards = Array.from(cardContainer.querySelectorAll('.scene-card'));
     
-    function addNewCard() {
-        const newSceneText = 'INT. NEW LOCATION - DAY';
-        
-        fountainInput.value += '\n\n' + newSceneText + '\n\nNew scene action.\n';
-        
-        updatePreview();
-        extractAndDisplayScenes();
-        syncCardsWithScript();
-        saveToLocalStorage();
-        
-        showToast('New scene added');
-        
-        // Scroll to bottom
-        setTimeout(() => {
-            cardContainer.scrollTop = cardContainer.scrollHeight;
-        }, 100);
-    }
+       cards.forEach((card, index) => {
+           const titleElement = card.querySelector('.card-scene-title');
+           const descriptionElement = card.querySelector('.card-description');
+           let title = titleElement ? titleElement.textContent.trim() : '';
+           let description = descriptionElement ? descriptionElement.value.trim() : '';
+
+           if (title && !title.match(/(INT\.|EXT\.|INT\.\/EXT\.|EXT\.\/INT\.)/i)) {
+               title = 'INT. ' + title.toUpperCase();
+           } else {
+               title = title.toUpperCase();
+           }
+
+           const numberElement = card.querySelector('.card-scene-number');
+           if (numberElement) {
+               numberElement.value = index + 1;
+           }
+
+           scriptText += title + '\n';
+           if (description) {
+               scriptText += description + '\n\n';
+           }
+       });
+
+       const trimmedScript = scriptText.trim();
+       if (trimmedScript !== fountainInput.value.trim() && trimmedScript !== '') {
+           fountainInput.value = trimmedScript;
+           fountainInput.classList.remove('placeholder');
+           saveToLocalStorage();
+       }
     
-    function shareCard(index) {
-        const scene = projectData.projectInfo.scenes[index];
-        
-        if (!scene) return;
-        
-        const shareText = `Scene ${index + 1}: ${scene.text}\n\n${scene.description || 'No description'}`;
-        
-        if (navigator.share) {
-            navigator.share({
-                title: `Scene ${index + 1}`,
-                text: shareText
-            }).then(() => {
-                showToast('Card shared');
-            }).catch((err) => {
-                console.log('Share cancelled or failed:', err);
-            });
-        } else {
-            // Fallback: Copy to clipboard
-            navigator.clipboard.writeText(shareText).then(() => {
-                showToast('Card copied to clipboard');
-            }).catch(() => {
-                showToast('Failed to copy card', 'error');
-            });
-        }
-    }
+       setTimeout(() => { isUpdatingFromSync = false; }, 100);
+   }
+
+   // Add New Scene Card
+   function addNewSceneCard(afterSceneId = null) {
+       const cardContainer = document.getElementById('card-container');
+       if (!cardContainer) return;
+
+       const allScenes = projectData.projectInfo.scenes;
+       const newSceneNumber = allScenes.length + 1;
+
+       const newScene = {
+           number: newSceneNumber,
+           heading: 'INT. NEW SCENE - DAY',
+           sceneType: 'INT.',
+           location: 'NEW SCENE',
+           timeOfDay: 'DAY',
+           description: [],
+           characters: [],
+           fullText: 'INT. NEW SCENE - DAY\n'
+       };
     
-    function deleteScene(index) {
-        if (!confirm('Delete this scene? This will remove it from your script.')) {
-            return;
-        }
-        
-        const scene = projectData.projectInfo.scenes[index];
-        const lines = fountainInput.value.split('\n');
-        
-        // Find scene end
-        let startLine = scene.lineIndex;
-        let endLine = startLine;
-        
-        for (let i = startLine + 1; i < lines.length; i++) {
-            if (/^(INT|EXT|INT\.\/EXT|EXT\.\/INT|I\/E)[\.\s]/i.test(lines[i].trim())) {
-                break;
-            }
-            endLine = i;
-        }
-        
-        // Remove lines
-        lines.splice(startLine, endLine - startLine + 1);
-        
-        // Remove extra blank lines
-        while (lines[startLine] && lines[startLine].trim() === '' && 
-               lines[startLine - 1] && lines[startLine - 1].trim() === '') {
-            lines.splice(startLine, 1);
-        }
-        
-        isUpdatingFromSync = true;
-        fountainInput.value = lines.join('\n');
-        isUpdatingFromSync = false;
-        
-        updatePreview();
-        extractAndDisplayScenes();
-        syncCardsWithScript();
-        saveToLocalStorage();
-        
-        showToast('Scene deleted');
-        
-        // Haptic feedback
-        if (navigator.vibrate) {
-            navigator.vibrate(50);
-        }
-    }
+       if (afterSceneId) {
+           const insertIndex = allScenes.findIndex(s => s.number == afterSceneId);
+           if (insertIndex !== -1) {
+               allScenes.splice(insertIndex + 1, 0, newScene);
+               allScenes.forEach((scene, index) => {
+                   scene.number = index + 1;
+               });
+           } else {
+               allScenes.push(newScene);
+           }
+       } else {
+           allScenes.push(newScene);
+       }
     
-    function initializeCardSortable() {
-        if (typeof Sortable !== 'undefined' && cardContainer) {
-            new Sortable(cardContainer, {
-                animation: 200,
-                ghostClass: 'sortable-ghost',
-                chosenClass: 'sortable-chosen',
-                dragClass: 'dragging',
-                handle: '.scene-card',
-                onEnd: function(evt) {
-                    reorderScenes(evt.oldIndex, evt.newIndex);
-                    syncCardsWithScript();
-                }
-            });
-        }
-    }
+       projectData.projectInfo.scenes = allScenes;
     
+       renderEnhancedCardView();
+       bindCardEditingEvents();
+    
+       if (cardHeader && currentView === 'card') {
+           cardHeader.style.display = 'flex';
+       }
+    
+       setTimeout(() => {
+           const newCard = cardContainer.querySelector(`.scene-card[data-scene-number="${newSceneNumber}"]`);
+           if (newCard) {
+               newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+               const titleElement = newCard.querySelector('.card-scene-title');
+               if (titleElement) titleElement.focus();
+           }
+       }, 100);
+
+       syncCardsToEditor();
+   }
+   
     // ========================================
     // SAVE ALL CARDS AS PDF (Optimized for Mobile)
     // ========================================
@@ -3129,35 +3137,22 @@ if ('serviceWorker' in navigator) {
 window.addEventListener('error', (e) => {
     console.error('Global error:', e.error);
     
-    // Don't show toast for network errors
-    if (e.error && e.error.message && !e.error.message.includes('Failed to fetch')) {
-        // Show user-friendly error
-        const errorMsg = document.createElement('div');
-        errorMsg.style.position = 'fixed';
-        errorMsg.style.top = '50%';
-        errorMsg.style.left = '50%';
-        errorMsg.style.transform = 'translate(-50%, -50%)';
-        errorMsg.style.background = 'rgba(239, 68, 68, 0.95)';
-        errorMsg.style.color = 'white';
-        errorMsg.style.padding = '20px 30px';
-        errorMsg.style.borderRadius = '12px';
-        errorMsg.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.4)';
-        errorMsg.style.zIndex = '10002';
-        errorMsg.style.maxWidth = '80%';
-        errorMsg.style.textAlign = 'center';
-        errorMsg.innerHTML = `
-            <h3 style="margin: 0 0 10px 0;">Something went wrong</h3>
-            <p style="margin: 0; font-size: 14px;">The app encountered an error. Your work has been saved automatically.</p>
-            <button onclick="window.location.reload()" style="margin-top: 15px; padding: 8px 20px; background: white; color: #ef4444; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                Reload App
-            </button>
-        `;
-        
-        document.body.appendChild(errorMsg);
-        
-        setTimeout(() => {
-            errorMsg.remove();
-        }, 10000);
+    // Ignore common harmless errors
+    if (e.error && e.error.message) {
+        const msg = e.error.message.toLowerCase();
+        if (msg.includes('script error') || 
+            msg.includes('failed to fetch') ||
+            msg.includes('load failed') ||
+            msg.includes('network error')) {
+            return; // Don't show error dialog
+        }
+    }
+    
+    // Only show critical errors
+    if (e.error && e.error.stack && !e.error.message.includes('ResizeObserver')) {
+        console.error('Critical error detected:', e.error);
+        // Optional: show error only in development
+        // Remove this entire section for production
     }
 });
 
