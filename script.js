@@ -1733,14 +1733,15 @@ function cycleTransition(text) {
     }
 }
 
-// UPDATED: Focus Mode Toggle (Fullscreen + Clean UI)
+// UPDATED: Focus Mode Toggle
 let focusModeActive = false;
+let focusExitBtn = null;
 
 function toggleFocusMode() {
     const body = document.body;
     const mobileToolbar = document.getElementById('mobile-keyboard-toolbar');
     const desktopToolbar = document.getElementById('desktop-side-toolbar');
-    const focusIcon = document.getElementById('focus-mode-icon');
+    const focusBtn = document.getElementById('focus-mode-btn');
     
     focusModeActive = !focusModeActive;
     
@@ -1753,16 +1754,22 @@ function toggleFocusMode() {
             desktopToolbar.style.display = 'none';
         }
         
-        // Show mobile toolbar at bottom with all buttons
+        // Show mobile toolbar at bottom
         if (mobileToolbar) {
             mobileToolbar.classList.add('show');
             mobileToolbar.style.display = 'block';
         }
         
-        // Change icon to "eye-slash" (hidden)
-        if (focusIcon) {
-            focusIcon.className = 'fas fa-eye-slash';
+        // Create exit button at top-right
+        if (!focusExitBtn) {
+            focusExitBtn = document.createElement('button');
+            focusExitBtn.className = 'focus-exit-btn';
+            focusExitBtn.innerHTML = '✕';
+            focusExitBtn.title = 'Exit Focus Mode';
+            focusExitBtn.addEventListener('click', toggleFocusMode);
+            document.body.appendChild(focusExitBtn);
         }
+        focusExitBtn.style.display = 'flex';
         
         console.log('Focus Mode: ON - Distraction-free writing');
     } else {
@@ -1779,29 +1786,29 @@ function toggleFocusMode() {
             mobileToolbar.classList.remove('show');
         }
         
-        // Change icon back to "eye" (visible)
-        if (focusIcon) {
-            focusIcon.className = 'fas fa-eye';
+        // Hide exit button
+        if (focusExitBtn) {
+            focusExitBtn.style.display = 'none';
         }
         
         console.log('Focus Mode: OFF - All UI visible');
     }
 }
 
-/// UPDATED: Show/hide focus mode toggle based on fullscreen
+// UPDATED: Show/hide focus button based on fullscreen
 function updateFocusModeButton() {
     const isFullscreen = document.fullscreenElement || document.body.classList.contains('fullscreen-active');
-    const focusToggleBtn = document.getElementById('focus-mode-toggle-btn');
+    const focusBtn = document.getElementById('focus-mode-btn');
     
     if (isFullscreen && currentView === 'write') {
-        // Show focus mode toggle in fullscreen write mode
-        if (focusToggleBtn) {
-            focusToggleBtn.style.display = 'flex';
+        // Show focus button in fullscreen write mode
+        if (focusBtn) {
+            focusBtn.style.display = 'flex';
         }
     } else {
-        // Hide toggle button in normal mode
-        if (focusToggleBtn) {
-            focusToggleBtn.style.display = 'none';
+        // Hide focus button in normal mode
+        if (focusBtn) {
+            focusBtn.style.display = 'none';
         }
         
         // Reset focus mode when exiting fullscreen
@@ -1819,9 +1826,8 @@ function updateFocusModeButton() {
                 mobileToolbar.classList.remove('show');
             }
             
-            const focusIcon = document.getElementById('focus-mode-icon');
-            if (focusIcon) {
-                focusIcon.className = 'fas fa-eye';
+            if (focusExitBtn) {
+                focusExitBtn.style.display = 'none';
             }
         }
     }
@@ -2908,43 +2914,68 @@ function updateFocusModeButton() {
 	  }
 	  
 
-	 // NEW: Focus Mode Toggle Button
-	 const focusModeToggleBtn = document.getElementById('focus-mode-toggle-btn');
-	 if (focusModeToggleBtn) {
-	     focusModeToggleBtn.addEventListener('click', toggleFocusMode);
-	 }
-
-	 // Fullscreen change events - UPDATED
-	 document.addEventListener('fullscreenchange', () => {
-	     if (!document.fullscreenElement) {
-	         document.body.classList.remove('fullscreen-active');
-	         setTimeout(() => {
-	             if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
-	             else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
-	             else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
-            
-	             updateFocusModeButton();
-	         }, 100);
-	     } else {
-	         updateFocusModeButton();
+	 // *** ADD THE FOCUS MODE BUTTON LISTENER RIGHT HERE ***
+	     // NEW: Focus Mode Button
+	     const focusModeBtn = document.getElementById('focus-mode-btn');
+	     if (focusModeBtn) {
+	         focusModeBtn.addEventListener('click', (e) => {
+	             e.preventDefault();
+	             e.stopPropagation();
+	             toggleFocusMode();
+	         });
 	     }
-	 });
 
-	 document.addEventListener('webkitfullscreenchange', () => {
-	     if (!document.webkitFullscreenElement) {
-	         document.body.classList.remove('fullscreen-active');
-	         setTimeout(() => {
-	             if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
-	             else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
-	             else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
-            
+	     // Desktop Side Toolbar Buttons
+	     const desktopActionBtns = document.querySelectorAll('#desktop-side-toolbar .action-btn');
+	     desktopActionBtns.forEach(btn => {
+	         btn.addEventListener('click', () => {
+	             const action = btn.getAttribute('data-action');
+	             handleActionBtn(action);
+	         });
+	     });
+
+	     // Mobile Keyboard Buttons - FIXED
+	     const mobileKeyboardBtns = document.querySelectorAll('.keyboard-btn');
+	     mobileKeyboardBtns.forEach(btn => {
+	         btn.addEventListener('click', (e) => {
+	             e.preventDefault();
+	             e.stopPropagation();
+	             const action = btn.getAttribute('data-action');
+	             console.log('Mobile button clicked:', action);
+	             handleActionBtn(action);
+	         });
+	     });
+
+	     // Fullscreen change events
+	     document.addEventListener('fullscreenchange', () => {
+	         if (!document.fullscreenElement) {
+	             document.body.classList.remove('fullscreen-active');
+	             setTimeout(() => {
+	                 if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
+	                 else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
+	                 else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
+                
+	                 updateFocusModeButton();
+	             }, 100);
+	         } else {
 	             updateFocusModeButton();
-	         }, 100);
-	     } else {
-	         updateFocusModeButton();
-	     }
-	 });
-	   
+	         }
+	     });
+
+	     document.addEventListener('webkitfullscreenchange', () => {
+	         if (!document.webkitFullscreenElement) {
+	             document.body.classList.remove('fullscreen-active');
+	             setTimeout(() => {
+	                 if (currentView === 'write' && mainHeader) mainHeader.style.display = 'flex';
+	                 else if (currentView === 'script' && scriptHeader) scriptHeader.style.display = 'flex';
+	                 else if (currentView === 'card' && cardHeader) cardHeader.style.display = 'flex';
+                
+	                 updateFocusModeButton();
+	             }, 100);
+	         } else {
+	             updateFocusModeButton();
+	         }
+	     });
        
 
 
