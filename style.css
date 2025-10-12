@@ -1557,3 +1557,78 @@ textarea::-webkit-scrollbar-thumb,
         gap: 8px;
     }
 }
+
+/* Floating Focus Mode Toggle Button */
+.focus-mode-toggle {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+    cursor: pointer;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.focus-mode-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.6);
+    background: linear-gradient(135deg, #d97706, #b45309);
+}
+
+.focus-mode-toggle:active {
+    transform: scale(0.95);
+}
+
+/* Focus Mode Active State */
+body.focus-mode-active .focus-mode-toggle {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+}
+
+body.focus-mode-active .focus-mode-toggle:hover {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.6);
+}
+
+/* Hide all UI in focus mode */
+body.focus-mode-active #main-header,
+body.focus-mode-active #script-header,
+body.focus-mode-active #card-header,
+body.focus-mode-active #desktop-side-toolbar,
+body.focus-mode-active #main-toolbar {
+    display: none !important;
+}
+
+/* Show only mobile toolbar at bottom in focus mode */
+body.focus-mode-active #mobile-keyboard-toolbar {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+body.focus-mode-active .main-content {
+    height: 100vh;
+}
+
+body.focus-mode-active .editor-area {
+    padding: 0;
+    padding-bottom: 80px;
+}
+
+body.focus-mode-active #fountain-input {
+    padding: 2rem;
+    height: calc(100vh - 80px);
+}
+
