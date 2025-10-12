@@ -1715,84 +1715,82 @@ function cycleTransition(text) {
     }
 }
 
-// NEW: Fullscreen Toolbar Toggle
-let toolbarPosition = 'side'; // 'side' or 'bottom'
+// UPDATED: Focus Mode Toggle (Fullscreen + Clean UI)
+let focusModeActive = false;
 
-function toggleToolbarPosition() {
-    const desktopToolbar = document.getElementById('desktop-side-toolbar');
+function toggleFocusMode() {
+    const body = document.body;
     const mobileToolbar = document.getElementById('mobile-keyboard-toolbar');
-    const editorArea = document.querySelector('.editor-area');
+    const desktopToolbar = document.getElementById('desktop-side-toolbar');
+    const focusIcon = document.getElementById('focus-mode-icon');
     
-    if (toolbarPosition === 'side') {
-        // Move to bottom
-        toolbarPosition = 'bottom';
+    focusModeActive = !focusModeActive;
+    
+    if (focusModeActive) {
+        // Enable Focus Mode
+        body.classList.add('focus-mode-active');
         
         // Hide side toolbar
         if (desktopToolbar) {
             desktopToolbar.style.display = 'none';
         }
         
-        // Show mobile toolbar at bottom
+        // Show mobile toolbar at bottom with all buttons
         if (mobileToolbar) {
             mobileToolbar.classList.add('show');
             mobileToolbar.style.display = 'block';
         }
         
-        // Add padding to editor
-        if (editorArea) {
-            editorArea.style.paddingBottom = '80px';
+        // Change icon to "eye-slash" (hidden)
+        if (focusIcon) {
+            focusIcon.className = 'fas fa-eye-slash';
         }
         
-        console.log('Toolbar moved to bottom');
+        console.log('Focus Mode: ON - Distraction-free writing');
     } else {
-        // Move to side
-        toolbarPosition = 'side';
+        // Disable Focus Mode
+        body.classList.remove('focus-mode-active');
         
-        // Show side toolbar
+        // Show side toolbar again
         if (desktopToolbar) {
             desktopToolbar.style.display = 'flex';
         }
         
-        // Hide mobile toolbar
-        if (mobileToolbar) {
+        // Hide mobile toolbar (unless on mobile device)
+        if (mobileToolbar && window.innerWidth > 768) {
             mobileToolbar.classList.remove('show');
         }
         
-        // Remove padding
-        if (editorArea) {
-            editorArea.style.paddingBottom = '0.5rem';
+        // Change icon back to "eye" (visible)
+        if (focusIcon) {
+            focusIcon.className = 'fas fa-eye';
         }
         
-        console.log('Toolbar moved to side');
+        console.log('Focus Mode: OFF - All UI visible');
     }
 }
 
-// Show/hide toggle button based on fullscreen state
-function updateFullscreenToolbarButton() {
+/// UPDATED: Show/hide focus mode toggle based on fullscreen
+function updateFocusModeButton() {
     const isFullscreen = document.fullscreenElement || document.body.classList.contains('fullscreen-active');
-    const desktopToggleBtn = document.getElementById('toggle-toolbar-position-btn');
-    const mobileToggleBtn = document.getElementById('toggle-toolbar-mobile-btn');
+    const focusToggleBtn = document.getElementById('focus-mode-toggle-btn');
     
     if (isFullscreen && currentView === 'write') {
-        // Show toggle buttons in fullscreen
-        if (desktopToggleBtn) {
-            desktopToggleBtn.style.display = 'flex';
-        }
-        if (mobileToggleBtn) {
-            mobileToggleBtn.style.display = 'block';
+        // Show focus mode toggle in fullscreen write mode
+        if (focusToggleBtn) {
+            focusToggleBtn.style.display = 'flex';
         }
     } else {
-        // Hide toggle buttons in normal mode
-        if (desktopToggleBtn) {
-            desktopToggleBtn.style.display = 'none';
-        }
-        if (mobileToggleBtn) {
-            mobileToggleBtn.style.display = 'none';
+        // Hide toggle button in normal mode
+        if (focusToggleBtn) {
+            focusToggleBtn.style.display = 'none';
         }
         
-        // Reset to side position when exiting fullscreen
-        if (!isFullscreen && toolbarPosition === 'bottom') {
-            toolbarPosition = 'side';
+        // Reset focus mode when exiting fullscreen
+        if (!isFullscreen && focusModeActive) {
+            focusModeActive = false;
+            document.body.classList.remove('focus-mode-active');
+            
             const desktopToolbar = document.getElementById('desktop-side-toolbar');
             const mobileToolbar = document.getElementById('mobile-keyboard-toolbar');
             
@@ -1801,6 +1799,11 @@ function updateFullscreenToolbarButton() {
             }
             if (mobileToolbar && window.innerWidth > 768) {
                 mobileToolbar.classList.remove('show');
+            }
+            
+            const focusIcon = document.getElementById('focus-mode-icon');
+            if (focusIcon) {
+                focusIcon.className = 'fas fa-eye';
             }
         }
     }
