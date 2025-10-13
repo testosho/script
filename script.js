@@ -844,81 +844,202 @@ FADE OUT.`;
     // CARD VIEW RENDERING - TOSCRIPT1 COMPLETE LOGIC
     // ========================================
     
-    function renderEnhancedCardView() {
-        // First update the scene list
-        updateSceneList();
+	// Enhanced Card View with Mobile Pagination - CORECODE STYLE
+	function renderEnhancedCardView() {
+	    const cardContainer = document.getElementById('card-container');
+	    console.log('=== RENDERING CARD VIEW ===');
+    
+	    if (!cardContainer) {
+	        console.error('Card container not found');
+	        return;
+	    }
+
+	    const scenes = projectData.projectInfo.scenes;
+	    console.log('Scenes to render:', scenes.length);
+	    const isMobile = window.innerWidth < 768;
+
+	    if (scenes.length === 0) {
+	        cardContainer.innerHTML = `
+	            <div style="grid-column: 1 / -1; text-align: center; padding: 4rem; color: var(--muted-text-color);">
+	                <i class="fas fa-film" style="font-size: 4rem; margin-bottom: 2rem; opacity: 0.3;"></i>
+	                <h3>No scenes found</h3>
+	                <p>Write some scenes in the editor with INT. or EXT. headings</p>
+	                <p style="font-size: 0.9rem; margin-top: 1rem;">Example: INT. OFFICE - DAY</p>
+	            </div>`;
+	        return;
+	    }
+
+	    let scenesToShow = scenes;
+	    if (isMobile) {
+	        const startIdx = currentPage * cardsPerPage;
+	        const endIdx = startIdx + cardsPerPage;
+	        scenesToShow = scenes.slice(startIdx, endIdx);
+	    }
+
+	    cardContainer.innerHTML = scenesToShow.map(scene => `
+	        <div class="scene-card card-for-export" data-scene-id="${scene.number}" data-scene-number="${scene.number}">
+	            <div class="scene-card-content">
+	                <div class="card-header">
+	                    <div class="card-scene-title" contenteditable="true" data-placeholder="Enter scene heading...">${scene.heading}</div>
+	                    <input class="card-scene-number" type="text" value="${scene.number}" maxlength="4" data-scene-id="${scene.number}">
+	                </div>
+	                <div class="card-body">
+	                    <textarea class="card-description" placeholder="Enter scene description (action only)..." data-scene-id="${scene.number}">${scene.description.join('\n')}</textarea>
+	                </div>
+	                <div class="card-watermark">ToscripT</div>
+	            </div>
+	            <div class="card-actions">
+	                <button class="icon-btn share-card-btn" title="Share Scene" data-scene-id="${scene.number}">
+	                    <i class="fas fa-share-alt"></i>
+	                </button>
+	                <button class="icon-btn delete-card-btn" title="Delete Scene" data-scene-id="${scene.number}">
+	                    <i class="fas fa-trash"></i>
+	                </button>
+	                ${isMobile ? `<button class="icon-btn add-card-btn-mobile" title="Add New Scene" data-scene-id="${scene.number}">
+	                    <i class="fas fa-plus"></i>
+	                </button>` : ''}
+	            </div>
+	        </div>
+	    `).join('');
+
+	    // CORECODE PAGINATION: Shows "1-5", "6-10" format
+	    if (isMobile && scenes.length > cardsPerPage) {
+	        const totalPages = Math.ceil(scenes.length / cardsPerPage);
+	        let paginationHtml = '<div class="mobile-pagination">';
         
-        const scenes = projectData.projectInfo.scenes;
-        const totalPages = Math.ceil(scenes.length / cardsPerPage);
+	        for (let i = 0; i < totalPages; i++) {
+	            const startNum = i * cardsPerPage + 1;
+	            const endNum = Math.min((i + 1) * cardsPerPage, scenes.length);
+	            const isActive = i === currentPage;
+	            paginationHtml += `
+	                <button class="pagination-btn ${isActive ? 'active' : ''}" data-page="${i}">
+	                    ${startNum}-${endNum}
+	                </button>
+	            `;
+	        }
         
-        if (!cardContainer) return;
+	        paginationHtml += '</div>';
+	        cardContainer.insertAdjacentHTML('beforeend', paginationHtml);
         
-        if (scenes.length === 0) {
-            cardContainer.innerHTML = '<div style="text-align:center; color:#666; padding:50px; grid-column: 1/-1;">No scenes found. Add scene headings (INT./EXT.) to your script.</div>';
-            if (prevPageBtn) prevPageBtn.style.display = 'none';
-            if (nextPageBtn) nextPageBtn.style.display = 'none';
-            if (pageIndicator) pageIndicator.style.display = 'none';
-            return;
-        }
+	        document.querySelectorAll('.pagination-btn').forEach(btn => {
+	            btn.addEventListener('click', (e) => {
+	                currentPage = parseInt(e.target.dataset.page);
+	                renderEnhancedCardView();
+	                bindCardEditingEvents();
+                
+	                if (cardHeader && currentView === 'card') {
+	                    cardHeader.style.display = 'flex';
+	                }
+                
+	                if (window.innerWidth < 768) {
+	                    setTimeout(() => setupMobileCardActions(), 100);
+	                }
+	            });
+	        });
+	    }
+
+	    console.log('Cards rendered successfully');
+    
+	    if (cardHeader && currentView === 'card') {
+	        cardHeader.style.display = 'flex';
+	    }
+    
+	    if (isMobile) {
+	        setTimeout(() => {
+	            setupMobileCardActions();
+	        }, 100);
+	    }
+	}
+	
+	// Save Cards Modal with TXT Option - CORECODE STYLE
+	function showExportOptions() {
+	    const isMobile = window.innerWidth < 768;
+    
+	    let modal = document.getElementById('save-cards-modal');
+    
+	    if (!modal) {
+	        const mobileNotice = isMobile ? 
+	            `<p style="background: #2563eb; color: white; padding: 10px; border-radius: 6px; font-size: 0.9rem; margin-bottom: 15px;">
+	                <strong>📱 Mobile Mode:</strong> Using fast export method for better performance.
+	            </p>` : '';
         
-        // TOSCRIPT1: Calculate paginated visible cards
-        const startIndex = currentPage * cardsPerPage;
-        const endIndex = Math.min(startIndex + cardsPerPage, scenes.length);
-        const visibleScenes = scenes.slice(startIndex, endIndex);
+	        const modalHtml = `
+	            <div id="save-cards-modal" class="modal">
+	                <div class="modal-content">
+	                    <div class="modal-header">
+	                        <h2>Save Scene Cards</h2>
+	                        <button class="icon-btn close-modal-btn">&times;</button>
+	                    </div>
+	                    <div class="modal-body">
+	                        ${mobileNotice}
+	                        <p>Choose how to save your scene cards:</p>
+	                    </div>
+	                    <div class="modal-footer" style="display: flex; flex-direction: column; gap: 10px;">
+	                        <div style="display: flex; gap: 10px; justify-content: center;">
+	                            <button id="save-visible-cards-btn" class="main-action-btn" style="flex: 1;">
+	                                📄 Save Visible Cards (PDF)
+	                            </button>
+	                            <button id="save-all-cards-modal-btn" class="main-action-btn secondary" style="flex: 1;">
+	                                📚 Save All Cards (PDF)
+	                            </button>
+	                        </div>
+	                        <button id="save-cards-as-txt-btn" class="main-action-btn" style="background: linear-gradient(135deg, #10b981, #059669); width: 100%;">
+	                            📝 Save All Cards as TXT
+	                        </button>
+	                    </div>
+	                </div>
+	            </div>
+	        `;
+	        document.body.insertAdjacentHTML('beforeend', modalHtml);
+	        modal = document.getElementById('save-cards-modal');
         
-        let cardsHTML = '';
+	        // Setup event listeners
+	        const saveVisibleBtn = document.getElementById('save-visible-cards-btn');
+	        const saveAllModalBtn = document.getElementById('save-all-cards-modal-btn');
+	        const saveTxtBtn = document.getElementById('save-cards-as-txt-btn');
+	        const closeBtn = modal.querySelector('.close-modal-btn');
         
-        // TOSCRIPT1: Render only visible cards
-        visibleScenes.forEach((scene, index) => {
-            const globalIndex = startIndex + index;
-            const sceneNumber = globalIndex + 1;
-            
-            cardsHTML += `
-                <div class="scene-card" data-index="${globalIndex}">
-                    <div class="card-header">
-                        <span class="card-number">#${sceneNumber}</span>
-                        <div class="card-actions" style="display: none;">
-                            <button class="card-action-btn share-card-btn" title="Share">📤</button>
-                            <button class="card-action-btn delete-card-btn" title="Delete">🗑️</button>
-                            <button class="card-action-btn add-below-btn" title="Add Below">➕</button>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <div class="card-heading" contenteditable="true">${escapeHtml(scene.heading)}</div>
-                        <div class="card-description" contenteditable="true">${escapeHtml(scene.description || 'Tap to add description...')}</div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="card-meta">
-                            ${scene.location ? `📍 ${escapeHtml(scene.location)}` : ''}
-                            ${scene.time ? `🕐 ${escapeHtml(scene.time)}` : ''}
-                            ${scene.characters.length > 0 ? `👥 ${scene.characters.length}` : ''}
-                        </div>
-                    </div>
-                    <div class="card-watermark">ToscripT</div>
-                </div>
-            `;
-        });
+	        if (saveVisibleBtn) {
+	            saveVisibleBtn.addEventListener('click', () => {
+	                modal.classList.remove('open');
+	                saveVisibleCardsAsPDF();
+	            });
+	        }
         
-        cardContainer.innerHTML = cardsHTML;
+	        if (saveAllModalBtn) {
+	            saveAllModalBtn.addEventListener('click', () => {
+	                modal.classList.remove('open');
+	                saveAllCardsAsImages();
+	            });
+	        }
         
-        // TOSCRIPT1: Update pagination controls
-        if (pageIndicator) {
-            pageIndicator.textContent = `Page ${currentPage + 1} of ${totalPages}`;
-            pageIndicator.style.display = 'block';
-        }
+	        if (saveTxtBtn) {
+	            saveTxtBtn.addEventListener('click', () => {
+	                modal.classList.remove('open');
+	                saveAllCardsAsTXT();
+	            });
+	        }
         
-        if (prevPageBtn) {
-            prevPageBtn.style.display = currentPage > 0 ? 'block' : 'none';
-        }
+	        if (closeBtn) {
+	            closeBtn.addEventListener('click', () => {
+	                modal.classList.remove('open');
+	            });
+	        }
         
-        if (nextPageBtn) {
-            nextPageBtn.style.display = currentPage < totalPages - 1 ? 'block' : 'none';
-        }
-        
-        // TOSCRIPT1: Bind card events
-        bindCardEditingEvents();
-        setupMobileCardActions();
-    }
+	        modal.addEventListener('click', (e) => {
+	            if (e.target === modal) {
+	                modal.classList.remove('open');
+	            }
+	        });
+	    }
+    
+	    modal.classList.add('open');
+	}
+
+	// Update the button listener in Part 2
+	saveAllCardsBtn?.addEventListener('click', showExportOptions);
+	
+    
     
     // ========================================
     // CARD EDITING - TOSCRIPT1 COMPLETE LOGIC
@@ -1193,6 +1314,409 @@ FADE OUT.`;
         updateSceneList();
         saveToLocalStorage();
     }
+	
+	// ========================================
+	// PROGRESS MODAL - CORECODE STYLE
+	// ========================================
+
+	function showProgressModal(message = 'Processing...') {
+	    let modal = document.getElementById('progress-modal');
+    
+	    if (!modal) {
+	        const modalHtml = `
+	            <div id="progress-modal" class="modal progress-modal">
+	                <div class="modal-content" style="max-width: 400px; text-align: center; padding: 2rem;">
+	                    <div class="spinner" style="margin: 0 auto 1rem; width: 50px; height: 50px; border: 4px solid rgba(37, 99, 235, 0.2); border-top-color: #2563eb; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+	                    <p id="progress-message" style="font-size: 1.1rem; color: var(--text-color); margin: 0;">${message}</p>
+	                </div>
+	            </div>
+	        `;
+	        document.body.insertAdjacentHTML('beforeend', modalHtml);
+	        modal = document.getElementById('progress-modal');
+        
+	        // Add spinner animation CSS if not exists
+	        if (!document.getElementById('spinner-style')) {
+	            const style = document.createElement('style');
+	            style.id = 'spinner-style';
+	            style.textContent = `
+	                @keyframes spin {
+	                    0% { transform: rotate(0deg); }
+	                    100% { transform: rotate(360deg); }
+	                }
+	                .progress-modal {
+	                    backdrop-filter: blur(5px);
+	                    background: rgba(0, 0, 0, 0.7) !important;
+	                }
+	            `;
+	            document.head.appendChild(style);
+	        }
+	    }
+    
+	    const messageEl = document.getElementById('progress-message');
+	    if (messageEl) messageEl.textContent = message;
+    
+	    modal.classList.add('open');
+	    return modal;
+	}
+
+	function hideProgressModal() {
+	    const modal = document.getElementById('progress-modal');
+	    if (modal) {
+	        modal.classList.remove('open');
+	    }
+	}
+
+	function updateProgressMessage(message) {
+	    const messageEl = document.getElementById('progress-message');
+	    if (messageEl) messageEl.textContent = message;
+	}
+
+	// ========================================
+	// COMPLETE TXT EXPORT - CORECODE STYLE
+	// ========================================
+
+	function saveAllCardsAsTXT() {
+	    const scenes = projectData.projectInfo.scenes;
+    
+	    if (!scenes || scenes.length === 0) {
+	        showToast('No scenes to export!', 'error');
+	        return;
+	    }
+    
+	    showProgressModal(`Exporting ${scenes.length} scene cards as TXT...`);
+    
+	    setTimeout(() => {
+	        try {
+	            let txtContent = '';
+            
+	            // Header
+	            txtContent += '='.repeat(80) + '\n';
+	            txtContent += `PROJECT: ${projectData.projectInfo.projectName}\n`;
+	            txtContent += `AUTHOR: ${projectData.projectInfo.prodName}\n`;
+	            txtContent += `TOTAL SCENES: ${scenes.length}\n`;
+	            txtContent += `EXPORTED: ${new Date().toLocaleString()}\n`;
+	            txtContent += '='.repeat(80) + '\n\n';
+            
+	            // Each scene card
+	            scenes.forEach((scene, index) => {
+	                txtContent += `SCENE #${index + 1}\n`;
+	                txtContent += '-'.repeat(80) + '\n';
+	                txtContent += `HEADING: ${scene.heading}\n\n`;
+                
+	                // Description
+	                if (scene.description && scene.description.length > 0) {
+	                    txtContent += 'DESCRIPTION:\n';
+	                    if (Array.isArray(scene.description)) {
+	                        scene.description.forEach(line => {
+	                            txtContent += `${line}\n`;
+	                        });
+	                    } else {
+	                        txtContent += `${scene.description}\n`;
+	                    }
+	                    txtContent += '\n';
+	                } else {
+	                    txtContent += 'DESCRIPTION: No description provided\n\n';
+	                }
+                
+	                // Metadata
+	                txtContent += `TYPE: ${scene.type || 'N/A'}\n`;
+	                txtContent += `LOCATION: ${scene.location || 'N/A'}\n`;
+	                txtContent += `TIME: ${scene.time || 'N/A'}\n`;
+	                txtContent += `CHARACTERS: ${scene.characters && scene.characters.length > 0 ? scene.characters.join(', ') : 'None'}\n`;
+                
+	                txtContent += '='.repeat(80) + '\n\n';
+	            });
+            
+	            // Statistics footer
+	            const intScenes = scenes.filter(s => s.type && s.type.includes('INT')).length;
+	            const extScenes = scenes.filter(s => s.type && s.type.includes('EXT')).length;
+	            const allCharacters = new Set();
+	            scenes.forEach(s => {
+	                if (s.characters && Array.isArray(s.characters)) {
+	                    s.characters.forEach(c => allCharacters.add(c));
+	                }
+	            });
+            
+	            txtContent += '\n' + '='.repeat(80) + '\n';
+	            txtContent += 'STATISTICS\n';
+	            txtContent += '-'.repeat(80) + '\n';
+	            txtContent += `Total Scenes: ${scenes.length}\n`;
+	            txtContent += `Interior Scenes: ${intScenes}\n`;
+	            txtContent += `Exterior Scenes: ${extScenes}\n`;
+	            txtContent += `Total Characters: ${allCharacters.size}\n`;
+	            if (allCharacters.size > 0) {
+	                txtContent += `Characters: ${Array.from(allCharacters).join(', ')}\n`;
+	            }
+	            txtContent += '='.repeat(80) + '\n';
+	            txtContent += '\nGenerated by ToscripT v3.0 Ultimate\n';
+	            txtContent += `Export Date: ${new Date().toLocaleString()}\n`;
+            
+	            // Create and download
+	            const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+	            const url = URL.createObjectURL(blob);
+	            const a = document.createElement('a');
+	            a.href = url;
+	            a.download = `${projectData.projectInfo.projectName}_scene_cards.txt`;
+	            document.body.appendChild(a);
+	            a.click();
+	            document.body.removeChild(a);
+	            URL.revokeObjectURL(url);
+            
+	            hideProgressModal();
+	            showToast(`Exported ${scenes.length} scene cards as TXT!`, 'success', 3000);
+            
+	        } catch (error) {
+	            console.error('TXT export error:', error);
+	            hideProgressModal();
+	            showToast('TXT export failed! Check console.', 'error');
+	        }
+	    }, 500);
+	}
+
+	// ========================================
+	// UPDATED SAVE VISIBLE CARDS - WITH PROGRESS
+	// ========================================
+
+	function saveVisibleCardsAsPDF() {
+	    const scenes = projectData.projectInfo.scenes;
+    
+	    if (!scenes || scenes.length === 0) {
+	        showToast('No scenes to export!', 'error');
+	        return;
+	    }
+    
+	    const isMobile = window.innerWidth < 768;
+	    const startIdx = currentPage * cardsPerPage;
+	    const endIdx = Math.min(startIdx + cardsPerPage, scenes.length);
+	    const visibleScenes = scenes.slice(startIdx, endIdx);
+    
+	    showProgressModal(`Exporting ${visibleScenes.length} visible cards...`);
+    
+	    setTimeout(() => {
+	        if (isMobile) {
+	            saveVisibleCardsCanvas_WithProgress(visibleScenes, startIdx);
+	        } else {
+	            if (typeof html2canvas === 'undefined') {
+	                saveVisibleCardsCanvas_WithProgress(visibleScenes, startIdx);
+	            } else {
+	                saveVisibleCardsHTML2Canvas_WithProgress(visibleScenes, startIdx);
+	            }
+	        }
+	    }, 500);
+	}
+
+	function saveVisibleCardsCanvas_WithProgress(visibleScenes, startIndex) {
+	    if (typeof window.jspdf === 'undefined') {
+	        hideProgressModal();
+	        showToast('jsPDF library not loaded!', 'error');
+	        return;
+	    }
+    
+	    try {
+	        const { jsPDF } = window.jspdf;
+	        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+	        visibleScenes.forEach((scene, index) => {
+	            updateProgressMessage(`Processing card ${index + 1} of ${visibleScenes.length}...`);
+            
+	            const globalIndex = startIndex + index;
+	            const canvas = createSceneCardCanvas(scene, globalIndex + 1);
+            
+	            if (index > 0) pdf.addPage();
+            
+	            const imgData = canvas.toDataURL('image/jpeg', 0.85);
+	            pdf.addImage(imgData, 'JPEG', 10, 10, 190, 130);
+	        });
+        
+	        const filename = `${projectData.projectInfo.projectName}_cards_page${currentPage + 1}.pdf`;
+	        pdf.save(filename);
+        
+	        hideProgressModal();
+	        showToast(`Exported ${visibleScenes.length} cards!`, 'success');
+        
+	    } catch (error) {
+	        console.error('PDF export error:', error);
+	        hideProgressModal();
+	        showToast('PDF export failed! Check console.', 'error');
+	    }
+	}
+
+	function saveVisibleCardsHTML2Canvas_WithProgress(visibleScenes, startIndex) {
+	    if (typeof window.jspdf === 'undefined') {
+	        hideProgressModal();
+	        showToast('jsPDF library not loaded!', 'error');
+	        return;
+	    }
+    
+	    const { jsPDF } = window.jspdf;
+	    const pdf = new jsPDF('p', 'mm', 'a4');
+	    let processed = 0;
+    
+	    visibleScenes.forEach((scene, index) => {
+	        const globalIndex = startIndex + index;
+	        const tempCard = createTempCardElement(scene, globalIndex + 1);
+	        document.body.appendChild(tempCard);
+        
+	        updateProgressMessage(`Processing card ${index + 1} of ${visibleScenes.length}...`);
+        
+	        html2canvas(tempCard, {
+	            scale: 2,
+	            backgroundColor: '#ffffff',
+	            logging: false
+	        }).then(canvas => {
+	            if (index > 0) pdf.addPage();
+            
+	            const imgData = canvas.toDataURL('image/jpeg', 0.9);
+	            pdf.addImage(imgData, 'JPEG', 10, 10, 190, 130);
+            
+	            document.body.removeChild(tempCard);
+	            processed++;
+            
+	            if (processed === visibleScenes.length) {
+	                const filename = `${projectData.projectInfo.projectName}_cards_page${currentPage + 1}.pdf`;
+	                pdf.save(filename);
+	                hideProgressModal();
+	                showToast(`Exported ${visibleScenes.length} cards!`, 'success');
+	            }
+	        }).catch(err => {
+	            console.error('Export error:', err);
+	            document.body.removeChild(tempCard);
+	            hideProgressModal();
+	            showToast('Export error! Check console.', 'error');
+	        });
+	    });
+	}
+
+	// ========================================
+	// UPDATED SAVE ALL CARDS - WITH PROGRESS
+	// ========================================
+
+	function saveAllCardsAsImages() {
+	    const scenes = projectData.projectInfo.scenes;
+    
+	    if (!scenes || scenes.length === 0) {
+	        showToast('No scenes to export!', 'error');
+	        return;
+	    }
+    
+	    showProgressModal(`Preparing to export ${scenes.length} cards...`);
+    
+	    setTimeout(() => {
+	        const isMobile = window.innerWidth < 768;
+        
+	        if (isMobile) {
+	            saveAllCardsAsPDF_Canvas_WithProgress();
+	        } else {
+	            if (typeof html2canvas === 'undefined') {
+	                saveAllCardsAsPDF_Canvas_WithProgress();
+	            } else {
+	                saveAllCardsAsPDF_Library_WithProgress();
+	            }
+	        }
+	    }, 500);
+	}
+
+	function saveAllCardsAsPDF_Canvas_WithProgress() {
+	    if (typeof window.jspdf === 'undefined') {
+	        hideProgressModal();
+	        showToast('jsPDF library not loaded!', 'error');
+	        return;
+	    }
+    
+	    try {
+	        const scenes = projectData.projectInfo.scenes;
+	        const { jsPDF } = window.jspdf;
+        
+	        const batchSize = 27;
+	        const batches = Math.ceil(scenes.length / batchSize);
+        
+	        updateProgressMessage(`Creating ${batches} PDF file(s)...`);
+        
+	        for (let batch = 0; batch < batches; batch++) {
+	            const pdf = new jsPDF('p', 'mm', 'a4');
+	            const startIdx = batch * batchSize;
+	            const endIdx = Math.min(startIdx + batchSize, scenes.length);
+	            const batchScenes = scenes.slice(startIdx, endIdx);
+            
+	            updateProgressMessage(`Processing batch ${batch + 1} of ${batches}...`);
+            
+	            batchScenes.forEach((scene, index) => {
+	                const globalIndex = startIdx + index;
+	                const canvas = createSceneCardCanvas(scene, globalIndex + 1);
+                
+	                if (index > 0) pdf.addPage();
+                
+	                const imgData = canvas.toDataURL('image/jpeg', 0.8);
+	                pdf.addImage(imgData, 'JPEG', 10, 10, 190, 130);
+	            });
+            
+	            const filename = batches > 1 
+	                ? `${projectData.projectInfo.projectName}_cards_part${batch + 1}.pdf`
+	                : `${projectData.projectInfo.projectName}_cards.pdf`;
+	            pdf.save(filename);
+	        }
+        
+	        hideProgressModal();
+	        showToast(`Exported ${scenes.length} cards in ${batches} file(s)!`, 'success', 4000);
+        
+	    } catch (error) {
+	        console.error('PDF export error:', error);
+	        hideProgressModal();
+	        showToast('PDF export failed! Check console.', 'error');
+	    }
+	}
+
+	function saveAllCardsAsPDF_Library_WithProgress() {
+	    if (typeof window.jspdf === 'undefined') {
+	        hideProgressModal();
+	        showToast('jsPDF library not loaded!', 'error');
+	        return;
+	    }
+    
+	    const scenes = projectData.projectInfo.scenes;
+	    const { jsPDF } = window.jspdf;
+	    const pdf = new jsPDF('p', 'mm', 'a4');
+    
+	    let processed = 0;
+    
+	    scenes.forEach((scene, index) => {
+	        const tempCard = createTempCardElement(scene, index + 1);
+	        document.body.appendChild(tempCard);
+        
+	        updateProgressMessage(`Processing card ${index + 1} of ${scenes.length}...`);
+        
+	        html2canvas(tempCard, {
+	            scale: 2,
+	            backgroundColor: '#ffffff',
+	            logging: false
+	        }).then(canvas => {
+	            if (index > 0) pdf.addPage();
+            
+	            const imgData = canvas.toDataURL('image/jpeg', 0.9);
+	            pdf.addImage(imgData, 'JPEG', 10, 10, 190, 130);
+            
+	            document.body.removeChild(tempCard);
+	            processed++;
+            
+	            if (processed === scenes.length) {
+	                pdf.save(`${projectData.projectInfo.projectName}_cards.pdf`);
+	                hideProgressModal();
+	                showToast(`Exported ${scenes.length} cards!`, 'success');
+	            }
+	        }).catch(err => {
+	            console.error('Export error:', err);
+	            document.body.removeChild(tempCard);
+	            processed++;
+            
+	            if (processed === scenes.length) {
+	                hideProgressModal();
+	                showToast('Some cards failed to export. Check console.', 'error');
+	            }
+	        });
+	    });
+	}
+	
+	
 
     // ========================================
     // SCENE MANAGEMENT
