@@ -1862,3 +1862,86 @@ body.focus-mode-active #focus-exit-btn {
     padding: 2rem;
     font-style: italic;
 }
+
+/* ========================================
+   MOBILE PAGINATION - CORECODE STYLE
+   ======================================== */
+
+.mobile-pagination {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 15px;
+    flex-wrap: wrap;
+}
+
+.pagination-btn {
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    min-width: 60px;
+}
+
+.pagination-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+.pagination-btn.active {
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.5);
+    transform: scale(1.1);
+}
+
+/* ========================================
+   PROGRESS MODAL
+   ======================================== */
+
+.progress-modal .modal-content {
+    animation: fadeInScale 0.3s ease;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ========================================
+   SAVE CARDS MODAL
+   ======================================== */
+
+#save-cards-modal .modal-content {
+    max-width: 500px;
+}
+
+#save-cards-modal .modal-footer {
+    padding-top: 20px;
+}
+
+#save-cards-modal .main-action-btn {
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+#save-cards-modal .main-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
