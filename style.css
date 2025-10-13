@@ -1,6 +1,6 @@
 /* ========================================
-   ToscripT - Professional Screenwriting App
-   Optimized for Android WebView
+   ToscripT3 - Professional Screenwriting App
+   Optimized for Android WebView with Pro Features
    ======================================== */
 
 :root {
@@ -16,6 +16,10 @@
     --card-bg-color: #1f2937;
     --card-text-color: #f3f4f6;
     --card-border-color: #374151;
+    --pro-gold: #FFD700;
+    --pro-orange: #FFA500;
+    --ad-bg: #f0f0f0;
+    --ad-text: #666666;
 }
 
 * {
@@ -131,11 +135,120 @@ body.loaded .splash-screen {
 }
 
 /* ========================================
+   ADS (Hidden for Pro Users)
+   ======================================== */
+.ad-banner {
+    position: fixed;
+    top: 55px; /* Below header */
+    left: 0;
+    width: 100%;
+    height: 50px;
+    background-color: var(--ad-bg);
+    z-index: 20;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ad-placeholder {
+    text-align: center;
+    color: var(--ad-text);
+    font-size: 0.9rem;
+    font-style: italic;
+    width: 100%;
+}
+
+.footer-ad {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50px;
+    background-color: var(--ad-bg);
+    z-index: 20;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.interstitial-ad {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+}
+
+.interstitial-ad.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ========================================
+   PRO FEATURES STYLES
+   ======================================== */
+.pro-btn {
+    color: var(--pro-gold);
+    background: linear-gradient(135deg, var(--pro-gold), var(--pro-orange));
+    border: 1px solid var(--pro-gold);
+    font-weight: bold;
+}
+
+.pro-btn:hover,
+.pro-btn:active {
+    background: linear-gradient(135deg, var(--pro-orange), var(--pro-gold));
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+.pro-section {
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.pro-upgrade-link {
+    color: var(--pro-gold) !important;
+    font-weight: bold;
+    text-decoration: none;
+    border: 1px solid var(--pro-gold);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.pro-upgrade-link:hover {
+    background: rgba(255, 215, 0, 0.2);
+}
+
+.pro-teaser {
+    font-size: 0.8rem;
+    color: var(--muted-text-color);
+    text-align: center;
+    margin: 0;
+    padding: 0 1rem;
+    font-style: italic;
+}
+
+/* ========================================
    FULLSCREEN MODE
    ======================================== */
 body.fullscreen-active #main-header,
 body.fullscreen-active #script-header,
-body.fullscreen-active #card-header {
+body.fullscreen-active #card-header,
+body.fullscreen-active .ad-banner,
+body.fullscreen-active .footer-ad {
     display: none !important;
 }
 
@@ -159,7 +272,9 @@ body.fullscreen-active #focus-mode-btn {
 body.focus-mode-active #main-header,
 body.focus-mode-active #script-header,
 body.focus-mode-active #card-header,
-body.focus-mode-active #main-toolbar {
+body.focus-mode-active #main-toolbar,
+body.focus-mode-active .ad-banner,
+body.focus-mode-active .footer-ad {
     display: none !important;
 }
 
@@ -388,6 +503,42 @@ body.focus-mode-active #focus-exit-btn {
 }
 
 /* ========================================
+   TOAST NOTIFICATIONS (Dynamic from JS)
+   ======================================== */
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    padding: 12px 20px;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: opacity 0.3s, transform 0.3s;
+    max-width: 300px;
+    word-wrap: break-word;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.toast-success {
+    background-color: var(--success-color);
+}
+
+.toast-error {
+    background-color: var(--danger-color);
+}
+
+.toast-warning {
+    background-color: var(--warning-color);
+}
+
+.toast-info {
+    background-color: var(--primary-color);
+}
+
+/* ========================================
    BUTTONS
    ======================================== */
 .icon-btn {
@@ -468,7 +619,8 @@ body.focus-mode-active #focus-exit-btn {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    height: calc(100vh - 55px);
+    height: calc(100vh - 55px - 50px); /* Account for ad banner if present */
+    margin-top: 50px; /* For ad-banner */
 }
 
 .view {
@@ -844,7 +996,7 @@ body.focus-mode-active #focus-exit-btn {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: 50px; /* Above footer-ad if present */
     background: linear-gradient(135deg, rgba(31, 41, 55, 0.98), rgba(17, 24, 39, 0.98));
     border-top: 2px solid var(--primary-color);
     z-index: 9999 !important;
@@ -932,7 +1084,34 @@ body.focus-mode-active #focus-exit-btn {
 }
 
 /* ========================================
-   CARD VIEW
+   LOADING INDICATOR (Dynamic)
+   ======================================== */
+#loading-indicator {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+}
+
+#loading-indicator.show {
+    display: flex;
+}
+
+#loading-indicator .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--border-color);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+/* ========================================
+   CARD VIEW - Basic (Toscript1 Style) and Advanced
    ======================================== */
 #card-view {
     overflow-y: auto;
@@ -955,6 +1134,101 @@ body.focus-mode-active #focus-exit-btn {
     min-height: calc(100vh - 140px);
 }
 
+/* Basic Index Cards (Toscript1 - Non-Editable) */
+.index-card {
+    border: 1px solid var(--card-border-color);
+    padding: 15px;
+    margin: 10px;
+    border-radius: 8px;
+    background: var(--card-bg-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+    color: var(--card-text-color);
+    transition: all 0.2s ease;
+}
+
+.index-card.basic-card {
+    background: var(--card-bg-color);
+    color: var(--card-text-color);
+    border-color: var(--card-border-color);
+}
+
+.index-card:hover {
+    background: var(--surface-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.index-card .card-header h3.scene-type {
+    margin: 0 0 0.5rem 0;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    text-transform: uppercase;
+}
+
+.index-card .card-body .scene-summary {
+    margin: 0.5rem 0;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.index-card .card-body .scene-stats {
+    text-align: right;
+    color: var(--muted-text-color);
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.index-card .card-footer {
+    text-align: center;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--muted-text-color);
+    border-top: 1px solid var(--card-border-color);
+    padding-top: 0.5rem;
+}
+
+/* Card Pagination (Basic) */
+.card-pagination-info {
+    text-align: center;
+    padding: 1rem;
+    color: var(--muted-text-color);
+    font-size: 0.9rem;
+    background: var(--surface-color);
+    border-radius: 4px;
+    margin: 1rem;
+}
+
+.paginator {
+    text-align: center;
+    margin: 20px 0;
+    padding: 10px;
+}
+
+.paginator button {
+    padding: 0.5rem 1rem;
+    margin: 0 0.5rem;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    color: var(--text-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.paginator button:hover:not(:disabled) {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.paginator button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Advanced Scene Cards (Toscript2 - Editable) */
 .scene-card {
     background-color: var(--card-bg-color) !important;
     color: var(--card-text-color) !important;
@@ -1192,7 +1466,7 @@ body.focus-mode-active #focus-exit-btn {
     padding-bottom: 1rem;
 }
 
-.modal-header h2 {
+.modal-header h2, .modal-header h3 {
     margin: 0;
     color: var(--primary-color);
 }
@@ -1244,10 +1518,58 @@ body.focus-mode-active #focus-exit-btn {
     justify-content: flex-end;
 }
 
+/* Project Stats in Modal */
+.stats-display .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--background-color);
+}
+
+.stat-item label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--muted-text-color);
+    margin-bottom: 0.25rem;
+}
+
+.stat-item span {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
 /* ========================================
    MOBILE RESPONSIVE
    ======================================== */
 @media (max-width: 768px) {
+    .ad-banner,
+    .footer-ad {
+        height: 40px;
+    }
+
+    .ad-placeholder {
+        font-size: 0.8rem;
+        line-height: 40px;
+    }
+
+    .main-content {
+        height: calc(100vh - 55px - 40px);
+        margin-top: 40px;
+    }
+
+    .mobile-keyboard-toolbar {
+        bottom: 40px; /* Above footer-ad */
+    }
+
     #desktop-side-toolbar {
         display: none;
     }
@@ -1358,6 +1680,15 @@ body.focus-mode-active #focus-exit-btn {
         min-height: auto;
     }
     
+    .index-card {
+        margin: 5px auto;
+        width: 90%;
+    }
+    
+    .paginator {
+        margin: 15px 0;
+    }
+
     .scene-card {
         width: calc(100% - 70px) !important;
         max-width: calc(100% - 70px) !important;
@@ -1410,6 +1741,11 @@ body.focus-mode-active #focus-exit-btn {
         margin: 1rem;
         max-height: 70vh;
     }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr); /* Mobile: 2 columns */
+        gap: 0.5rem;
+    }
 }
 
 /* ========================================
@@ -1422,7 +1758,20 @@ body.focus-mode-active #focus-exit-btn {
         print-color-adjust: exact !important;
     }
     
-    .scene-card {
+    .ad-banner,
+    .footer-ad,
+    .interstitial-ad,
+    .pro-upgrade-section,
+    .menu-panel,
+    .side-panel,
+    #main-toolbar,
+    .mobile-keyboard-toolbar,
+    .focus-exit-btn {
+        display: none !important;
+    }
+    
+    .scene-card,
+    .index-card {
         width: 3in !important;
         height: 5in !important;
         border: 2px solid #000 !important;
@@ -1442,6 +1791,11 @@ body.focus-mode-active #focus-exit-btn {
     .card-watermark {
         opacity: 0.3 !important;
         visibility: visible !important;
+    }
+
+    .paginator,
+    .card-pagination-info {
+        display: none !important;
     }
 }
 
@@ -1499,3 +1853,12 @@ body.focus-mode-active #focus-exit-btn {
 .mt-2 { margin-top: 1rem; }
 .mb-1 { margin-bottom: 0.5rem; }
 .mb-2 { margin-bottom: 1rem; }
+
+/* No Content Messages */
+.no-content,
+.no-scenes-message {
+    text-align: center;
+    color: var(--muted-text-color);
+    padding: 2rem;
+    font-style: italic;
+}
