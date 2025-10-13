@@ -680,6 +680,261 @@ FADE OUT.`;
             return e.returnValue;
         }
     }
+	
+	function showProjectInfo() {
+	    const scenes = projectData.projectInfo.scenes;
+	    const scriptContent = isPlaceholder ? '' : (fountainInput ? fountainInput.value : '');
+	    const words = scriptContent.split(/\s+/).filter(w => w.length > 0);
+	    const wordCount = words.length;
+	    const characterCount = scriptContent.length;
+	    const pageEstimate = Math.ceil(wordCount / 250);
+    
+	    const allCharacters = new Set();
+	    scenes.forEach(scene => {
+	        if (scene.characters && Array.isArray(scene.characters)) {
+	            scene.characters.forEach(char => allCharacters.add(char));
+	        }
+	    });
+    
+	    const intScenes = scenes.filter(s => s.type && s.type.includes('INT')).length;
+	    const extScenes = scenes.filter(s => s.type && s.type.includes('EXT')).length;
+    
+	    const locations = new Set();
+	    scenes.forEach(scene => {
+	        if (scene.location) locations.add(scene.location);
+	    });
+    
+	    const modalHTML = `
+	        <div style="padding:20px;">
+	            <h2 style="margin-top:0; color:#1a73e8;">📊 Project Statistics</h2>
+            
+	            <div style="margin-bottom:20px;">
+	                <h3 style="color:#333;">Project Information</h3>
+	                <p><strong>Title:</strong> ${escapeHtml(projectData.projectInfo.projectName)}</p>
+	                <p><strong>Author:</strong> ${escapeHtml(projectData.projectInfo.prodName)}</p>
+	            </div>
+            
+	            <div style="margin-bottom:20px;">
+	                <h3 style="color:#333;">Script Metrics</h3>
+	                <p><strong>Word Count:</strong> ${wordCount.toLocaleString()}</p>
+	                <p><strong>Character Count:</strong> ${characterCount.toLocaleString()}</p>
+	                <p><strong>Estimated Pages:</strong> ${pageEstimate}</p>
+	            </div>
+            
+	            <div style="margin-bottom:20px;">
+	                <h3 style="color:#333;">Scene Breakdown</h3>
+	                <p><strong>Total Scenes:</strong> ${scenes.length}</p>
+	                <p><strong>Interior Scenes:</strong> ${intScenes}</p>
+	                <p><strong>Exterior Scenes:</strong> ${extScenes}</p>
+	                <p><strong>Unique Locations:</strong> ${locations.size}</p>
+	            </div>
+            
+	            <div style="margin-bottom:20px;">
+	                <h3 style="color:#333;">Characters</h3>
+	                <p><strong>Total Characters:</strong> ${allCharacters.size}</p>
+	                ${allCharacters.size > 0 ? `<p style="color:#666; font-size:14px;">${Array.from(allCharacters).join(', ')}</p>` : ''}
+	            </div>
+            
+	            <div style="background:#f5f5f5; padding:15px; border-radius:5px; margin-top:20px;">
+	                <p style="margin:0; color:#666; font-size:13px;">
+	                    💾 Last saved: ${new Date().toLocaleString()}<br>
+	                    💻 Auto-save: ${autoSaveInterval ? 'Enabled (30s)' : 'Disabled'}<br>
+	                    ${lastSyncTime ? `☁️ Last sync: ${lastSyncTime.toLocaleTimeString()}` : ''}
+	                </p>
+	            </div>
+	        </div>
+	    `;
+    
+	    if (projectInfoModal) {
+	        projectInfoModal.innerHTML = `
+	            <div class="modal-content">
+	                <div class="modal-header">
+	                    <h2>Project Info</h2>
+	                    <button class="close-btn">&times;</button>
+	                </div>
+	                <div class="modal-body">
+	                    ${modalHTML}
+	                </div>
+	            </div>
+	        `;
+        
+	        const closeBtn = projectInfoModal.querySelector('.close-btn');
+	        if (closeBtn) {
+	            closeBtn.addEventListener('click', () => closeModal(projectInfoModal));
+	        }
+        
+	        showModal(projectInfoModal);
+	    }
+	}
+	
+	function showModal(modal) {
+	    if (modal) {
+	        modal.style.display = 'flex';
+	        modal.classList.add('open');
+	    }
+	}
+
+	function closeModal(modal) {
+	    if (modal) {
+	        modal.style.display = 'none';
+	        modal.classList.remove('open');
+	    }
+	}
+
+	function toggleMenu() {
+	    if (menuPanel) menuPanel.classList.toggle('open');
+	    closeSceneNavigator();
+	}
+
+	function closeMenu() {
+	    if (menuPanel) menuPanel.classList.remove('open');
+	}
+
+	function toggleSceneNavigator() {
+	    if (sceneNavigatorPanel) sceneNavigatorPanel.classList.toggle('open');
+	    closeMenu();
+	}
+
+	function closeSceneNavigator() {
+	    if (sceneNavigatorPanel) sceneNavigatorPanel.classList.remove('open');
+	}
+
+	function toggleSaveSubmenu() {
+	    const submenu = document.getElementById('save-submenu');
+	    if (submenu) {
+	        submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+	    }
+	}
+
+	function toggleCloudSubmenu() {
+	    const submenu = document.getElementById('cloud-submenu');
+	    if (submenu) {
+	        submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+	    }
+	}
+	
+	
+	function showMobileToolbar() {
+	    if (window.innerWidth <= 768 && !isFocusMode && currentView === 'write' && mobileKeyboardToolbar) {
+	        mobileKeyboardToolbar.style.display = 'flex';
+	    }
+	}
+
+	function hideMobileToolbar() {
+	    if (mobileKeyboardToolbar) {
+	        mobileKeyboardToolbar.style.display = 'none';
+	    }
+	}
+
+	function isMobileDevice() {
+	    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+	        || window.innerWidth <= 768;
+	}
+	
+	function insertText(text, cursorOffset = 0) {
+	    if (!fountainInput) return;
+    
+	    const start = fountainInput.selectionStart;
+	    const end = fountainInput.selectionEnd;
+	    const value = fountainInput.value;
+    
+	    fountainInput.value = value.substring(0, start) + text + value.substring(end);
+    
+	    const newCursorPos = start + text.length + cursorOffset;
+	    fountainInput.selectionStart = fountainInput.selectionEnd = newCursorPos;
+	    fountainInput.focus();
+    
+	    isPlaceholder = false;
+	    saveToUndoStack();
+    
+	    clearTimeout(debounceTimeout);
+	    debounceTimeout = setTimeout(() => {
+	        updateSceneList();
+	        saveToLocalStorage();
+	    }, 300);
+	}
+
+	function insertOrCycleText(options) {
+	    if (!fountainInput) return;
+    
+	    const start = fountainInput.selectionStart;
+	    const value = fountainInput.value;
+	    const lineBefore = value.substring(0, start);
+	    const lastLine = lineBefore.split('\n').pop();
+    
+	    let inserted = false;
+    
+	    for (let i = 0; i < options.length; i++) {
+	        const currentOption = options[i].trim();
+        
+	        if (lastLine.includes(currentOption)) {
+	            const nextOption = options[(i + 1) % options.length];
+	            const newLine = lastLine.replace(currentOption, nextOption.trim());
+	            const beforeLine = lineBefore.substring(0, lineBefore.lastIndexOf('\n') + 1);
+            
+	            fountainInput.value = beforeLine + newLine + value.substring(start);
+	            fountainInput.selectionStart = fountainInput.selectionEnd = beforeLine.length + newLine.length;
+	            inserted = true;
+	            break;
+	        }
+	    }
+    
+	    if (!inserted) {
+	        insertText(options[0]);
+	        return;
+	    }
+    
+	    fountainInput.focus();
+	    isPlaceholder = false;
+	    saveToUndoStack();
+    
+	    clearTimeout(debounceTimeout);
+	    debounceTimeout = setTimeout(() => {
+	        updateSceneList();
+	        saveToLocalStorage();
+	    }, 300);
+	}
+
+	function toggleCaps() {
+	    if (!fountainInput) return;
+    
+	    const start = fountainInput.selectionStart;
+	    const end = fountainInput.selectionEnd;
+    
+	    if (start === end) {
+	        const value = fountainInput.value;
+	        const lineBefore = value.substring(0, start);
+	        const lineStart = lineBefore.lastIndexOf('\n') + 1;
+	        const lineEnd = value.indexOf('\n', start);
+	        const lineEndPos = lineEnd === -1 ? value.length : lineEnd;
+	        const line = value.substring(lineStart, lineEndPos);
+        
+	        const newLine = line === line.toUpperCase() ? line.toLowerCase() : line.toUpperCase();
+	        fountainInput.value = value.substring(0, lineStart) + newLine + value.substring(lineEndPos);
+	        fountainInput.selectionStart = fountainInput.selectionEnd = lineStart + newLine.length;
+	    } else {
+	        const selectedText = fountainInput.value.substring(start, end);
+	        const newText = selectedText === selectedText.toUpperCase() 
+	            ? selectedText.toLowerCase() 
+	            : selectedText.toUpperCase();
+        
+	        fountainInput.value = fountainInput.value.substring(0, start) + newText + fountainInput.value.substring(end);
+	        fountainInput.selectionStart = start;
+	        fountainInput.selectionEnd = start + newText.length;
+	    }
+    
+	    fountainInput.focus();
+	    isPlaceholder = false;
+	    saveToUndoStack();
+    
+	    clearTimeout(debounceTimeout);
+	    debounceTimeout = setTimeout(() => {
+	        updateSceneList();
+	        saveToLocalStorage();
+	    }, 300);
+	}
+	
+	
     
     // ========================================
     // VIEW SWITCHING
@@ -1721,54 +1976,57 @@ FADE OUT.`;
     // ========================================
     // SCENE MANAGEMENT
     // ========================================
+   function updateSceneList() {
+       const scriptContent = isPlaceholder ? '' : (fountainInput ? fountainInput.value : '');
+       const tokens = parseFountain(scriptContent);
+       const scenes = [];
+       let currentScene = null;
+       let sceneIndex = 1; // ADD THIS LINE
     
-    function updateSceneList() {
-        const scriptContent = isPlaceholder ? '' : (fountainInput ? fountainInput.value : '');
-        const tokens = parseFountain(scriptContent);
-        const scenes = [];
-        let currentScene = null;
-        
-        tokens.forEach(token => {
-            if (token.type === 'scene-heading') {
-                if (currentScene) {
-                    scenes.push(currentScene);
-                }
-                currentScene = {
-                    heading: token.content,
-                    description: '',
-                    characters: [],
-                    type: '',
-                    location: '',
-                    time: ''
-                };
-                
-                // Parse scene metadata
-                const match = token.content.match(/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.)\s*(.+?)\s*-\s*(.+)$/);
-                if (match) {
-                    currentScene.type = match[1];
-                    currentScene.location = match[2].trim();
-                    currentScene.time = match[3].trim();
-                }
-            } else if (currentScene) {
-                if (token.type === 'action' || token.type === 'dialogue') {
-                    currentScene.description += token.content + ' ';
-                } else if (token.type === 'character') {
-                    if (!currentScene.characters.includes(token.content)) {
-                        currentScene.characters.push(token.content);
-                    }
-                }
-            }
-        });
-        
-        if (currentScene) {
-            scenes.push(currentScene);
-        }
-        
-        projectData.projectInfo.scenes = scenes;
-        projectData.projectInfo.scriptContent = scriptContent;
-        
-        renderSceneNavigator(scenes);
-    }
+       tokens.forEach(token => {
+           if (token.type === 'scene-heading') {
+               if (currentScene) {
+                   scenes.push(currentScene);
+                   sceneIndex++; // ADD THIS LINE
+               }
+               currentScene = {
+                   number: sceneIndex, // ADD THIS LINE - CRITICAL FIX
+                   heading: token.content,
+                   description: [], // CHANGE TO ARRAY
+                   characters: [],
+                   type: '',
+                   location: '',
+                   time: ''
+               };
+            
+               // Parse scene metadata
+               const match = token.content.match(/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.)\s*(.+?)\s*-\s*(.+)$/);
+               if (match) {
+                   currentScene.type = match[1];
+                   currentScene.location = match[2].trim();
+                   currentScene.time = match[3].trim();
+               }
+           } else if (currentScene) {
+               if (token.type === 'action' || token.type === 'dialogue') {
+                   currentScene.description.push(token.content); // CHANGE TO PUSH INTO ARRAY
+               } else if (token.type === 'character') {
+                   if (!currentScene.characters.includes(token.content)) {
+                       currentScene.characters.push(token.content);
+                   }
+               }
+           }
+       });
+    
+       if (currentScene) {
+           scenes.push(currentScene);
+       }
+    
+       projectData.projectInfo.scenes = scenes;
+       projectData.projectInfo.scriptContent = scriptContent;
+    
+       renderSceneNavigator(scenes);
+   }
+   
     
     function renderSceneNavigator(scenes) {
         if (!sceneList) return;
