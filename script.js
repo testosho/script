@@ -432,6 +432,73 @@ FADE OUT.`;
             }
         });
     }
+	
+	
+	function setupEventListeners() {
+	    console.log('Setting up event listeners...');
+    
+	    // Hamburger Menu - ADD OPTIONAL CHAINING
+	    hamburgerBtn?.addEventListener('click', () => toggleMenu());
+	    hamburgerBtnScript?.addEventListener('click', () => toggleMenu());
+	    hamburgerBtnCard?.addEventListener('click', () => toggleMenu());
+    
+	    // View Switching
+	    showScriptBtn?.addEventListener('click', () => switchView('script'));
+	    showWriteBtnHeader?.addEventListener('click', () => switchView('write'));
+	    showWriteBtnCardHeader?.addEventListener('click', () => switchView('write'));
+	    cardViewBtn?.addEventListener('click', () => switchView('card'));
+    
+	    // Scene Navigator
+	    sceneNavigatorBtn?.addEventListener('click', () => toggleSceneNavigator());
+	    sceneNavigatorBtnScript?.addEventListener('click', () => toggleSceneNavigator());
+	    closeNavigatorBtn?.addEventListener('click', () => closeSceneNavigator());
+    
+	    // Fullscreen & Focus Mode
+	    fullscreenBtnMain?.addEventListener('click', () => toggleFullscreen());
+	    focusModeBtn?.addEventListener('click', () => toggleFocusMode());
+	    focusExitBtn?.addEventListener('click', () => exitFocusMode());
+    
+	    // Toolbar buttons
+	    document.querySelectorAll('.action-btn').forEach(btn => {
+	        btn.addEventListener('click', () => {
+	            const action = btn.getAttribute('data-action');
+	            if (action) handleAction(action);
+	        });
+	    });
+    
+	    document.querySelectorAll('.keyboard-btn').forEach(btn => {
+	        btn.addEventListener('click', () => {
+	            const action = btn.getAttribute('data-action');
+	            if (action) handleAction(action);
+	        });
+	    });
+    
+	    // Fountain Input
+	    fountainInput?.addEventListener('focus', handleFountainFocus);
+	    fountainInput?.addEventListener('blur', handleFountainBlur);
+	    fountainInput?.addEventListener('input', handleFountainInput);
+    
+	    // CRITICAL FIX - Close panels with optional chaining
+	    document.addEventListener('click', (e) => {
+	        if (menuPanel?.classList.contains('open') && 
+	            !menuPanel.contains(e.target) && 
+	            !hamburgerBtn?.contains(e.target) &&
+	            !hamburgerBtnScript?.contains(e.target) &&
+	            !hamburgerBtnCard?.contains(e.target)) {
+	            closeMenu();
+	        }
+        
+	        if (sceneNavigatorPanel?.classList.contains('open') && 
+	            !sceneNavigatorPanel.contains(e.target) && 
+	            !sceneNavigatorBtn?.contains(e.target) &&
+	            !sceneNavigatorBtnScript?.contains(e.target)) {
+	            closeSceneNavigator();
+	        }
+	    });
+    
+	    console.log('Event listeners attached successfully');
+	}
+	
     
     // ========================================
     // VIEW MANAGEMENT
