@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1f2937">
     
-    <title>ToscripT - Professional Screenwriting</title>
+    <title>Toscript3 - Professional Screenwriting</title>
     
     <!-- Preconnect to Google APIs for faster loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -43,12 +43,18 @@
             <div class="splash-logo">
                 <i class="fas fa-film"></i>
             </div>
-            <h1>ToscripT</h1>
-            <p>Professional Screenwriting</p>
+            <h1>Toscript3</h1>
+            <p>Professional Screenwriting - Pro Edition</p>
             <div class="splash-loader"></div>
         </div>
     </div>
-    
+
+    <!-- Ad Banner (Hidden for Pro Users) -->
+    <div id="ad-banner" class="ad-banner" style="display: block;">
+        <!-- Placeholder for Banner Ad (e.g., AdMob) -->
+        <div class="ad-placeholder">Ad Space - Upgrade to Pro to Remove</div>
+    </div>
+
     <!-- Write Mode Header -->
     <header id="main-header" class="page-header write-mode-header">
         <div class="header-left">
@@ -58,6 +64,10 @@
             <button id="show-script-btn" class="main-action-btn header-btn wide-btn">TO SCRIPT</button>
         </div>
         <div class="header-right">
+            <!-- Pro Upgrade Button (Shown if not Pro) -->
+            <button id="pro-upgrade-btn" class="icon-btn pro-btn" title="Upgrade to Pro (Remove Ads, Cloud)" style="display: none;"><i class="fas fa-crown"></i></button>
+            <!-- Cloud Sync Button (Pro Only) -->
+            <button id="cloud-sync-btn" class="icon-btn cloud-btn" title="Toggle Cloud Sync" style="display: none;"><i class="fas fa-cloud-sync"></i></button>
             <button id="scene-navigator-btn" class="icon-btn" title="Scene Navigator & Filters"><i class="fas fa-layer-group"></i></button>
         </div>
     </header>
@@ -71,6 +81,9 @@
             <button id="show-write-btn-header" class="main-action-btn header-btn wide-btn">TO WRITE</button>
         </div>
         <div class="header-right">
+            <!-- Pro/Cloud Buttons Repeated for Consistency -->
+            <button id="pro-upgrade-btn-script" class="icon-btn pro-btn" title="Upgrade to Pro" style="display: none;"><i class="fas fa-crown"></i></button>
+            <button id="cloud-sync-btn-script" class="icon-btn cloud-btn" title="Toggle Cloud Sync" style="display: none;"><i class="fas fa-cloud-sync"></i></button>
             <button id="scene-navigator-btn-script" class="icon-btn" title="Scene Navigator & Filters"><i class="fas fa-layer-group"></i></button>
         </div>
     </header>
@@ -84,16 +97,18 @@
             <button id="show-write-btn-card-header" class="main-action-btn header-btn wide-btn">TO WRITE</button>
         </div>
         <div class="header-right">
+            <!-- Pro Card Export Button -->
+            <button id="export-cards-btn" class="icon-btn pro-btn" title="Export Cards (Pro)" style="display: none;"><i class="fas fa-download"></i></button>
             <button id="add-new-card-btn" class="icon-btn" title="Add New Scene Card">
                 <i class="fas fa-plus"></i>
             </button>
             <button id="save-all-cards-btn" class="icon-btn" title="Save All Cards">
-                <i class="fas fa-download"></i>
+                <i class="fas fa-save"></i>
             </button>
         </div>
     </header>
     
-    <!-- Menu Panel (Hamburger Menu) -->
+    <!-- Menu Panel (Hamburger Menu) - Updated with Pro/Cloud -->
     <div id="menu-panel" class="side-menu">
         <nav>
             <a href="#" id="new-btn"><i class="fas fa-file"></i> New Project</a>
@@ -112,16 +127,26 @@
                 </div>
             </div>
             
-            <!-- Cloud Storage Options -->
-            <div class="dropdown-container">
-                <a href="#" id="cloud-menu-btn" class="dropdown-toggle"><i class="fas fa-cloud"></i> Cloud Storage</a>
+            <!-- Cloud Storage Options (Pro Only) -->
+            <div class="dropdown-container pro-section" style="display: none;">
+                <a href="#" id="cloud-menu-btn" class="dropdown-toggle"><i class="fas fa-cloud"></i> Cloud Storage (Pro)</a>
                 <div id="cloud-menu" class="dropdown-content">
+                    <a href="#" id="open-from-cloud-btn"><i class="fas fa-folder-open"></i> Open from Cloud</a>
                     <a href="#" id="google-drive-save-btn"><i class="fab fa-google-drive"></i> Save to Google Drive</a>
                     <a href="#" id="google-drive-open-btn"><i class="fab fa-google-drive"></i> Open from Google Drive</a>
                     <a href="#" id="dropbox-save-btn"><i class="fab fa-dropbox"></i> Save to Dropbox</a>
                     <a href="#" id="dropbox-open-btn"><i class="fab fa-dropbox"></i> Open from Dropbox</a>
-                    <a href="#" id="cloud-sync-btn"><i class="fas fa-sync"></i> Auto-Sync Settings</a>
+                    <a href="#" id="cloud-sync-btn-menu"><i class="fas fa-sync"></i> Toggle Auto-Sync</a>
+                    <a href="#" id="cloud-config-btn"><i class="fas fa-cog"></i> Cloud Settings</a>
                 </div>
+            </div>
+            
+            <!-- Pro Upgrade Prompt -->
+            <div id="pro-upgrade-section" style="display: block;">
+                <a href="#" id="pro-upgrade-btn-menu" class="pro-upgrade-link">
+                    <i class="fas fa-crown"></i> Upgrade to Pro (Remove Ads + Cloud)
+                </a>
+                <p class="pro-teaser">Pro: Ad-free, Cloud Sync, Advanced Exports</p>
             </div>
             
             <a href="#" id="auto-save-btn" class="flex-between">
@@ -140,6 +165,17 @@
         </nav>
     </div>
     
+    <!-- Footer Ad (Hidden for Pro Users) -->
+    <div id="footer-ad" class="footer-ad" style="display: block;">
+        <!-- Placeholder for Footer Ad -->
+        <div class="ad-placeholder">Footer Ad - Pro Removes This</div>
+    </div>
+
+    <!-- Interstitial Ad Placeholder (Pro Hides) -->
+    <div id="interstitial-ad" class="interstitial-ad" style="display: none;">
+        <!-- Full-screen ad trigger -->
+    </div>
+    
     <!-- Main Content Area -->
     <main class="main-content">
         
@@ -152,6 +188,8 @@
                 <button id="undo-btn-top" class="toolbar-btn" disabled title="Undo"><i class="fas fa-undo"></i></button>
                 <button id="redo-btn-top" class="toolbar-btn" disabled title="Redo"><i class="fas fa-redo"></i></button>
                 <button id="fullscreen-btn-main" class="toolbar-btn" title="Toggle Fullscreen"><i class="fas fa-expand"></i></button>
+                <!-- Pro Export Button in Toolbar -->
+                <button id="export-pdf-btn" class="toolbar-btn pro-btn" title="Export PDF" style="display: none;"><i class="fas fa-file-pdf"></i></button>
             </div>
             <div class="editor-area">
                 <textarea id="fountain-input" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea>
@@ -233,15 +271,55 @@
         </div>
     </div>
     
-    <!-- Modals -->
+    <!-- Updated/Expanded Modals -->
+    <!-- Project Info Modal -->
+    <div id="project-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Project Info</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label>Project Name:</label>
+                <input type="text" id="proj-name" placeholder="Untitled Script">
+                <label>Producer/Author:</label>
+                <input type="text" id="prod-name" placeholder="Your Name">
+                <div id="stats-display" class="stats-display"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-project-info">Save</button>
+                <button class="modal-close">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cloud Config Modal (Pro Only) -->
+    <div id="cloud-config-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Cloud Configuration (Pro)</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Fields populated by JS -->
+            </div>
+            <div class="modal-footer">
+                <button id="save-cloud-config">Save Settings</button>
+                <button class="modal-close">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Other Modals -->
     <div id="info-modal" class="modal mobile-modal"></div>
     <div id="about-modal" class="modal mobile-modal"></div>
     <div id="title-page-modal" class="modal mobile-modal"></div>
-    <div id="project-info-modal" class="modal mobile-modal"></div>
-    <div id="cloud-sync-modal" class="modal mobile-modal"></div>
     
     <!-- File Input (Hidden) -->
     <input type="file" id="file-input" style="display: none;" accept=".fountain,.txt,.filmproj">
+    
+    <!-- Loading Indicator (Dynamic) -->
+    <div id="loading-indicator" style="display: none;"></div>
     
     <!-- Main JavaScript -->
     <script src="script.js"></script>
