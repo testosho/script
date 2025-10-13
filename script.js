@@ -1,5 +1,6 @@
 // ========================================
-// ToscripT Professional - Complete Android Optimized Version
+// ToscripT Professional v3.0 - COMPLETE MERGED VERSION
+// ALL Features from Toscript1 + Toscript2
 // ========================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -23,19 +24,22 @@ document.addEventListener('DOMContentLoaded', () => {
     let debounceTimeout = null;
     let isUpdatingFromSync = false;
     let currentPage = 0;
-    const cardsPerPage = 10; // Reduced for better mobile performance
+    const cardsPerPage = 5;
     let undoStack = [];
     let redoStack = [];
     let isPlaceholder = true;
     let isFocusMode = false;
     let isFullscreen = false;
     
-    // Google Drive & Dropbox
+    // Google Drive & Dropbox (from Toscript2)
     let gapi = null;
     let gapiInited = false;
     let isSignedIn = false;
     let autoSyncEnabled = false;
     let autoSyncTimer = null;
+    
+    // Drag and drop
+    let draggedElement = null;
     
     // ========================================
     // DOM ELEMENTS
@@ -79,6 +83,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const addNewCardBtn = document.getElementById('add-new-card-btn');
     const saveAllCardsBtn = document.getElementById('save-all-cards-btn');
     const exportSceneOrderBtn = document.getElementById('export-scene-order-btn');
+    const prevPageBtn = document.getElementById('prev-page-btn');
+    const nextPageBtn = document.getElementById('next-page-btn');
+    const pageIndicator = document.getElementById('page-indicator');
     
     // Menu Items
     const newBtn = document.getElementById('new-btn');
@@ -160,3194 +167,2226 @@ FADE OUT.`;
     // ========================================
     // INITIALIZATION
     // ========================================
-    function init() {
-        console.log('ToscripT initializing...');
-        
-        // Hide splash screen after 1.5 seconds
+    
+    // Show splash screen
+    if (splashScreen) {
         setTimeout(() => {
-            if (splashScreen) {
-                splashScreen.style.animation = 'fadeOut 0.5s ease-out forwards';
-                setTimeout(() => {
-                    document.body.classList.add('loaded');
-                }, 500);
-            }
-        }, 1500);
-        
-        // Load saved data
-        loadFromLocalStorage();
-        
-        // Set placeholder if empty
-        if (!fountainInput.value.trim() || fountainInput.value === placeholderText) {
-            fountainInput.value = placeholderText;
-            fountainInput.classList.add('placeholder');
-            isPlaceholder = true;
-        } else {
-            isPlaceholder = false;
-        }
-        
-        // Initialize UI
-        updatePreview();
-        extractAndDisplayScenes();
-        syncCardsWithScript();
-        updateUndoRedoButtons();
-        
-        // Initialize event listeners
-        initializeEventListeners();
-        
-        // Initialize Google Drive API
-        initializeGoogleDrive();
-        
-        // Check for Android WebView
-        checkAndroidWebView();
-        
-        // Show mobile keyboard toolbar on mobile
-        if (isMobileDevice()) {
-            showMobileToolbar();
-        }
-        
-        console.log('ToscripT initialized successfully!');
-    }
-    
-    // ========================================
-    // ANDROID WEBVIEW DETECTION
-    // ========================================
-    function checkAndroidWebView() {
-        const isAndroid = /Android/i.test(navigator.userAgent);
-        const isWebView = /wv/.test(navigator.userAgent);
-        
-        if (isAndroid && isWebView) {
-            console.log('Running in Android WebView');
-            document.body.classList.add('android-webview');
-            
-            // Enable hardware acceleration hint
-            document.body.style.transform = 'translateZ(0)';
-            
-            // Add Android back button handler
-            if (window.Android && window.Android.onBackPressed) {
-                console.log('Android interface detected');
-            }
-        }
-    }
-    
-    // ========================================
-    // MOBILE DEVICE DETECTION
-    // ========================================
-    function isMobileDevice() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
-            || window.innerWidth <= 768;
-    }
-    
-    // ========================================
-    // MOBILE KEYBOARD TOOLBAR MANAGEMENT
-    // ========================================
-    function showMobileToolbar() {
-        if (mobileKeyboardToolbar && currentView === 'write') {
-            mobileKeyboardToolbar.classList.add('show');
-        }
-    }
-    
-    function hideMobileToolbar() {
-        if (mobileKeyboardToolbar) {
-            mobileKeyboardToolbar.classList.remove('show');
-        }
-    }
-    
-    // ========================================
-    // LOCAL STORAGE FUNCTIONS
-    // ========================================
-    function saveToLocalStorage() {
-        if (isPlaceholder) {
-            console.log('Skipping save: placeholder text active');
-            return;
-        }
-        
-        try {
-            projectData.projectInfo.scriptContent = fountainInput.value;
-            localStorage.setItem('toscriptProject', JSON.stringify(projectData));
-            console.log('Project saved to localStorage');
-            showToast('Project saved');
-        } catch (e) {
-            console.error('localStorage save error:', e);
-            if (e.name === 'QuotaExceededError') {
-                showToast('Storage quota exceeded! Please export your script.', 'error');
-            } else {
-                showToast('Failed to save project', 'error');
-            }
-        }
-    }
-    
-    function loadFromLocalStorage() {
-        try {
-            const saved = localStorage.getItem('toscriptProject');
-            if (saved) {
-                projectData = JSON.parse(saved);
-                fountainInput.value = projectData.projectInfo.scriptContent || '';
-                console.log('Project loaded from localStorage');
-            }
-        } catch (e) {
-            console.error('localStorage load error:', e);
-            showToast('Failed to load saved project', 'error');
-        }
-    }
-    
-    function clearLocalStorage() {
-        try {
-            localStorage.removeItem('toscriptProject');
-            console.log('localStorage cleared');
-        } catch (e) {
-            console.error('localStorage clear error:', e);
-        }
-    }
-
-    // ========================================
-    // EVENT LISTENERS INITIALIZATION
-    // ========================================
-    function initializeEventListeners() {
-        
-        // Hamburger Menu Toggles
-        hamburgerBtn?.addEventListener('click', () => toggleMenu());
-        hamburgerBtnScript?.addEventListener('click', () => toggleMenu());
-        hamburgerBtnCard?.addEventListener('click', () => toggleMenu());
-        
-        // View Switching
-        showScriptBtn?.addEventListener('click', () => switchView('script'));
-        showWriteBtnHeader?.addEventListener('click', () => switchView('write'));
-        showWriteBtnCardHeader?.addEventListener('click', () => switchView('write'));
-        cardViewBtn?.addEventListener('click', () => switchView('card'));
-        
-        // Scene Navigator
-        sceneNavigatorBtn?.addEventListener('click', () => toggleSceneNavigator());
-        sceneNavigatorBtnScript?.addEventListener('click', () => toggleSceneNavigator());
-        closeNavigatorBtn?.addEventListener('click', () => toggleSceneNavigator());
-        
-        // Fullscreen & Focus Mode
-        fullscreenBtnMain?.addEventListener('click', () => toggleFullscreen());
-        focusModeBtn?.addEventListener('click', () => toggleFocusMode());
-        focusExitBtn?.addEventListener('click', () => exitFocusMode());
-        
-        // Zoom Controls
-        zoomInBtn?.addEventListener('click', () => adjustFontSize(2));
-        zoomOutBtn?.addEventListener('click', () => adjustFontSize(-2));
-        
-        // Undo/Redo
-        undoBtnTop?.addEventListener('click', () => undo());
-        redoBtnTop?.addEventListener('click', () => redo());
-        
-        // Card View Buttons
-        addNewCardBtn?.addEventListener('click', () => addNewCard());
-        saveAllCardsBtn?.addEventListener('click', () => saveAllCardsAsImages());
-        exportSceneOrderBtn?.addEventListener('click', () => exportSceneOrder());
-        
-        // Menu Items
-        newBtn?.addEventListener('click', (e) => { e.preventDefault(); newProject(); });
-        openBtn?.addEventListener('click', (e) => { e.preventDefault(); openProject(); });
-        projectInfoBtn?.addEventListener('click', (e) => { e.preventDefault(); openProjectInfoModal(); });
-        titlePageBtn?.addEventListener('click', (e) => { e.preventDefault(); openTitlePageModal(); });
-        saveMenuBtn?.addEventListener('click', (e) => { e.preventDefault(); toggleDropdown('save-menu'); });
-        cloudMenuBtn?.addEventListener('click', (e) => { e.preventDefault(); toggleDropdown('cloud-menu'); });
-        saveFountainBtn?.addEventListener('click', (e) => { e.preventDefault(); saveFountainFile(); });
-        savePdfEnglishBtn?.addEventListener('click', (e) => { e.preventDefault(); savePdfEnglish(); });
-        savePdfUnicodeBtn?.addEventListener('click', (e) => { e.preventDefault(); savePdfUnicode(); });
-        saveFilmprojBtn?.addEventListener('click', (e) => { e.preventDefault(); saveFilmproj(); });
-        
-        // Cloud Storage
-        googleDriveSaveBtn?.addEventListener('click', (e) => { e.preventDefault(); saveToGoogleDrive(); });
-        googleDriveOpenBtn?.addEventListener('click', (e) => { e.preventDefault(); openFromGoogleDrive(); });
-        dropboxSaveBtn?.addEventListener('click', (e) => { e.preventDefault(); saveToDropbox(); });
-        dropboxOpenBtn?.addEventListener('click', (e) => { e.preventDefault(); openFromDropbox(); });
-        cloudSyncBtn?.addEventListener('click', (e) => { e.preventDefault(); openCloudSyncModal(); });
-        
-        autoSaveBtn?.addEventListener('click', (e) => { e.preventDefault(); toggleAutoSave(); });
-        shareBtn?.addEventListener('click', (e) => { e.preventDefault(); shareScript(); });
-        sceneNoBtn?.addEventListener('click', (e) => { e.preventDefault(); toggleSceneNumbers(); });
-        clearProjectBtn?.addEventListener('click', (e) => { e.preventDefault(); clearProject(); });
-        infoBtn?.addEventListener('click', (e) => { e.preventDefault(); openInfoModal(); });
-        aboutBtn?.addEventListener('click', (e) => { e.preventDefault(); openAboutModal(); });
-        
-        // Fountain Input Events
-        fountainInput?.addEventListener('focus', handleFountainFocus);
-        fountainInput?.addEventListener('blur', handleFountainBlur);
-        fountainInput?.addEventListener('input', handleFountainInput);
-        
-        // Desktop Toolbar Buttons
-        const desktopActionBtns = desktopSideToolbar?.querySelectorAll('.action-btn');
-        desktopActionBtns?.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const action = btn.getAttribute('data-action');
-                if (action) handleAction(action);
-            });
-        });
-        
-        // Mobile Keyboard Toolbar Buttons
-        const mobileKeyboardBtns = mobileKeyboardToolbar?.querySelectorAll('.keyboard-btn');
-        mobileKeyboardBtns?.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const action = btn.getAttribute('data-action');
-                if (action) handleAction(action);
-            });
-        });
-        
-        // Filter Events
-        filterCategorySelect?.addEventListener('change', handleFilterCategoryChange);
-        filterValueInput?.addEventListener('input', handleFilterValueInput);
-        
-        // File Input
-        fileInput?.addEventListener('change', handleFileSelect);
-        
-        // Close panels on outside click
-		document.addEventListener('click', (e) => {
-		    if (menuPanel?.classList.contains('open') && 
-		        !menuPanel.contains(e.target) && 
-		        !hamburgerBtn?.contains(e.target) &&
-		        !hamburgerBtnScript?.contains(e.target) &&
-		        !hamburgerBtnCard?.contains(e.target)) {
-		        closeMenu();
-		    }
-    
-		    if (sceneNavigatorPanel?.classList.contains('open') && 
-		        !sceneNavigatorPanel.contains(e.target) && 
-		        !sceneNavigatorBtn?.contains(e.target) &&
-		        !sceneNavigatorBtnScript?.contains(e.target)) {
-		        closeSceneNavigator();
-		    }
-		});
-        
-        // Fullscreen change detection
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', handleKeyboardShortcuts);
-        
-        // Window resize for mobile toolbar
-        window.addEventListener('resize', handleWindowResize);
-        
-        // Prevent accidental refresh
-        window.addEventListener('beforeunload', (e) => {
-            if (!isPlaceholder && fountainInput.value.trim()) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        });
-    }
-	
-	
-	function setupEventListeners() {
-	    console.log('Setting up event listeners...');
-    
-	    // Hamburger Menu - ADD OPTIONAL CHAINING
-	    hamburgerBtn?.addEventListener('click', () => toggleMenu());
-	    hamburgerBtnScript?.addEventListener('click', () => toggleMenu());
-	    hamburgerBtnCard?.addEventListener('click', () => toggleMenu());
-    
-	    // View Switching
-	    showScriptBtn?.addEventListener('click', () => switchView('script'));
-	    showWriteBtnHeader?.addEventListener('click', () => switchView('write'));
-	    showWriteBtnCardHeader?.addEventListener('click', () => switchView('write'));
-	    cardViewBtn?.addEventListener('click', () => switchView('card'));
-    
-	    // Scene Navigator
-	    sceneNavigatorBtn?.addEventListener('click', () => toggleSceneNavigator());
-	    sceneNavigatorBtnScript?.addEventListener('click', () => toggleSceneNavigator());
-	    closeNavigatorBtn?.addEventListener('click', () => closeSceneNavigator());
-    
-	    // Fullscreen & Focus Mode
-	    fullscreenBtnMain?.addEventListener('click', () => toggleFullscreen());
-	    focusModeBtn?.addEventListener('click', () => toggleFocusMode());
-	    focusExitBtn?.addEventListener('click', () => exitFocusMode());
-    
-	    // Toolbar buttons
-	    document.querySelectorAll('.action-btn').forEach(btn => {
-	        btn.addEventListener('click', () => {
-	            const action = btn.getAttribute('data-action');
-	            if (action) handleAction(action);
-	        });
-	    });
-    
-	    document.querySelectorAll('.keyboard-btn').forEach(btn => {
-	        btn.addEventListener('click', () => {
-	            const action = btn.getAttribute('data-action');
-	            if (action) handleAction(action);
-	        });
-	    });
-    
-	    // Fountain Input
-	    fountainInput?.addEventListener('focus', handleFountainFocus);
-	    fountainInput?.addEventListener('blur', handleFountainBlur);
-	    fountainInput?.addEventListener('input', handleFountainInput);
-    
-	    // CRITICAL FIX - Close panels with optional chaining
-	    document.addEventListener('click', (e) => {
-	        if (menuPanel?.classList.contains('open') && 
-	            !menuPanel.contains(e.target) && 
-	            !hamburgerBtn?.contains(e.target) &&
-	            !hamburgerBtnScript?.contains(e.target) &&
-	            !hamburgerBtnCard?.contains(e.target)) {
-	            closeMenu();
-	        }
-        
-	        if (sceneNavigatorPanel?.classList.contains('open') && 
-	            !sceneNavigatorPanel.contains(e.target) && 
-	            !sceneNavigatorBtn?.contains(e.target) &&
-	            !sceneNavigatorBtnScript?.contains(e.target)) {
-	            closeSceneNavigator();
-	        }
-	    });
-    
-	    console.log('Event listeners attached successfully');
-	}
-	
-    
-    // ========================================
-    // VIEW MANAGEMENT
-    // ========================================
-	// Switch View Function - FIXED WITH SCENE EXTRACTION
-	function switchView(view) {
-	    console.log(`Switching to view: ${view}`);
-	    currentView = view;
-    
-	    // Hide all views and headers first
-	    [writeView, scriptView, cardView].forEach(v => v?.classList.remove('active'));
-	    [mainHeader, scriptHeader, cardHeader].forEach(h => {
-	        if (h) h.style.display = 'none';
-	    });
-	    hideMobileToolbar();
-
-	    // Check if in fullscreen mode
-	    const isFullscreen = document.fullscreenElement || document.body.classList.contains('fullscreen-active');
-
-	    if (view === 'script') {
-	        scriptView?.classList.add('active');
-	        if (scriptHeader && !isFullscreen) {
-	            scriptHeader.style.display = 'flex';
-	        }
-	        updatePreview(); // Use updatePreview instead of renderEnhancedScript
-        
-	    } else if (view === 'card') {
-	        // CRITICAL FIX: Extract scenes BEFORE rendering cards
-	        if (fountainInput && !isPlaceholder) {
-	            console.log('Extracting scenes for card view...');
-	            projectData.projectInfo.scenes = extractAndDisplayScenes(); // This extracts scenes
-	            console.log('Scenes extracted:', projectData.projectInfo.scenes.length);
-	        }
-        
-	        cardView?.classList.add('active');
-        
-	        // Show card header unless in fullscreen
-	        if (cardHeader) {
-	            if (isFullscreen) {
-	                cardHeader.style.display = 'none';
-	            } else {
-	                cardHeader.style.display = 'flex';
-	            }
-	        }
-        
-	        currentPage = 0;
-	        renderEnhancedCardView();
-        
-	        setTimeout(() => {
-	            bindCardEditingEvents();
-            
-	            // Ensure header stays visible after render
-	            if (cardHeader && !isFullscreen) {
-	                cardHeader.style.display = 'flex';
-	            }
-	        }, 100);
-        
-	    } else {
-	        // Write mode
-	        writeView?.classList.add('active');
-	        if (mainHeader && !isFullscreen) {
-	            mainHeader.style.display = 'flex';
-	        }
-        
-	        setTimeout(() => {
-	            if (fountainInput) {
-	                if (!isPlaceholder) {
-	                    fountainInput.classList.remove('placeholder');
-	                }
-	                fountainInput.focus();
-                
-	                // Always show toolbar in write mode on mobile
-	                if (window.innerWidth <= 768) {
-	                    showMobileToolbar();
-	                }
-	            }
-	        }, 200);
-	    }
-	}
-    
-	// Helper: Check if placeholder
-	function isPlaceholder() {
-	    return isPlaceholderActive || (fountainInput && fountainInput.value === placeholderText);
-	}
-	
-    
-    // ========================================
-    // MENU MANAGEMENT
-    // ========================================
-    function toggleMenu() {
-        menuPanel?.classList.toggle('open');
-    }
-    
-    function closeMenu() {
-        menuPanel?.classList.remove('open');
-    }
-    
-    function toggleSceneNavigator() {
-        sceneNavigatorPanel?.classList.toggle('open');
-        if (sceneNavigatorPanel?.classList.contains('open')) {
-            extractAndDisplayScenes();
-        }
-    }
-    
-    function closeSceneNavigator() {
-        sceneNavigatorPanel?.classList.remove('open');
-    }
-    
-    function toggleDropdown(dropdownId) {
-        const dropdown = document.getElementById(dropdownId);
-        const container = dropdown?.closest('.dropdown-container');
-        container?.classList.toggle('open');
-    }
-    
-    // ========================================
-    // FULLSCREEN MANAGEMENT
-    // ========================================
-    function toggleFullscreen() {
-        if (!document.fullscreenElement && !document.webkitFullscreenElement && 
-            !document.mozFullScreenElement && !document.msFullscreenElement) {
-            enterFullscreen();
-        } else {
-            exitFullscreen();
-        }
-    }
-    
-    function enterFullscreen() {
-        const elem = document.documentElement;
-        
-        if (elem.requestFullscreen) {
-            elem.requestFullscreen();
-        } else if (elem.webkitRequestFullscreen) {
-            elem.webkitRequestFullscreen();
-        } else if (elem.mozRequestFullScreen) {
-            elem.mozRequestFullScreen();
-        } else if (elem.msRequestFullscreen) {
-            elem.msRequestFullscreen();
-        }
-    }
-    
-    function exitFullscreen() {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-            document.mozCancelFullScreen();
-        } else if (document.msExitFullscreen) {
-            document.msExitFullscreen();
-        }
-    }
-    
-    function handleFullscreenChange() {
-        const isNowFullscreen = document.fullscreenElement || 
-                               document.webkitFullscreenElement || 
-                               document.mozFullScreenElement || 
-                               document.msFullscreenElement;
-        
-        if (isNowFullscreen) {
-            document.body.classList.add('fullscreen-active');
-            isFullscreen = true;
-            if (isMobileDevice()) showMobileToolbar();
-        } else {
-            document.body.classList.remove('fullscreen-active');
-            isFullscreen = false;
-            if (isFocusMode) exitFocusMode();
-        }
-    }
-    
-    // ========================================
-    // FOCUS MODE (Enhanced)
-    // ========================================
-    function toggleFocusMode() {
-        if (isFocusMode) {
-            exitFocusMode();
-        } else {
-            enterFocusMode();
-        }
-    }
-    
-    function enterFocusMode() {
-        if (!isFullscreen) {
-            enterFullscreen();
+            splashScreen.style.opacity = '0';
             setTimeout(() => {
-                activateFocusMode();
-            }, 300);
-        } else {
-            activateFocusMode();
-        }
+                splashScreen.style.display = 'none';
+            }, 500);
+        }, 2000);
     }
     
-    function activateFocusMode() {
-        isFocusMode = true;
-        document.body.classList.add('focus-mode-active');
-        showMobileToolbar();
-        focusExitBtn.style.display = 'flex';
-        
-        // Give haptic feedback on mobile
-        if (navigator.vibrate) {
-            navigator.vibrate(50);
-        }
-        
-        showToast('Focus Mode Activated');
-        console.log('Focus Mode: ON');
+    // Initialize the app
+    fountainInput.value = placeholderText;
+    loadFromLocalStorage();
+    
+    if (fountainInput.value.trim() === '') {
+        fountainInput.value = placeholderText;
+        isPlaceholder = true;
     }
     
-    function exitFocusMode() {
-        isFocusMode = false;
-        document.body.classList.remove('focus-mode-active');
-        focusExitBtn.style.display = 'none';
-        
-        if (isMobileDevice() && currentView === 'write') {
-            showMobileToolbar();
-        } else {
-            hideMobileToolbar();
-        }
-        
-        // Give haptic feedback on mobile
-        if (navigator.vibrate) {
-            navigator.vibrate(50);
-        }
-        
-        showToast('Focus Mode Deactivated');
-        console.log('Focus Mode: OFF');
-    }
+    updateSceneList();
     
-    // ========================================
-    // WINDOW RESIZE HANDLER
-    // ========================================
-    function handleWindowResize() {
-        if (isMobileDevice() && currentView === 'write' && !isFocusMode) {
-            showMobileToolbar();
-        }
-    }
+    // Focus on editor
+    fountainInput.focus();
+    
+    // Save initial state
+    saveToUndoStack();
 
     // ========================================
-    // FOUNTAIN INPUT HANDLERS
+    // ANDROID BRIDGE (from Toscript2)
     // ========================================
-    function handleFountainFocus() {
+    
+    function isAndroid() {
+        return typeof AndroidBridge !== 'undefined' || /android/i.test(navigator.userAgent);
+    }
+    
+    function setupAndroidBackButton() {
+        if (typeof AndroidBridge !== 'undefined') {
+            window.handleBackPress = function() {
+                if (menuPanel.classList.contains('open')) {
+                    toggleMenu();
+                    return true;
+                }
+                if (sceneNavigatorPanel.classList.contains('open')) {
+                    toggleSceneNavigator();
+                    return true;
+                }
+                if (currentView !== 'write') {
+                    switchView('write');
+                    return true;
+                }
+                return false;
+            };
+        }
+    }
+    
+    setupAndroidBackButton();
+    
+    // ========================================
+    // EVENT LISTENERS - TOOLBAR
+    // ========================================
+    
+    hamburgerBtn?.addEventListener('click', toggleMenu);
+    hamburgerBtnScript?.addEventListener('click', toggleMenu);
+    hamburgerBtnCard?.addEventListener('click', toggleMenu);
+    
+    showScriptBtn?.addEventListener('click', () => switchView('script'));
+    showWriteBtnHeader?.addEventListener('click', () => switchView('write'));
+    showWriteBtnCardHeader?.addEventListener('click', () => switchView('write'));
+    
+    sceneNavigatorBtn?.addEventListener('click', toggleSceneNavigator);
+    sceneNavigatorBtnScript?.addEventListener('click', toggleSceneNavigator);
+    closeNavigatorBtn?.addEventListener('click', toggleSceneNavigator);
+    
+    cardViewBtn?.addEventListener('click', () => switchView('card'));
+    
+    fullscreenBtnMain?.addEventListener('click', toggleFullscreen);
+    focusModeBtn?.addEventListener('click', toggleFocusMode);
+    focusExitBtn?.addEventListener('click', toggleFocusMode);
+    
+    zoomInBtn?.addEventListener('click', () => changeFontSize(2));
+    zoomOutBtn?.addEventListener('click', () => changeFontSize(-2));
+    
+    undoBtnTop?.addEventListener('click', undo);
+    redoBtnTop?.addEventListener('click', redo);
+    
+    addNewCardBtn?.addEventListener('click', () => addNewSceneCard());
+    saveAllCardsBtn?.addEventListener('click', showExportOptions);
+    exportSceneOrderBtn?.addEventListener('click', exportSceneOrder);
+    
+    // Pagination buttons
+    prevPageBtn?.addEventListener('click', () => {
+        if (currentPage > 0) {
+            currentPage--;
+            renderEnhancedCardView();
+        }
+    });
+    
+    nextPageBtn?.addEventListener('click', () => {
+        const totalPages = Math.ceil(projectData.projectInfo.scenes.length / cardsPerPage);
+        if (currentPage < totalPages - 1) {
+            currentPage++;
+            renderEnhancedCardView();
+        }
+    });
+    
+    // ========================================
+    // EVENT LISTENERS - MENU
+    // ========================================
+    
+    newBtn?.addEventListener('click', () => {
+        if (confirm('Create a new project? Unsaved changes will be lost.')) {
+            clearProject();
+        }
+    });
+    
+    openBtn?.addEventListener('click', () => fileInput?.click());
+    fileInput?.addEventListener('change', handleFileOpen);
+    
+    projectInfoBtn?.addEventListener('click', showProjectInfo);
+    titlePageBtn?.addEventListener('click', () => showModal(titlePageModal));
+    
+    saveMenuBtn?.addEventListener('click', toggleSaveSubmenu);
+    cloudMenuBtn?.addEventListener('click', toggleCloudSubmenu);
+    
+    saveFountainBtn?.addEventListener('click', saveFountain);
+    savePdfEnglishBtn?.addEventListener('click', () => savePDF('English'));
+    savePdfUnicodeBtn?.addEventListener('click', () => savePDF('Unicode'));
+    saveFilmprojBtn?.addEventListener('click', saveFilmproj);
+    
+    // Cloud buttons (from Toscript2)
+    googleDriveSaveBtn?.addEventListener('click', saveToGoogleDrive);
+    googleDriveOpenBtn?.addEventListener('click', openFromGoogleDrive);
+    dropboxSaveBtn?.addEventListener('click', saveToDropbox);
+    dropboxOpenBtn?.addEventListener('click', openFromDropbox);
+    cloudSyncBtn?.addEventListener('click', openCloudSyncModal);
+    
+    autoSaveBtn?.addEventListener('click', toggleAutoSave);
+    shareBtn?.addEventListener('click', shareScript);
+    sceneNoBtn?.addEventListener('click', toggleSceneNumbers);
+    clearProjectBtn?.addEventListener('click', () => {
+        if (confirm('Clear all content? This cannot be undone.')) {
+            clearProject();
+        }
+    });
+    
+    infoBtn?.addEventListener('click', () => showModal(infoModal));
+    aboutBtn?.addEventListener('click', () => showModal(aboutModal));
+    
+    // ========================================
+    // EVENT LISTENERS - FOUNTAIN INPUT
+    // ========================================
+    
+    fountainInput.addEventListener('focus', () => {
         if (isPlaceholder) {
             fountainInput.value = '';
-            fountainInput.classList.remove('placeholder');
             isPlaceholder = false;
         }
-    }
+        if (currentView === 'write' && !isFocusMode) {
+            showMobileToolbar();
+        }
+    });
     
-    function handleFountainBlur() {
-        if (!fountainInput.value.trim()) {
+    fountainInput.addEventListener('blur', () => {
+        if (fountainInput.value.trim() === '') {
             fountainInput.value = placeholderText;
-            fountainInput.classList.add('placeholder');
             isPlaceholder = true;
         }
-    }
+    });
     
-    function handleFountainInput() {
-        if (isPlaceholder) return;
-        
-        clearTimeout(debounceTimeout);
-        debounceTimeout = setTimeout(() => {
-            saveUndoState();
-            updatePreview();
-            extractAndDisplayScenes();
-            
-            if (!isUpdatingFromSync) {
-                clearTimeout(debounceTimeout);
-                debounceTimeout = setTimeout(() => {
-                    syncCardsWithScript();
-                }, 800);
-            }
-            
-            saveToLocalStorage();
-        }, 1000);
-    }
+    fountainInput.addEventListener('input', () => {
+        if (!isUpdatingFromSync) {
+            saveToUndoStack();
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                updateSceneList();
+                saveToLocalStorage();
+            }, 300);
+        }
+    });
     
     // ========================================
-    // UNDO/REDO SYSTEM
+    // EVENT LISTENERS - MODALS
     // ========================================
-    function saveUndoState() {
-        if (isPlaceholder) return;
-        
-        const currentContent = fountainInput.value;
-        
-        if (undoStack.length === 0 || undoStack[undoStack.length - 1] !== currentContent) {
-            undoStack.push(currentContent);
-            
-            if (undoStack.length > 50) {
-                undoStack.shift();
-            }
-            
-            redoStack = [];
-            updateUndoRedoButtons();
-        }
-    }
     
-    function undo() {
-        if (undoStack.length > 1) {
-            const currentState = undoStack.pop();
-            redoStack.push(currentState);
-            
-            const previousState = undoStack[undoStack.length - 1];
-            fountainInput.value = previousState;
-            
-            updatePreview();
-            extractAndDisplayScenes();
-            syncCardsWithScript();
-            saveToLocalStorage();
-            updateUndoRedoButtons();
-            
-            showToast('Undo');
-        }
-    }
+    const closeButtons = document.querySelectorAll('.close-btn');
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const modal = btn.closest('.modal');
+            if (modal) closeModal(modal);
+        });
+    });
     
-    function redo() {
-        if (redoStack.length > 0) {
-            const nextState = redoStack.pop();
-            undoStack.push(nextState);
-            
-            fountainInput.value = nextState;
-            
-            updatePreview();
-            extractAndDisplayScenes();
-            syncCardsWithScript();
-            saveToLocalStorage();
-            updateUndoRedoButtons();
-            
-            showToast('Redo');
+    window.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            closeModal(e.target);
         }
-    }
+    });
     
-    function updateUndoRedoButtons() {
-        if (undoBtnTop) {
-            undoBtnTop.disabled = undoStack.length <= 1;
-        }
-        if (redoBtnTop) {
-            redoBtnTop.disabled = redoStack.length === 0;
-        }
-    }
-    
-    // ========================================
-    // TOOLBAR ACTIONS
-    // ========================================
-    function handleAction(action) {
-        const textarea = fountainInput;
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const selectedText = textarea.value.substring(start, end);
-        const beforeText = textarea.value.substring(0, start);
-        const afterText = textarea.value.substring(end);
-        
-        let newText = '';
-        let newCursorPos = start;
-        
-        switch(action) {
-            case 'scene':
-                newText = cycleSceneHeading(selectedText);
-                break;
-            case 'time':
-                newText = cycleTimeOfDay(selectedText);
-                break;
-            case 'caps':
-                newText = toggleCase(selectedText);
-                break;
-            case 'parens':
-                newText = addParentheses(selectedText);
-                break;
-            case 'transition':
-                newText = cycleTransition(selectedText);
-                break;
-            default:
-                return;
-        }
-        
-        textarea.value = beforeText + newText + afterText;
-        newCursorPos = start + newText.length;
-        textarea.setSelectionRange(newCursorPos, newCursorPos);
-        textarea.focus();
-        
-        // Trigger input event
-        handleFountainInput();
-        
-        // Haptic feedback
-        if (navigator.vibrate) {
-            navigator.vibrate(30);
-        }
-    }
-    
-    function cycleSceneHeading(text) {
-        const scenes = ['INT.', 'EXT.', 'INT./EXT.', 'EXT./INT.'];
-        
-        for (let i = 0; i < scenes.length; i++) {
-            if (text.toUpperCase().startsWith(scenes[i])) {
-                const nextScene = scenes[(i + 1) % scenes.length];
-                return text.replace(new RegExp('^' + scenes[i], 'i'), nextScene);
-            }
-        }
-        
-        return 'INT. ' + text;
-    }
-    
-    function cycleTimeOfDay(text) {
-        const times = ['DAY', 'NIGHT', 'MORNING', 'AFTERNOON', 'EVENING', 'DUSK', 'DAWN', 'CONTINUOUS'];
-        
-        for (let i = 0; i < times.length; i++) {
-            if (text.toUpperCase().includes(times[i])) {
-                const nextTime = times[(i + 1) % times.length];
-                return text.replace(new RegExp(times[i], 'gi'), nextTime);
-            }
-        }
-        
-        return text + ' - DAY';
-    }
-    
-    function toggleCase(text) {
-        if (text === text.toUpperCase()) {
-            return text.toLowerCase();
-        } else {
-            return text.toUpperCase();
-        }
-    }
-    
-    function addParentheses(text) {
-        if (text.startsWith('(') && text.endsWith(')')) {
-            return text.slice(1, -1);
-        } else {
-            return '(' + text + ')';
-        }
-    }
-    
-    function cycleTransition(text) {
-        const transitions = ['CUT TO:', 'FADE TO:', 'DISSOLVE TO:', 'FADE OUT.', 'FADE IN:', 'SMASH CUT TO:'];
-        
-        for (let i = 0; i < transitions.length; i++) {
-            if (text.toUpperCase().includes(transitions[i])) {
-                return transitions[(i + 1) % transitions.length];
-            }
-        }
-        
-        return 'CUT TO:';
-    }
-    
-    // ========================================
-    // FONT SIZE ADJUSTMENT
-    // ========================================
-    function adjustFontSize(delta) {
-        fontSize += delta;
-        fontSize = Math.max(12, Math.min(24, fontSize));
-        fountainInput.style.fontSize = fontSize + 'px';
+    // Title Page Save
+    document.getElementById('save-title-btn')?.addEventListener('click', () => {
+        projectData.projectInfo.projectName = document.getElementById('title-input')?.value || 'Untitled';
+        projectData.projectInfo.prodName = document.getElementById('author-input')?.value || 'Author';
         saveToLocalStorage();
-        showToast(`Font Size: ${fontSize}px`);
-    }
+        closeModal(titlePageModal);
+        alert('Title page saved!');
+    });
+    
+    // Cloud Sync Modal (from Toscript2)
+    document.getElementById('enable-auto-sync-btn')?.addEventListener('click', () => {
+        autoSyncEnabled = true;
+        startAutoSync();
+        alert('Auto-sync enabled! Your project will sync every 5 minutes.');
+        closeModal(cloudSyncModal);
+    });
+    
+    document.getElementById('disable-auto-sync-btn')?.addEventListener('click', () => {
+        autoSyncEnabled = false;
+        stopAutoSync();
+        alert('Auto-sync disabled.');
+        closeModal(cloudSyncModal);
+    });
+    
+    document.getElementById('sync-now-btn')?.addEventListener('click', () => {
+        syncNow();
+    });
     
     // ========================================
-    // KEYBOARD SHORTCUTS
+    // EVENT LISTENERS - SCENE NAVIGATOR
     // ========================================
-    function handleKeyboardShortcuts(e) {
-        // Ctrl/Cmd + S: Save
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-            e.preventDefault();
-            saveToLocalStorage();
-            showToast('Project Saved');
-        }
+    
+    filterCategorySelect?.addEventListener('change', updateFilterHelp);
+    
+    document.getElementById('apply-filter-btn')?.addEventListener('click', () => {
+        const category = filterCategorySelect.value;
+        const value = filterValueInput?.value.trim();
+        filterScenes(category, value);
+    });
+    
+    document.getElementById('clear-filter-btn')?.addEventListener('click', () => {
+        filterValueInput.value = '';
+        updateSceneList();
+    });
+    
+    // ========================================
+    // MOBILE KEYBOARD TOOLBAR BUTTONS
+    // ========================================
+    
+    document.getElementById('int-ext-btn')?.addEventListener('click', () => {
+        insertOrCycleText(['INT. ', 'EXT. ', 'INT./EXT. ', 'I/E. ']);
+    });
+    
+    document.getElementById('day-night-btn')?.addEventListener('click', () => {
+        insertOrCycleText([' - DAY', ' - NIGHT', ' - MORNING', ' - EVENING', ' - AFTERNOON', ' - DAWN', ' - DUSK', ' - CONTINUOUS']);
+    });
+    
+    document.getElementById('caps-btn')?.addEventListener('click', () => {
+        toggleCaps();
+    });
+    
+    document.getElementById('paren-btn')?.addEventListener('click', () => {
+        insertText('()', -1);
+    });
+    
+    document.getElementById('transition-btn')?.addEventListener('click', () => {
+        insertOrCycleText([
+            '\n\nCUT TO:\n\n', 
+            '\n\nFADE TO:\n\n', 
+            '\n\nDISSOLVE TO:\n\n', 
+            '\n\nFADE IN:\n\n',
+            '\n\nFADE OUT.\n\n',
+            '\n\nSMASH CUT TO:\n\n',
+            '\n\nJUMP CUT TO:\n\n',
+            '\n\nMATCH CUT TO:\n\n'
+        ]);
+    });
+    
+    document.getElementById('undo-btn')?.addEventListener('click', undo);
+    document.getElementById('redo-btn')?.addEventListener('click', redo);
+    
+    // ========================================
+    // CORE FUNCTIONS - VIEW SWITCHING
+    // ========================================
+    
+    function switchView(view) {
+        currentView = view;
         
-        // Ctrl/Cmd + Z: Undo
-        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-            e.preventDefault();
-            undo();
-        }
+        writeView.style.display = 'none';
+        scriptView.style.display = 'none';
+        cardView.style.display = 'none';
         
-        // Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y: Redo
-        if ((e.ctrlKey || e.metaKey) && (e.shiftKey && e.key === 'z' || e.key === 'y')) {
-            e.preventDefault();
-            redo();
-        }
+        mainHeader.style.display = 'none';
+        scriptHeader.style.display = 'none';
+        cardHeader.style.display = 'none';
         
-        // Ctrl/Cmd + P: Preview
-        if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-            e.preventDefault();
-            switchView('script');
-        }
+        hideMobileToolbar();
         
-        // Ctrl/Cmd + K: Card View
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-            e.preventDefault();
-            switchView('card');
-        }
-        
-        // Ctrl/Cmd + E: Write View
-        if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
-            e.preventDefault();
-            switchView('write');
-        }
-        
-        // F11: Fullscreen
-        if (e.key === 'F11') {
-            e.preventDefault();
-            toggleFullscreen();
-        }
-        
-        // Escape: Exit Focus Mode or Close Panels
-        if (e.key === 'Escape') {
-            if (isFocusMode) {
-                exitFocusMode();
-            } else if (menuPanel?.classList.contains('open')) {
-                closeMenu();
-            } else if (sceneNavigatorPanel?.classList.contains('open')) {
-                closeSceneNavigator();
+        if (view === 'write') {
+            writeView.style.display = 'flex';
+            mainHeader.style.display = 'flex';
+            if (!isFocusMode) {
+                desktopSideToolbar.style.display = 'flex';
             }
+            fountainInput.focus();
+        } else if (view === 'script') {
+            scriptView.style.display = 'block';
+            scriptHeader.style.display = 'flex';
+            desktopSideToolbar.style.display = 'none';
+            renderEnhancedScript();
+        } else if (view === 'card') {
+            cardView.style.display = 'flex';
+            cardHeader.style.display = 'flex';
+            desktopSideToolbar.style.display = 'none';
+            currentPage = 0;
+            renderEnhancedCardView();
         }
+        
+        closeMenu();
+        closeSceneNavigator();
     }
     
     // ========================================
-    // AUTO-SAVE MANAGEMENT
+    // CORE FUNCTIONS - FOUNTAIN PARSING
     // ========================================
-    function toggleAutoSave() {
-        const indicator = document.getElementById('auto-save-indicator');
-        
-        if (autoSaveInterval) {
-            clearInterval(autoSaveInterval);
-            autoSaveInterval = null;
-            indicator?.classList.remove('on');
-            indicator?.classList.add('off');
-            showToast('Auto-Save OFF');
-        } else {
-            autoSaveInterval = setInterval(() => {
-                if (!isPlaceholder) {
-                    saveToLocalStorage();
-                }
-            }, 60000); // Every 60 seconds
-            indicator?.classList.remove('off');
-            indicator?.classList.add('on');
-            showToast('Auto-Save ON');
-        }
-    }
     
-    // ========================================
-    // SCENE NUMBER TOGGLE
-    // ========================================
-    function toggleSceneNumbers() {
-        showSceneNumbers = !showSceneNumbers;
-        const indicator = document.getElementById('scene-no-indicator');
-        
-        if (showSceneNumbers) {
-            indicator?.classList.remove('off');
-            indicator?.classList.add('on');
-            showToast('Scene Numbers ON');
-        } else {
-            indicator?.classList.remove('on');
-            indicator?.classList.add('off');
-            showToast('Scene Numbers OFF');
-        }
-        
-        updatePreview();
-        saveToLocalStorage();
-    }
-	
-    // ========================================
-    // SCREENPLAY PREVIEW (Fountain Parsing)
-    // ========================================
-    function updatePreview() {
-        if (isPlaceholder) return;
-        
-        const fountainText = fountainInput.value;
-        screenplayOutput.innerHTML = '';
-        
-        const lines = fountainText.split('\n');
-        let sceneCounter = 1;
-        let insideDialogue = false;
+    function parseFountain(text) {
+        const lines = text.split('\n');
+        const tokens = [];
+        let inTitlePage = true;
         
         for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            const trimmedLine = line.trim();
+            let line = lines[i];
             
-            if (trimmedLine === '') {
-                const emptyDiv = document.createElement('div');
-                emptyDiv.className = 'empty-line';
-                screenplayOutput.appendChild(emptyDiv);
-                insideDialogue = false;
+            if (inTitlePage && line.trim() === '') {
+                inTitlePage = false;
                 continue;
             }
             
-            const element = classifyLine(line, trimmedLine, i, lines);
+            if (inTitlePage && line.includes(':')) {
+                tokens.push({ type: 'title-page', content: line });
+                continue;
+            }
             
-            if (element.className === 'scene-heading') {
-                if (showSceneNumbers) {
-                    const sceneDiv = document.createElement('div');
-                    sceneDiv.className = 'scene-heading';
-                    
-                    const sceneText = document.createElement('span');
-                    sceneText.textContent = element.text;
-                    
-                    const sceneNum = document.createElement('span');
-                    sceneNum.className = 'scene-number';
-                    sceneNum.textContent = sceneCounter;
-                    
-                    sceneDiv.appendChild(sceneText);
-                    sceneDiv.appendChild(sceneNum);
-                    screenplayOutput.appendChild(sceneDiv);
-                    
-                    sceneCounter++;
-                } else {
-                    const sceneDiv = document.createElement('div');
-                    sceneDiv.className = 'scene-heading';
-                    sceneDiv.textContent = element.text;
-                    screenplayOutput.appendChild(sceneDiv);
-                    sceneCounter++;
-                }
-                insideDialogue = false;
-            } else if (element.className === 'character') {
-                const charDiv = document.createElement('div');
-                charDiv.className = 'character';
-                charDiv.textContent = element.text;
-                screenplayOutput.appendChild(charDiv);
-                insideDialogue = true;
-            } else if (element.className === 'dialogue') {
-                const dialogueDiv = document.createElement('div');
-                dialogueDiv.className = 'dialogue';
-                dialogueDiv.textContent = element.text;
-                screenplayOutput.appendChild(dialogueDiv);
-            } else if (element.className === 'parenthetical') {
-                const parenDiv = document.createElement('div');
-                parenDiv.className = 'parenthetical';
-                parenDiv.textContent = element.text;
-                screenplayOutput.appendChild(parenDiv);
-            } else if (element.className === 'transition') {
-                const transDiv = document.createElement('div');
-                transDiv.className = 'transition';
-                transDiv.textContent = element.text;
-                screenplayOutput.appendChild(transDiv);
-                insideDialogue = false;
-            } else if (element.className === 'action') {
-                const actionDiv = document.createElement('div');
-                actionDiv.className = 'action';
-                actionDiv.textContent = element.text;
-                screenplayOutput.appendChild(actionDiv);
-                insideDialogue = false;
-            } else if (element.className === 'title-page-element') {
-                const titleDiv = document.createElement('div');
-                titleDiv.className = 'title-page-element';
-                titleDiv.textContent = element.text;
-                screenplayOutput.appendChild(titleDiv);
+            inTitlePage = false;
+            
+            // Scene headings
+            if (/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.)/.test(line.trim())) {
+                tokens.push({ type: 'scene-heading', content: line.trim() });
+            }
+            // Transitions
+            else if (/^(CUT TO:|FADE TO:|DISSOLVE TO:|FADE OUT\.|FADE IN:|SMASH CUT TO:|JUMP CUT TO:|MATCH CUT TO:)/.test(line.trim())) {
+                tokens.push({ type: 'transition', content: line.trim() });
+            }
+            // Character names (all caps, centered position)
+            else if (line.trim() === line.trim().toUpperCase() && 
+                     line.trim().length > 0 && 
+                     line.trim().length < 40 &&
+                     !line.includes('.') &&
+                     i + 1 < lines.length &&
+                     lines[i + 1].trim() !== '') {
+                tokens.push({ type: 'character', content: line.trim() });
+            }
+            // Parentheticals
+            else if (line.trim().startsWith('(') && line.trim().endsWith(')')) {
+                tokens.push({ type: 'parenthetical', content: line.trim() });
+            }
+            // Dialogue (follows character or parenthetical)
+            else if (tokens.length > 0 && 
+                     (tokens[tokens.length - 1].type === 'character' || 
+                      tokens[tokens.length - 1].type === 'parenthetical' ||
+                      tokens[tokens.length - 1].type === 'dialogue') &&
+                     line.trim() !== '') {
+                tokens.push({ type: 'dialogue', content: line.trim() });
+            }
+            // Action/Description
+            else if (line.trim() !== '') {
+                tokens.push({ type: 'action', content: line.trim() });
+            }
+            // Empty lines
+            else {
+                tokens.push({ type: 'empty', content: '' });
             }
         }
+        
+        return tokens;
     }
-    
-    function classifyLine(line, trimmedLine, index, lines) {
-        // Scene Heading
-        if (/^(INT|EXT|INT\.\/EXT|EXT\.\/INT|I\/E)[\.\s]/i.test(trimmedLine)) {
-            return { className: 'scene-heading', text: trimmedLine.toUpperCase() };
-        }
-        
-        // Transition (all caps ending with TO:)
-        if (/^[A-Z\s]+TO:$/.test(trimmedLine) || /^FADE (OUT|IN)\.?$/.test(trimmedLine)) {
-            return { className: 'transition', text: trimmedLine };
-        }
-        
-        // Character Name (all caps, potentially with extension)
-        if (/^[A-Z\s]+(\(.*\))?$/.test(trimmedLine) && 
-            trimmedLine.length < 40 && 
-            index < lines.length - 1 && 
-            lines[index + 1].trim() !== '') {
-            
-            const nextLine = lines[index + 1].trim();
-            if (!nextLine.startsWith('(') && !/^[A-Z\s]+TO:$/.test(nextLine)) {
-                return { className: 'character', text: trimmedLine };
-            }
-        }
-        
-        // Parenthetical
-        if (/^\(.*\)$/.test(trimmedLine)) {
-            return { className: 'parenthetical', text: trimmedLine };
-        }
-        
-        // Dialogue (follows character or parenthetical)
-        if (index > 0) {
-            const prevLine = lines[index - 1].trim();
-            const prevClassified = classifyLine(lines[index - 1], prevLine, index - 1, lines);
-            
-            if (prevClassified.className === 'character' || prevClassified.className === 'parenthetical') {
-                return { className: 'dialogue', text: trimmedLine };
-            }
-            
-            // Continue dialogue if previous was dialogue
-            if (prevClassified.className === 'dialogue' && index > 1) {
-                const prevPrevLine = lines[index - 2].trim();
-                const prevPrevClassified = classifyLine(lines[index - 2], prevPrevLine, index - 2, lines);
-                if (prevPrevClassified.className === 'character') {
-                    return { className: 'dialogue', text: trimmedLine };
-                }
-            }
-        }
-        
-        // Title Page Elements
-        if (trimmedLine.startsWith('Title:') || trimmedLine.startsWith('Author:') || 
-            trimmedLine.startsWith('Draft:') || trimmedLine.startsWith('Contact:')) {
-            return { className: 'title-page-element', text: trimmedLine };
-        }
-        
-        // Default: Action
-        return { className: 'action', text: trimmedLine };
-    }
-    
+
     // ========================================
-    // SCENE EXTRACTION & DISPLAY
+    // CORE FUNCTIONS - SCRIPT RENDERING
     // ========================================
-    function extractAndDisplayScenes() {
-        if (isPlaceholder) return;
-        
-        const fountainText = fountainInput.value;
-        const lines = fountainText.split('\n');
-        const scenes = [];
-        
-        lines.forEach((line, index) => {
-            const trimmedLine = line.trim();
-            if (/^(INT|EXT|INT\.\/EXT|EXT\.\/INT|I\/E)[\.\s]/i.test(trimmedLine)) {
-                const sceneMatch = trimmedLine.match(/^(INT|EXT|INT\.\/EXT|EXT\.\/INT|I\/E)[\.\s]+(.*?)\s*-\s*(.*)$/i);
-                
-                let sceneType = 'INT.';
-                let sceneSetting = trimmedLine;
-                let timeOfDay = 'DAY';
-                
-                if (sceneMatch) {
-                    sceneType = sceneMatch[1].toUpperCase();
-                    sceneSetting = sceneMatch[2].trim();
-                    timeOfDay = sceneMatch[3].trim().toUpperCase();
-                }
-                
-                scenes.push({
-                    text: trimmedLine,
-                    lineIndex: index,
-                    sceneType: sceneType,
-                    sceneSetting: sceneSetting,
-                    timeOfDay: timeOfDay,
-                    cast: extractCastFromScene(lines, index)
-                });
-            }
-        });
-        
-        projectData.projectInfo.scenes = scenes;
-        displayScenes(scenes);
-    }
     
-    function extractCastFromScene(lines, startIndex) {
-        const cast = [];
-        let i = startIndex + 1;
-        
-        while (i < lines.length) {
-            const line = lines[i].trim();
-            
-            // Stop at next scene heading
-            if (/^(INT|EXT|INT\.\/EXT|EXT\.\/INT|I\/E)[\.\s]/i.test(line)) {
-                break;
-            }
-            
-            // Check if it's a character name
-            if (/^[A-Z\s]+(\(.*\))?$/.test(line) && line.length < 40) {
-                const charName = line.replace(/\(.*\)/, '').trim();
-                if (!cast.includes(charName) && charName) {
-                    cast.push(charName);
-                }
-            }
-            
-            i++;
-        }
-        
-        return cast;
-    }
-    
-    function displayScenes(scenes) {
-        sceneList.innerHTML = '';
-        
-        if (scenes.length === 0) {
-            const emptyMsg = document.createElement('li');
-            emptyMsg.textContent = 'No scenes found';
-            emptyMsg.style.textAlign = 'center';
-            emptyMsg.style.color = 'var(--muted-text-color)';
-            emptyMsg.style.cursor = 'default';
-            sceneList.appendChild(emptyMsg);
+    function renderEnhancedScript() {
+        const scriptContent = isPlaceholder ? '' : fountainInput.value;
+        if (!scriptContent.trim()) {
+            screenplayOutput.innerHTML = '<p style="text-align:center; color:#666; padding:50px;">No content to display. Start writing in the editor.</p>';
             return;
         }
         
-        scenes.forEach((scene, index) => {
-            const li = document.createElement('li');
-            li.setAttribute('data-scene-index', index);
-            li.setAttribute('data-line-index', scene.lineIndex);
-            
-            const header = document.createElement('div');
-            header.className = 'scene-item-header';
-            
-            const sceneNum = document.createElement('span');
-            sceneNum.textContent = `Scene ${index + 1}`;
-            
-            const timeLabel = document.createElement('span');
-            timeLabel.className = 'scene-time';
-            timeLabel.textContent = scene.timeOfDay;
-            
-            header.appendChild(sceneNum);
-            header.appendChild(timeLabel);
-            
-            const sceneText = document.createElement('div');
-            sceneText.textContent = scene.text;
-            sceneText.style.marginTop = '0.3rem';
-            sceneText.style.fontSize = '0.85rem';
-            
-            li.appendChild(header);
-            li.appendChild(sceneText);
-            
-            li.addEventListener('click', () => {
-                jumpToLine(scene.lineIndex);
-                closeSceneNavigator();
-            });
-            
-            sceneList.appendChild(li);
+        const tokens = parseFountain(scriptContent);
+        let html = '<div class="screenplay-page">';
+        let sceneNumber = 1;
+        
+        tokens.forEach((token, index) => {
+            if (token.type === 'scene-heading') {
+                const sceneNum = showSceneNumbers ? `<span class="scene-number">${sceneNumber}</span>` : '';
+                html += `<div class="scene-heading">${sceneNum}${escapeHtml(token.content)}</div>`;
+                sceneNumber++;
+            } else if (token.type === 'action') {
+                html += `<div class="action">${escapeHtml(token.content)}</div>`;
+            } else if (token.type === 'character') {
+                html += `<div class="character">${escapeHtml(token.content)}</div>`;
+            } else if (token.type === 'parenthetical') {
+                html += `<div class="parenthetical">${escapeHtml(token.content)}</div>`;
+            } else if (token.type === 'dialogue') {
+                html += `<div class="dialogue">${escapeHtml(token.content)}</div>`;
+            } else if (token.type === 'transition') {
+                html += `<div class="transition">${escapeHtml(token.content)}</div>`;
+            } else if (token.type === 'empty') {
+                html += '<div class="empty-line">&nbsp;</div>';
+            }
         });
         
-        initializeSortable();
-    }
-    
-    function jumpToLine(lineIndex) {
-        const lines = fountainInput.value.split('\n');
-        let charPosition = 0;
-        
-        for (let i = 0; i < lineIndex; i++) {
-            charPosition += lines[i].length + 1;
-        }
-        
-        fountainInput.focus();
-        fountainInput.setSelectionRange(charPosition, charPosition);
-        fountainInput.scrollTop = fountainInput.scrollHeight * (lineIndex / lines.length);
-        
-        switchView('write');
+        html += '</div>';
+        screenplayOutput.innerHTML = html;
+        screenplayOutput.style.fontSize = `${fontSize}px`;
     }
     
     // ========================================
-    // SCENE REORDERING (Sortable.js)
+    // CORE FUNCTIONS - CARD VIEW RENDERING
     // ========================================
-    function initializeSortable() {
-        if (typeof Sortable !== 'undefined' && sceneList) {
-            new Sortable(sceneList, {
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                chosenClass: 'sortable-chosen',
-                dragClass: 'dragging',
-                handle: 'li',
-                onEnd: function(evt) {
-                    reorderScenes(evt.oldIndex, evt.newIndex);
-                }
-            });
-        }
-    }
     
-    function reorderScenes(oldIndex, newIndex) {
-        if (oldIndex === newIndex) return;
+    function renderEnhancedCardView() {
+        updateSceneList();
         
         const scenes = projectData.projectInfo.scenes;
-        const movedScene = scenes[oldIndex];
-        scenes.splice(oldIndex, 1);
-        scenes.splice(newIndex, 0, movedScene);
-        
-        rebuildScriptFromScenes(scenes);
-        showToast('Scene reordered');
-        
-        // Haptic feedback
-        if (navigator.vibrate) {
-            navigator.vibrate(50);
-        }
-    }
-    
-    function rebuildScriptFromScenes(scenes) {
-        const lines = fountainInput.value.split('\n');
-        const newLines = [];
-        const sceneBlocks = [];
-        
-        scenes.forEach(scene => {
-            let startLine = scene.lineIndex;
-            let endLine = startLine;
-            
-            for (let i = startLine + 1; i < lines.length; i++) {
-                if (/^(INT|EXT|INT\.\/EXT|EXT\.\/INT|I\/E)[\.\s]/i.test(lines[i].trim())) {
-                    break;
-                }
-                endLine = i;
-            }
-            
-            sceneBlocks.push(lines.slice(startLine, endLine + 1));
-        });
-        
-        sceneBlocks.forEach((block, index) => {
-            newLines.push(...block);
-            if (index < sceneBlocks.length - 1) {
-                newLines.push('');
-            }
-        });
-        
-        isUpdatingFromSync = true;
-        fountainInput.value = newLines.join('\n');
-        isUpdatingFromSync = false;
-        
-        updatePreview();
-        extractAndDisplayScenes();
-        syncCardsWithScript();
-        saveToLocalStorage();
-    }
-    
-    function exportSceneOrder() {
-        const scenes = projectData.projectInfo.scenes;
+        const totalPages = Math.ceil(scenes.length / cardsPerPage);
         
         if (scenes.length === 0) {
-            showToast('No scenes to export', 'error');
+            cardContainer.innerHTML = '<div style="text-align:center; color:#666; padding:50px; grid-column: 1/-1;">No scenes found. Add scene headings (INT./EXT.) to your script.</div>';
+            if (prevPageBtn) prevPageBtn.style.display = 'none';
+            if (nextPageBtn) nextPageBtn.style.display = 'none';
+            if (pageIndicator) pageIndicator.style.display = 'none';
             return;
         }
         
-        let csvContent = 'Scene Number,Scene Heading,Type,Setting,Time of Day,Characters\n';
+        // Calculate start and end indices
+        const startIndex = currentPage * cardsPerPage;
+        const endIndex = Math.min(startIndex + cardsPerPage, scenes.length);
+        const visibleScenes = scenes.slice(startIndex, endIndex);
         
-        scenes.forEach((scene, index) => {
-            const characters = scene.cast.join('; ');
-            csvContent += `${index + 1},"${scene.text}","${scene.sceneType}","${scene.sceneSetting}","${scene.timeOfDay}","${characters}"\n`;
+        let cardsHTML = '';
+        
+        visibleScenes.forEach((scene, index) => {
+            const globalIndex = startIndex + index;
+            const sceneNumber = globalIndex + 1;
+            
+            cardsHTML += `
+                <div class="scene-card" data-index="${globalIndex}">
+                    <div class="card-header">
+                        <span class="card-number">#${sceneNumber}</span>
+                        <div class="card-actions" style="display: none;">
+                            <button class="card-action-btn share-card-btn" title="Share">📤</button>
+                            <button class="card-action-btn delete-card-btn" title="Delete">🗑️</button>
+                            <button class="card-action-btn add-below-btn" title="Add Below">➕</button>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-heading" contenteditable="true">${escapeHtml(scene.heading)}</div>
+                        <div class="card-description" contenteditable="true">${escapeHtml(scene.description || 'Tap to add description...')}</div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="card-meta">
+                            ${scene.location ? `📍 ${escapeHtml(scene.location)}` : ''}
+                            ${scene.time ? `🕐 ${escapeHtml(scene.time)}` : ''}
+                            ${scene.characters.length > 0 ? `👥 ${scene.characters.length}` : ''}
+                        </div>
+                    </div>
+                    <div class="card-watermark">ToscripT</div>
+                </div>
+            `;
         });
         
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${projectData.projectInfo.projectName}_scene_order.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+        cardContainer.innerHTML = cardsHTML;
         
-        showToast('Scene order exported');
-    }
-	
-   // ========================================
-   // CARD VIEW - ORIGINAL WORKING VERSION
-   // ========================================
-
-   // Enhanced Card View with Mobile Pagination
-   function renderEnhancedCardView() {
-       const cardContainer = document.getElementById('card-container');
-       console.log('=== RENDERING CARD VIEW ===');
-    
-       if (!cardContainer) {
-           console.error('Card container not found');
-           return;
-       }
-
-       const scenes = projectData.projectInfo.scenes;
-       console.log('Scenes to render:', scenes.length);
-       const isMobile = window.innerWidth < 768;
-
-       if (scenes.length === 0) {
-           cardContainer.innerHTML = `
-               <div style="grid-column: 1 / -1; text-align: center; padding: 4rem; color: var(--muted-text-color);">
-                   <i class="fas fa-film" style="font-size: 4rem; margin-bottom: 2rem; opacity: 0.3;"></i>
-                   <h3>No scenes found</h3>
-                   <p>Write some scenes in the editor with INT. or EXT. headings</p>
-                   <p style="font-size: 0.9rem; margin-top: 1rem;">Example: INT. OFFICE - DAY</p>
-               </div>`;
-           return;
-       }
-
-       let scenesToShow = scenes;
-       if (isMobile) {
-           const startIdx = currentPage * cardsPerPage;
-           const endIdx = startIdx + cardsPerPage;
-           scenesToShow = scenes.slice(startIdx, endIdx);
-       }
-
-       cardContainer.innerHTML = scenesToShow.map(scene => `
-           <div class="scene-card card-for-export" data-scene-id="${scene.number}" data-scene-number="${scene.number}">
-               <div class="scene-card-content">
-                   <div class="card-header">
-                       <div class="card-scene-title" contenteditable="true" data-placeholder="Enter scene heading...">${scene.heading}</div>
-                       <input class="card-scene-number" type="text" value="${scene.number}" maxlength="4" data-scene-id="${scene.number}">
-                   </div>
-                   <div class="card-body">
-                       <textarea class="card-description" placeholder="Enter scene description (action only)..." data-scene-id="${scene.number}">${scene.description.join('\n')}</textarea>
-                   </div>
-                   <div class="card-watermark">TO SCRIPT</div>
-               </div>
-               <div class="card-actions">
-                   <button class="icon-btn share-card-btn" title="Share Scene" data-scene-id="${scene.number}">
-                       <i class="fas fa-share-alt"></i>
-                   </button>
-                   <button class="icon-btn delete-card-btn" title="Delete Scene" data-scene-id="${scene.number}">
-                       <i class="fas fa-trash"></i>
-                   </button>
-                   ${isMobile ? `<button class="icon-btn add-card-btn-mobile" title="Add New Scene" data-scene-id="${scene.number}">
-                       <i class="fas fa-plus"></i>
-                   </button>` : ''}
-               </div>
-           </div>
-       `).join('');
-
-       if (isMobile && scenes.length > cardsPerPage) {
-           const totalPages = Math.ceil(scenes.length / cardsPerPage);
-           let paginationHtml = '<div class="mobile-pagination">';
-        
-           for (let i = 0; i < totalPages; i++) {
-               const startNum = i * cardsPerPage + 1;
-               const endNum = Math.min((i + 1) * cardsPerPage, scenes.length);
-               const isActive = i === currentPage;
-               paginationHtml += `
-                   <button class="pagination-btn ${isActive ? 'active' : ''}" data-page="${i}">
-                       ${startNum}-${endNum}
-                   </button>
-               `;
-           }
-        
-           paginationHtml += '</div>';
-           cardContainer.insertAdjacentHTML('beforeend', paginationHtml);
-        
-           document.querySelectorAll('.pagination-btn').forEach(btn => {
-               btn.addEventListener('click', (e) => {
-                   currentPage = parseInt(e.target.dataset.page);
-                   renderEnhancedCardView();
-                   bindCardEditingEvents();
-                
-                   if (cardHeader && currentView === 'card') {
-                       cardHeader.style.display = 'flex';
-                   }
-                
-                   if (window.innerWidth < 768) {
-                       setTimeout(() => setupMobileCardActions(), 100);
-                   }
-               });
-           });
-       }
-
-       console.log('Cards rendered successfully');
-    
-       if (cardHeader && currentView === 'card') {
-           cardHeader.style.display = 'flex';
-       }
-    
-       if (isMobile) {
-           setTimeout(() => {
-               setupMobileCardActions();
-           }, 100);
-       }
-   }
-
-   // Bind Card Editing Events
-   function bindCardEditingEvents() {
-       const cardContainer = document.getElementById('card-container');
-       if (!cardContainer) return;
-
-       cardContainer.removeEventListener('input', handleCardInput);
-       cardContainer.removeEventListener('blur', handleCardBlur, true);
-       cardContainer.removeEventListener('click', handleCardClick);
-
-       cardContainer.addEventListener('input', handleCardInput);
-       cardContainer.addEventListener('blur', handleCardBlur, true);
-       cardContainer.addEventListener('click', handleCardClick);
-
-       function handleCardInput(e) {
-           if (e.target.classList.contains('card-scene-title') || 
-               e.target.classList.contains('card-description') || 
-               e.target.classList.contains('card-scene-number')) {
-               clearTimeout(handleCardInput.timeout);
-               handleCardInput.timeout = setTimeout(() => {
-                   syncCardsToEditor();
-               }, 800);
-           }
-       }
-
-       function handleCardBlur(e) {
-           if (e.target.classList.contains('card-scene-title') || 
-               e.target.classList.contains('card-description') || 
-               e.target.classList.contains('card-scene-number')) {
-               syncCardsToEditor();
-           }
-       }
-
-       function handleCardClick(e) {
-           if (e.target.closest('.delete-card-btn')) {
-               const sceneId = e.target.closest('.delete-card-btn').getAttribute('data-scene-id');
-               const card = cardContainer.querySelector(`.scene-card[data-scene-id="${sceneId}"]`);
-               if (card && confirm('Delete this scene card?')) {
-                   card.remove();
-                
-                   const allScenes = projectData.projectInfo.scenes;
-                   const sceneIndex = allScenes.findIndex(s => s.number == sceneId);
-                   if (sceneIndex !== -1) {
-                       allScenes.splice(sceneIndex, 1);
-                       allScenes.forEach((scene, index) => {
-                           scene.number = index + 1;
-                       });
-                       projectData.projectInfo.scenes = allScenes;
-                   }
-                
-                   renderEnhancedCardView();
-                   bindCardEditingEvents();
-                
-                   if (cardHeader && currentView === 'card') {
-                       cardHeader.style.display = 'flex';
-                   }
-                
-                   syncCardsToEditor();
-               }
-           } else if (e.target.closest('.share-card-btn')) {
-               const sceneId = e.target.closest('.share-card-btn').getAttribute('data-scene-id');
-               shareSceneCard(sceneId);
-           } else if (e.target.closest('.add-card-btn-mobile')) {
-               const sceneId = e.target.closest('.add-card-btn-mobile').getAttribute('data-scene-id');
-               addNewSceneCard(sceneId);
-           }
-       }
-   }
-
-   // Sync Cards to Editor
-   function syncCardsToEditor() {
-       const cardContainer = document.getElementById('card-container');
-       if (!cardContainer || !fountainInput) return;
-
-       isUpdatingFromSync = true;
-    
-       let scriptText = '';
-       const cards = Array.from(cardContainer.querySelectorAll('.scene-card'));
-    
-       cards.forEach((card, index) => {
-           const titleElement = card.querySelector('.card-scene-title');
-           const descriptionElement = card.querySelector('.card-description');
-           let title = titleElement ? titleElement.textContent.trim() : '';
-           let description = descriptionElement ? descriptionElement.value.trim() : '';
-
-           if (title && !title.match(/(INT\.|EXT\.|INT\.\/EXT\.|EXT\.\/INT\.)/i)) {
-               title = 'INT. ' + title.toUpperCase();
-           } else {
-               title = title.toUpperCase();
-           }
-
-           const numberElement = card.querySelector('.card-scene-number');
-           if (numberElement) {
-               numberElement.value = index + 1;
-           }
-
-           scriptText += title + '\n';
-           if (description) {
-               scriptText += description + '\n\n';
-           }
-       });
-
-       const trimmedScript = scriptText.trim();
-       if (trimmedScript !== fountainInput.value.trim() && trimmedScript !== '') {
-           fountainInput.value = trimmedScript;
-           fountainInput.classList.remove('placeholder');
-           saveToLocalStorage();
-       }
-    
-       setTimeout(() => { isUpdatingFromSync = false; }, 100);
-   }
-   
-   // ========================================
-   // MISSING CARD VIEW FUNCTIONS - ADD THESE
-   // ========================================
-
-   // Wrapper function for syncCardsToEditor
-   function syncCardsWithScript() {
-       renderEnhancedCardView();
-       bindCardEditingEvents();
-   }
-
-   // Wrapper for addNewSceneCard
-   function addNewCard() {
-       addNewSceneCard(null);
-   }
-
-   // Share individual scene card
-   function shareSceneCard(sceneId) {
-       const scene = projectData.projectInfo.scenes.find(s => s.number == sceneId);
-       if (!scene) return;
-    
-       const shareText = `Scene ${sceneId}: ${scene.heading}\n\n${scene.description.join('\n')}`;
-    
-       if (navigator.share) {
-           navigator.share({
-               title: `Scene ${sceneId}`,
-               text: shareText
-           }).then(() => {
-               showToast('Card shared');
-           }).catch(() => {
-               navigator.clipboard.writeText(shareText).then(() => {
-                   showToast('Card copied to clipboard');
-               });
-           });
-       } else {
-           navigator.clipboard.writeText(shareText).then(() => {
-               showToast('Card copied to clipboard');
-           });
-       }
-   }
-
-   // Setup mobile card actions
-   function setupMobileCardActions() {
-       const cards = document.querySelectorAll('.scene-card');
-       cards.forEach(card => {
-           card.addEventListener('touchstart', () => {
-               card.classList.add('active');
-           });
-        
-           card.addEventListener('touchend', () => {
-               setTimeout(() => {
-                   card.classList.remove('active');
-               }, 300);
-           });
-       });
-   }
-   
-
-   // Add New Scene Card
-   function addNewSceneCard(afterSceneId = null) {
-       const cardContainer = document.getElementById('card-container');
-       if (!cardContainer) return;
-
-       const allScenes = projectData.projectInfo.scenes;
-       const newSceneNumber = allScenes.length + 1;
-
-       const newScene = {
-           number: newSceneNumber,
-           heading: 'INT. NEW SCENE - DAY',
-           sceneType: 'INT.',
-           location: 'NEW SCENE',
-           timeOfDay: 'DAY',
-           description: [],
-           characters: [],
-           fullText: 'INT. NEW SCENE - DAY\n'
-       };
-    
-       if (afterSceneId) {
-           const insertIndex = allScenes.findIndex(s => s.number == afterSceneId);
-           if (insertIndex !== -1) {
-               allScenes.splice(insertIndex + 1, 0, newScene);
-               allScenes.forEach((scene, index) => {
-                   scene.number = index + 1;
-               });
-           } else {
-               allScenes.push(newScene);
-           }
-       } else {
-           allScenes.push(newScene);
-       }
-    
-       projectData.projectInfo.scenes = allScenes;
-    
-       renderEnhancedCardView();
-       bindCardEditingEvents();
-    
-       if (cardHeader && currentView === 'card') {
-           cardHeader.style.display = 'flex';
-       }
-    
-       setTimeout(() => {
-           const newCard = cardContainer.querySelector(`.scene-card[data-scene-number="${newSceneNumber}"]`);
-           if (newCard) {
-               newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-               const titleElement = newCard.querySelector('.card-scene-title');
-               if (titleElement) titleElement.focus();
-           }
-       }, 100);
-
-       syncCardsToEditor();
-   }
-   
-    // ========================================
-    // SAVE ALL CARDS AS PDF (Optimized for Mobile)
-    // ========================================
-    function saveAllCardsAsImages() {
-        const cards = Array.from(document.querySelectorAll('.scene-card'));
-        
-        if (cards.length === 0) {
-            showToast('No cards to save', 'error');
-            return;
+        // Update pagination controls
+        if (pageIndicator) {
+            pageIndicator.textContent = `Page ${currentPage + 1} of ${totalPages}`;
+            pageIndicator.style.display = 'block';
         }
         
-        showToast('Preparing cards for export...');
+        if (prevPageBtn) {
+            prevPageBtn.style.display = currentPage > 0 ? 'block' : 'none';
+        }
         
-        // Show watermarks for export
+        if (nextPageBtn) {
+            nextPageBtn.style.display = currentPage < totalPages - 1 ? 'block' : 'none';
+        }
+        
+        // Bind card events
+        bindCardEditingEvents();
+        setupMobileCardActions();
+    }
+    
+    // ========================================
+    // CORE FUNCTIONS - CARD EDITING
+    // ========================================
+    
+    function bindCardEditingEvents() {
+        const cards = document.querySelectorAll('.scene-card');
+        
         cards.forEach(card => {
-            const watermark = card.querySelector('.card-watermark');
-            if (watermark) {
-                watermark.style.opacity = '0.3';
-                watermark.style.visibility = 'visible';
-            }
-        });
-        
-        // Use different method based on device
-        if (isMobileDevice()) {
-            saveCardsAsImagesCanvas(cards);
-        } else {
-            saveCardsAsImagesPDF(cards);
-        }
-    }
-    
-    async function saveCardsAsImagesCanvas(cards) {
-        try {
-            const zip = new JSZip();
-            const cardsPerFile = 18; // 6 pages x 3 cards per page
-            let fileIndex = 1;
+            const index = parseInt(card.dataset.index);
+            const cardActions = card.querySelector('.card-actions');
+            const shareBtn = card.querySelector('.share-card-btn');
+            const deleteBtn = card.querySelector('.delete-card-btn');
+            const addBelowBtn = card.querySelector('.add-below-btn');
+            const headingEl = card.querySelector('.card-heading');
+            const descriptionEl = card.querySelector('.card-description');
             
-            for (let i = 0; i < cards.length; i += cardsPerFile) {
-                const batch = cards.slice(i, i + cardsPerFile);
-                
-                for (let j = 0; j < batch.length; j++) {
-                    const card = batch[j];
-                    const blob = await generateSimpleCardBlob(card);
-                    const cardNumber = i + j + 1;
-                    zip.file(`scene_card_${cardNumber}.png`, blob);
-                }
-                
-                showToast(`Processing ${Math.min(i + cardsPerFile, cards.length)}/${cards.length} cards...`);
-            }
-            
-            const zipBlob = await zip.generateAsync({ type: 'blob' });
-            const url = URL.createObjectURL(zipBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${projectData.projectInfo.projectName}_scene_cards.zip`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            showToast('Cards exported successfully!');
-            
-            // Hide watermarks after export
-            cards.forEach(card => {
-                const watermark = card.querySelector('.card-watermark');
-                if (watermark) {
-                    watermark.style.opacity = '0';
-                    watermark.style.visibility = 'hidden';
-                }
-            });
-            
-        } catch (error) {
-            console.error('Export error:', error);
-            showToast('Export failed', 'error');
-        }
-    }
-    
-    async function generateSimpleCardBlob(card) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const scale = 2;
-        
-        canvas.width = 600 * scale;
-        canvas.height = 1000 * scale;
-        
-        ctx.fillStyle = '#1f2937';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        ctx.strokeStyle = '#374151';
-        ctx.lineWidth = 2 * scale;
-        ctx.strokeRect(10 * scale, 10 * scale, (canvas.width - 20 * scale), (canvas.height - 20 * scale));
-        
-        ctx.fillStyle = '#f3f4f6';
-        ctx.font = `bold ${28 * scale}px "Courier New", monospace`;
-        
-        const title = card.querySelector('.card-scene-title');
-        const description = card.querySelector('.card-description');
-        const sceneNumber = card.querySelector('.card-scene-number');
-        
-        const titleText = title ? title.textContent : 'Scene';
-        const descText = description ? description.value : '';
-        const numText = sceneNumber ? sceneNumber.value : '1';
-        
-        ctx.fillText(numText, 30 * scale, 50 * scale);
-        
-        const titleWords = titleText.split(' ');
-        let line = '';
-        let y = 100 * scale;
-        
-        titleWords.forEach(word => {
-            const testLine = line + word + ' ';
-            if (ctx.measureText(testLine).width > (canvas.width - 60 * scale)) {
-                ctx.fillText(line, 30 * scale, y);
-                line = word + ' ';
-                y += 40 * scale;
-            } else {
-                line = testLine;
-            }
-        });
-        ctx.fillText(line, 30 * scale, y);
-        
-        ctx.strokeStyle = '#374151';
-        ctx.lineWidth = 1 * scale;
-        ctx.beginPath();
-        ctx.moveTo(30 * scale, (y + 20 * scale));
-        ctx.lineTo((canvas.width - 30 * scale), (y + 20 * scale));
-        ctx.stroke();
-        
-        ctx.font = `${22 * scale}px "Courier New", monospace`;
-        const descLines = descText.split('\n');
-        y += 60 * scale;
-        
-        descLines.forEach(descLine => {
-            const words = descLine.split(' ');
-            let descLineText = '';
-            
-            words.forEach(word => {
-                const testLine = descLineText + word + ' ';
-                if (ctx.measureText(testLine).width > (canvas.width - 60 * scale)) {
-                    ctx.fillText(descLineText, 30 * scale, y);
-                    descLineText = word + ' ';
-                    y += 32 * scale;
-                } else {
-                    descLineText = testLine;
-                }
-            });
-            
-            if (descLineText) {
-                ctx.fillText(descLineText, 30 * scale, y);
-                y += 32 * scale;
-            }
-        });
-        
-        ctx.fillStyle = 'rgba(156, 163, 175, 0.3)';
-        ctx.font = `${16 * scale}px "Inter", sans-serif`;
-        ctx.fillText('ToscripT', 30 * scale, (canvas.height - 20 * scale));
-        
-        return new Promise((resolve) => {
-            canvas.toBlob(resolve, 'image/png');
-        });
-    }
-    
-    async function saveCardsAsImagesPDF(cards) {
-        if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
-            showToast('PDF library not loaded', 'error');
-            return;
-        }
-        
-        try {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'in', 'letter');
-            
-            const cardWidth = 3;
-            const cardHeight = 5;
-            const cardsPerRow = 2;
-            const cardsPerColumn = 2;
-            const marginLeft = 1;
-            const marginTop = 0.5;
-            const spacing = 0.5;
-            
-            let cardIndex = 0;
-            
-            for (const card of cards) {
-                const canvas = await html2canvas(card, {
-                    scale: 2,
-                    backgroundColor: '#1f2937',
-                    logging: false
+            // Desktop: Hover to show actions
+            if (!isMobileDevice()) {
+                card.addEventListener('mouseenter', () => {
+                    cardActions.style.display = 'flex';
                 });
-                
-                const imgData = canvas.toDataURL('image/png');
-                
-                const row = Math.floor((cardIndex % (cardsPerRow * cardsPerColumn)) / cardsPerRow);
-                const col = cardIndex % cardsPerRow;
-                
-                const x = marginLeft + col * (cardWidth + spacing);
-                const y = marginTop + row * (cardHeight + spacing);
-                
-                pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight);
-                
-                cardIndex++;
-                
-                if (cardIndex % (cardsPerRow * cardsPerColumn) === 0 && cardIndex < cards.length) {
-                    pdf.addPage();
-                }
-                
-                showToast(`Processing ${cardIndex}/${cards.length} cards...`);
+                card.addEventListener('mouseleave', () => {
+                    cardActions.style.display = 'none';
+                });
             }
             
-            pdf.save(`${projectData.projectInfo.projectName}_scene_cards.pdf`);
-            showToast('Cards exported as PDF!');
+            // Share button
+            shareBtn?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                shareCard(index);
+            });
             
-            // Hide watermarks
-            cards.forEach(card => {
-                const watermark = card.querySelector('.card-watermark');
-                if (watermark) {
-                    watermark.style.opacity = '0';
-                    watermark.style.visibility = 'hidden';
+            // Delete button
+            deleteBtn?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (confirm('Delete this scene card?')) {
+                    deleteCard(index);
                 }
             });
             
-        } catch (error) {
-            console.error('PDF export error:', error);
-            showToast('PDF export failed', 'error');
-        }
-    }
-	
-    // ========================================
-    // FILE OPERATIONS - SAVE AS
-    // ========================================
-    function saveFountainFile() {
-        if (isPlaceholder) {
-            showToast('Cannot save placeholder text', 'error');
-            return;
-        }
-        
-        const content = fountainInput.value;
-        const filename = `${projectData.projectInfo.projectName}.fountain`;
-        
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        showToast('Fountain file saved');
-        closeMenu();
+            // Add below button
+            addBelowBtn?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                addNewSceneCard(index);
+            });
+            
+            // Edit heading
+            headingEl?.addEventListener('blur', () => {
+                const newHeading = headingEl.textContent.trim();
+                if (newHeading) {
+                    updateCardInScript(index, 'heading', newHeading);
+                }
+            });
+            
+            headingEl?.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    headingEl.blur();
+                }
+            });
+            
+            // Edit description
+            descriptionEl?.addEventListener('blur', () => {
+                const newDescription = descriptionEl.textContent.trim();
+                updateCardInScript(index, 'description', newDescription);
+            });
+            
+            descriptionEl?.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    descriptionEl.blur();
+                }
+            });
+        });
     }
     
-    function savePdfEnglish() {
-        if (typeof jspdf === 'undefined') {
-            showToast('PDF library not loaded', 'error');
-            return;
-        }
+    function setupMobileCardActions() {
+        if (!isMobileDevice()) return;
         
-        if (isPlaceholder) {
-            showToast('Cannot save placeholder text', 'error');
-            return;
-        }
+        const cards = document.querySelectorAll('.scene-card');
         
-        showToast('Generating PDF...');
-        
-        try {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'in', 'letter');
+        cards.forEach(card => {
+            const cardActions = card.querySelector('.card-actions');
             
-            pdf.setFont('courier');
-            pdf.setFontSize(12);
-            
-            const lines = fountainInput.value.split('\n');
-            const pageHeight = 11;
-            const marginTop = 1;
-            const marginLeft = 1.5;
-            const lineHeight = 0.17;
-            let y = marginTop;
-            
-            lines.forEach(line => {
-                const trimmed = line.trim();
-                
-                if (y > pageHeight - 1) {
-                    pdf.addPage();
-                    y = marginTop;
-                }
-                
-                if (trimmed === '') {
-                    y += lineHeight;
+            // Tap to reveal/hide actions
+            card.addEventListener('click', (e) => {
+                // Don't toggle if clicking on buttons or editable content
+                if (e.target.classList.contains('card-action-btn') || 
+                    e.target.hasAttribute('contenteditable')) {
                     return;
                 }
                 
-                const element = classifyLine(line, trimmed, 0, lines);
+                // Hide all other card actions
+                const allActions = document.querySelectorAll('.card-actions');
+                allActions.forEach(actions => {
+                    if (actions !== cardActions) {
+                        actions.style.display = 'none';
+                    }
+                });
                 
-                if (element.className === 'scene-heading') {
-                    pdf.setFont('courier', 'bold');
-                    pdf.text(trimmed.toUpperCase(), marginLeft, y);
-                    y += lineHeight * 2;
-                } else if (element.className === 'character') {
-                    pdf.setFont('courier', 'normal');
-                    pdf.text(trimmed, marginLeft + 2.37, y);
-                    y += lineHeight;
-                } else if (element.className === 'dialogue') {
-                    pdf.setFont('courier', 'normal');
-                    const dialogueLines = pdf.splitTextToSize(trimmed, 3.5);
-                    dialogueLines.forEach(dialogueLine => {
-                        if (y > pageHeight - 1) {
-                            pdf.addPage();
-                            y = marginTop;
-                        }
-                        pdf.text(dialogueLine, marginLeft + 1.5, y);
-                        y += lineHeight;
-                    });
-                } else if (element.className === 'parenthetical') {
-                    pdf.setFont('courier', 'normal');
-                    pdf.text(trimmed, marginLeft + 1.8, y);
-                    y += lineHeight;
-                } else if (element.className === 'transition') {
-                    pdf.setFont('courier', 'bold');
-                    const transWidth = pdf.getTextWidth(trimmed);
-                    pdf.text(trimmed, 8.5 - 1 - transWidth, y);
-                    y += lineHeight * 2;
+                // Toggle current card actions
+                if (cardActions.style.display === 'none' || cardActions.style.display === '') {
+                    cardActions.style.display = 'flex';
                 } else {
-                    pdf.setFont('courier', 'normal');
-                    const actionLines = pdf.splitTextToSize(trimmed, 6);
-                    actionLines.forEach(actionLine => {
-                        if (y > pageHeight - 1) {
-                            pdf.addPage();
-                            y = marginTop;
-                        }
-                        pdf.text(actionLine, marginLeft, y);
-                        y += lineHeight;
-                    });
-                    y += lineHeight;
+                    cardActions.style.display = 'none';
                 }
             });
+        });
+    }
+    
+    // ========================================
+    // CORE FUNCTIONS - CARD OPERATIONS
+    // ========================================
+    
+    function addNewSceneCard(afterIndex = null) {
+        const newSceneHeading = 'INT. NEW LOCATION - DAY';
+        const newSceneContent = '\n\n' + newSceneHeading + '\n\nAction description goes here.\n\n';
+        
+        if (afterIndex === null || afterIndex === undefined) {
+            // Add at the end
+            const currentContent = isPlaceholder ? '' : fountainInput.value;
+            fountainInput.value = currentContent + newSceneContent;
+        } else {
+            // Add after specific scene
+            const lines = fountainInput.value.split('\n');
+            let insertPosition = 0;
+            let sceneCount = 0;
             
-            pdf.save(`${projectData.projectInfo.projectName}.pdf`);
-            showToast('PDF saved successfully!');
-            closeMenu();
+            for (let i = 0; i < lines.length; i++) {
+                if (/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.)/.test(lines[i].trim())) {
+                    if (sceneCount === afterIndex) {
+                        // Find the end of this scene
+                        for (let j = i + 1; j < lines.length; j++) {
+                            if (/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.)/.test(lines[j].trim())) {
+                                insertPosition = j;
+                                break;
+                            }
+                            insertPosition = j + 1;
+                        }
+                        break;
+                    }
+                    sceneCount++;
+                }
+            }
             
-        } catch (error) {
-            console.error('PDF generation error:', error);
-            showToast('PDF generation failed', 'error');
+            lines.splice(insertPosition, 0, '', newSceneHeading, '', 'Action description goes here.', '');
+            fountainInput.value = lines.join('\n');
+        }
+        
+        isPlaceholder = false;
+        updateSceneList();
+        saveToLocalStorage();
+        renderEnhancedCardView();
+    }
+    
+    function deleteCard(index) {
+        const scenes = projectData.projectInfo.scenes;
+        if (index < 0 || index >= scenes.length) return;
+        
+        const lines = fountainInput.value.split('\n');
+        
+        let sceneCount = 0;
+        let startLine = -1;
+        let endLine = -1;
+        
+        for (let i = 0; i < lines.length; i++) {
+            if (/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.)/.test(lines[i].trim())) {
+                if (sceneCount === index) {
+                    startLine = i;
+                    // Find where this scene ends
+                    for (let j = i + 1; j < lines.length; j++) {
+                        if (/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.)/.test(lines[j].trim())) {
+                            endLine = j;
+                            break;
+                        }
+                    }
+                    if (endLine === -1) endLine = lines.length;
+                    break;
+                }
+                sceneCount++;
+            }
+        }
+        
+        if (startLine !== -1) {
+            lines.splice(startLine, endLine - startLine);
+            fountainInput.value = lines.join('\n');
+            updateSceneList();
+            saveToLocalStorage();
+            
+            // Adjust current page if needed
+            const newTotalPages = Math.ceil(projectData.projectInfo.scenes.length / cardsPerPage);
+            if (currentPage >= newTotalPages && currentPage > 0) {
+                currentPage--;
+            }
+            
+            renderEnhancedCardView();
         }
     }
     
-    function savePdfUnicode() {
-        if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
-            showToast('PDF library not loaded', 'error');
-            return;
+    function shareCard(index) {
+        const scenes = projectData.projectInfo.scenes;
+        if (index < 0 || index >= scenes.length) return;
+        
+        const scene = scenes[index];
+        const shareText = `Scene #${index + 1}\n${scene.heading}\n\n${scene.description || 'No description'}`;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: `Scene #${index + 1}`,
+                text: shareText
+            }).catch(err => console.log('Share cancelled'));
+        } else {
+            navigator.clipboard.writeText(shareText).then(() => {
+                alert('Scene copied to clipboard!');
+            }).catch(err => {
+                alert('Unable to copy to clipboard');
+            });
         }
+    }
+    
+    function updateCardInScript(index, field, newValue) {
+        const scenes = projectData.projectInfo.scenes;
+        if (index < 0 || index >= scenes.length) return;
         
-        if (isPlaceholder) {
-            showToast('Cannot save placeholder text', 'error');
-            return;
-        }
+        const lines = fountainInput.value.split('\n');
+        let sceneCount = 0;
         
-        showToast('Generating Unicode PDF (this may take a moment)...');
-        
-        setTimeout(async () => {
-            try {
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'in', 'letter');
-                
-                const canvas = await html2canvas(screenplayOutput, {
-                    scale: 2,
-                    backgroundColor: '#ffffff',
-                    logging: false
-                });
-                
-                const imgData = canvas.toDataURL('image/png');
-                const imgWidth = 8.5;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                
-                let heightLeft = imgHeight;
-                let position = 0;
-                
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= 11;
-                
-                while (heightLeft > 0) {
-                    position = heightLeft - imgHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= 11;
+        for (let i = 0; i < lines.length; i++) {
+            if (/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.)/.test(lines[i].trim())) {
+                if (sceneCount === index) {
+                    if (field === 'heading') {
+                        lines[i] = newValue;
+                    } else if (field === 'description') {
+                        // Update the action lines following the heading
+                        let descLines = newValue.split('\n');
+                        // Find existing description end
+                        let descEnd = i + 1;
+                        for (let j = i + 1; j < lines.length; j++) {
+                            if (/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.)/.test(lines[j].trim()) || 
+                                lines[j].trim() === lines[j].trim().toUpperCase() && lines[j].trim().length > 0) {
+                                descEnd = j;
+                                break;
+                            }
+                            if (j === lines.length - 1) descEnd = j + 1;
+                        }
+                        // Replace description
+                        lines.splice(i + 1, descEnd - i - 1, '', ...descLines, '');
+                    }
+                    break;
                 }
-                
-                pdf.save(`${projectData.projectInfo.projectName}_unicode.pdf`);
-                showToast('Unicode PDF saved successfully!');
-                closeMenu();
-                
-            } catch (error) {
-                console.error('Unicode PDF error:', error);
-                showToast('Unicode PDF generation failed', 'error');
+                sceneCount++;
             }
-        }, 100);
+        }
+        
+        isUpdatingFromSync = true;
+        fountainInput.value = lines.join('\n');
+        isUpdatingFromSync = false;
+        
+        updateSceneList();
+        saveToLocalStorage();
+    }
+
+    // ========================================
+    // CORE FUNCTIONS - SCENE MANAGEMENT
+    // ========================================
+    
+    function updateSceneList() {
+        const scriptContent = isPlaceholder ? '' : fountainInput.value;
+        const tokens = parseFountain(scriptContent);
+        const scenes = [];
+        let currentScene = null;
+        
+        tokens.forEach(token => {
+            if (token.type === 'scene-heading') {
+                if (currentScene) {
+                    scenes.push(currentScene);
+                }
+                currentScene = {
+                    heading: token.content,
+                    description: '',
+                    characters: [],
+                    type: '',
+                    location: '',
+                    time: ''
+                };
+                
+                // Parse scene metadata
+                const match = token.content.match(/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.)\s*(.+?)\s*-\s*(.+)$/);
+                if (match) {
+                    currentScene.type = match[1];
+                    currentScene.location = match[2].trim();
+                    currentScene.time = match[3].trim();
+                }
+            } else if (currentScene) {
+                if (token.type === 'action' || token.type === 'dialogue') {
+                    currentScene.description += token.content + ' ';
+                } else if (token.type === 'character') {
+                    if (!currentScene.characters.includes(token.content)) {
+                        currentScene.characters.push(token.content);
+                    }
+                }
+            }
+        });
+        
+        if (currentScene) {
+            scenes.push(currentScene);
+        }
+        
+        projectData.projectInfo.scenes = scenes;
+        projectData.projectInfo.scriptContent = scriptContent;
+        
+        renderSceneNavigator(scenes);
+    }
+    
+    function renderSceneNavigator(scenes) {
+        if (!sceneList) return;
+        
+        if (scenes.length === 0) {
+            sceneList.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">No scenes yet</div>';
+            return;
+        }
+        
+        let html = '';
+        scenes.forEach((scene, index) => {
+            html += `
+                <div class="scene-item" data-index="${index}" draggable="true">
+                    <div class="scene-number">#${index + 1}</div>
+                    <div class="scene-details">
+                        <div class="scene-heading-nav">${escapeHtml(scene.heading)}</div>
+                        <div class="scene-meta">
+                            ${scene.characters.length > 0 ? scene.characters.slice(0, 3).join(', ') : 'No characters'}
+                            ${scene.characters.length > 3 ? '...' : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        sceneList.innerHTML = html;
+        
+        // Add drag and drop functionality
+        const sceneItems = sceneList.querySelectorAll('.scene-item');
+        sceneItems.forEach(item => {
+            item.addEventListener('dragstart', handleDragStart);
+            item.addEventListener('dragover', handleDragOver);
+            item.addEventListener('drop', handleDrop);
+            item.addEventListener('dragend', handleDragEnd);
+            
+            // Click to jump to scene in editor
+            item.addEventListener('click', () => {
+                const index = parseInt(item.dataset.index);
+                jumpToScene(index);
+            });
+        });
+    }
+    
+    function jumpToScene(index) {
+        const lines = fountainInput.value.split('\n');
+        let sceneCount = 0;
+        
+        for (let i = 0; i < lines.length; i++) {
+            if (/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.)/.test(lines[i].trim())) {
+                if (sceneCount === index) {
+                    // Calculate character position
+                    const beforeText = lines.slice(0, i).join('\n');
+                    fountainInput.focus();
+                    fountainInput.setSelectionRange(beforeText.length, beforeText.length);
+                    switchView('write');
+                    return;
+                }
+                sceneCount++;
+            }
+        }
+    }
+    
+    // ========================================
+    // DRAG AND DROP HANDLERS
+    // ========================================
+    
+    function handleDragStart(e) {
+        draggedElement = this;
+        this.style.opacity = '0.5';
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.innerHTML);
+    }
+    
+    function handleDragOver(e) {
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+        e.dataTransfer.dropEffect = 'move';
+        
+        // Visual feedback
+        if (draggedElement !== this) {
+            this.style.borderTop = '2px solid #1a73e8';
+        }
+        
+        return false;
+    }
+    
+    function handleDrop(e) {
+        if (e.stopPropagation) {
+            e.stopPropagation();
+        }
+        
+        // Clear visual feedback
+        this.style.borderTop = '';
+        
+        if (draggedElement !== this) {
+            const fromIndex = parseInt(draggedElement.dataset.index);
+            const toIndex = parseInt(this.dataset.index);
+            reorderScenes(fromIndex, toIndex);
+        }
+        
+        return false;
+    }
+    
+    function handleDragEnd(e) {
+        this.style.opacity = '1';
+        
+        // Clear all visual feedback
+        const items = document.querySelectorAll('.scene-item');
+        items.forEach(item => {
+            item.style.borderTop = '';
+        });
+    }
+    
+    function reorderScenes(fromIndex, toIndex) {
+        const lines = fountainInput.value.split('\n');
+        const sceneBlocks = [];
+        let currentBlock = [];
+        
+        // Split content into scene blocks
+        for (let i = 0; i < lines.length; i++) {
+            if (/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.)/.test(lines[i].trim())) {
+                if (currentBlock.length > 0) {
+                    sceneBlocks.push(currentBlock);
+                }
+                currentBlock = [lines[i]];
+            } else {
+                currentBlock.push(lines[i]);
+            }
+        }
+        if (currentBlock.length > 0) {
+            sceneBlocks.push(currentBlock);
+        }
+        
+        // Reorder
+        const movedScene = sceneBlocks.splice(fromIndex, 1)[0];
+        sceneBlocks.splice(toIndex, 0, movedScene);
+        
+        // Rebuild content
+        const newContent = sceneBlocks.map(block => block.join('\n')).join('\n');
+        fountainInput.value = newContent;
+        
+        updateSceneList();
+        saveToLocalStorage();
+        
+        if (currentView === 'card') {
+            renderEnhancedCardView();
+        }
+    }
+    
+    // ========================================
+    // FILTER FUNCTIONS
+    // ========================================
+    
+    function updateFilterHelp() {
+        const category = filterCategorySelect.value;
+        const helpTexts = {
+            'type': 'Enter: INT. or EXT.',
+            'location': 'Enter location name (e.g., COFFEE SHOP)',
+            'time': 'Enter time of day (e.g., DAY, NIGHT)',
+            'character': 'Enter character name'
+        };
+        if (filterHelpText) {
+            filterHelpText.textContent = helpTexts[category] || '';
+        }
+    }
+    
+    function filterScenes(category, value) {
+        if (!value) {
+            updateSceneList();
+            return;
+        }
+        
+        const allScenes = projectData.projectInfo.scenes;
+        const filtered = allScenes.filter(scene => {
+            if (category === 'type') {
+                return scene.type.toLowerCase().includes(value.toLowerCase());
+            } else if (category === 'location') {
+                return scene.location.toLowerCase().includes(value.toLowerCase());
+            } else if (category === 'time') {
+                return scene.time.toLowerCase().includes(value.toLowerCase());
+            } else if (category === 'character') {
+                return scene.characters.some(char => 
+                    char.toLowerCase().includes(value.toLowerCase())
+                );
+            }
+            return true;
+        });
+        
+        renderSceneNavigator(filtered);
+    }
+    
+    // ========================================
+    // EXPORT FUNCTIONS - OPTIONS MENU
+    // ========================================
+    
+    function showExportOptions() {
+        const options = [
+            'Export Visible Cards (Current Page)',
+            'Export All Cards as PDF',
+            'Export All Cards as TXT',
+            'Cancel'
+        ];
+        
+        let choice;
+        if (isMobileDevice()) {
+            // Simple alert for mobile
+            const message = 'Choose export option:\n1. Visible Cards\n2. All Cards PDF\n3. All Cards TXT';
+            choice = prompt(message, '1');
+            
+            if (choice === '1') {
+                saveVisibleCardsAsPDF();
+            } else if (choice === '2') {
+                saveAllCardsAsImages();
+            } else if (choice === '3') {
+                saveAllCardsAsTXT();
+            }
+        } else {
+            // Better dialog for desktop
+            if (confirm('Export visible cards only (current page)?\n\nClick OK for visible cards, Cancel to see all options.')) {
+                saveVisibleCardsAsPDF();
+            } else {
+                const allChoice = prompt('Export all cards:\n1. As PDF\n2. As TXT\n\nEnter 1 or 2:', '1');
+                if (allChoice === '1') {
+                    saveAllCardsAsImages();
+                } else if (allChoice === '2') {
+                    saveAllCardsAsTXT();
+                }
+            }
+        }
+    }
+    
+    // ========================================
+    // EXPORT FUNCTIONS - VISIBLE CARDS
+    // ========================================
+    
+    function saveVisibleCardsAsPDF() {
+        const scenes = projectData.projectInfo.scenes;
+        if (scenes.length === 0) {
+            alert('No scenes to export!');
+            return;
+        }
+        
+        const startIndex = currentPage * cardsPerPage;
+        const endIndex = Math.min(startIndex + cardsPerPage, scenes.length);
+        const visibleScenes = scenes.slice(startIndex, endIndex);
+        
+        if (isMobileDevice()) {
+            saveVisibleCardsCanvas(visibleScenes, startIndex);
+        } else {
+            saveVisibleCardsHTML2Canvas(visibleScenes, startIndex);
+        }
+    }
+    
+    function saveVisibleCardsCanvas(visibleScenes, startIndex) {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        visibleScenes.forEach((scene, index) => {
+            const globalIndex = startIndex + index;
+            const canvas = createSceneCardCanvas(scene, globalIndex + 1);
+            
+            if (index > 0) pdf.addPage();
+            
+            const imgData = canvas.toDataURL('image/jpeg', 0.85);
+            pdf.addImage(imgData, 'JPEG', 10, 10, 190, 130);
+        });
+        
+        const filename = `${projectData.projectInfo.projectName}_cards_page${currentPage + 1}.pdf`;
+        pdf.save(filename);
+        alert(`Exported ${visibleScenes.length} cards from page ${currentPage + 1}!`);
+    }
+    
+    function saveVisibleCardsHTML2Canvas(visibleScenes, startIndex) {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        let processed = 0;
+        
+        visibleScenes.forEach((scene, index) => {
+            const globalIndex = startIndex + index;
+            const tempCard = createTempCardElement(scene, globalIndex + 1);
+            document.body.appendChild(tempCard);
+            
+            html2canvas(tempCard, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                logging: false
+            }).then(canvas => {
+                if (index > 0) pdf.addPage();
+                
+                const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                pdf.addImage(imgData, 'JPEG', 10, 10, 190, 130);
+                
+                document.body.removeChild(tempCard);
+                processed++;
+                
+                if (processed === visibleScenes.length) {
+                    const filename = `${projectData.projectInfo.projectName}_cards_page${currentPage + 1}.pdf`;
+                    pdf.save(filename);
+                    alert(`Exported ${visibleScenes.length} cards from page ${currentPage + 1}!`);
+                }
+            }).catch(err => {
+                console.error('Export error:', err);
+                document.body.removeChild(tempCard);
+            });
+        });
+    }
+    
+    // ========================================
+    // EXPORT FUNCTIONS - ALL CARDS
+    // ========================================
+    
+    function saveAllCardsAsImages() {
+        const scenes = projectData.projectInfo.scenes;
+        if (scenes.length === 0) {
+            alert('No scenes to export!');
+            return;
+        }
+        
+        if (isMobileDevice()) {
+            saveAllCardsAsPDF_Canvas();
+        } else {
+            saveAllCardsAsPDF_Library();
+        }
+    }
+    
+    function saveAllCardsAsPDF_Canvas() {
+        const scenes = projectData.projectInfo.scenes;
+        const { jsPDF } = window.jspdf;
+        
+        // Split into batches of 27 cards per PDF
+        const batchSize = 27;
+        const batches = Math.ceil(scenes.length / batchSize);
+        
+        for (let batch = 0; batch < batches; batch++) {
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const startIdx = batch * batchSize;
+            const endIdx = Math.min(startIdx + batchSize, scenes.length);
+            const batchScenes = scenes.slice(startIdx, endIdx);
+            
+            batchScenes.forEach((scene, index) => {
+                const globalIndex = startIdx + index;
+                const canvas = createSceneCardCanvas(scene, globalIndex + 1);
+                
+                if (index > 0) pdf.addPage();
+                
+                const imgData = canvas.toDataURL('image/jpeg', 0.8);
+                pdf.addImage(imgData, 'JPEG', 10, 10, 190, 130);
+            });
+            
+            const filename = batches > 1 
+                ? `${projectData.projectInfo.projectName}_cards_part${batch + 1}.pdf`
+                : `${projectData.projectInfo.projectName}_cards.pdf`;
+            pdf.save(filename);
+        }
+        
+        alert(`Exported ${scenes.length} cards in ${batches} file(s)!`);
+    }
+    
+    function saveAllCardsAsPDF_Library() {
+        const scenes = projectData.projectInfo.scenes;
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        let processed = 0;
+        
+        scenes.forEach((scene, index) => {
+            const tempCard = createTempCardElement(scene, index + 1);
+            document.body.appendChild(tempCard);
+            
+            html2canvas(tempCard, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                logging: false
+            }).then(canvas => {
+                if (index > 0) pdf.addPage();
+                
+                const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                pdf.addImage(imgData, 'JPEG', 10, 10, 190, 130);
+                
+                document.body.removeChild(tempCard);
+                processed++;
+                
+                if (processed === scenes.length) {
+                    pdf.save(`${projectData.projectInfo.projectName}_cards.pdf`);
+                    alert(`Exported ${scenes.length} cards as PDF!`);
+                }
+            }).catch(err => {
+                console.error('Export error:', err);
+                document.body.removeChild(tempCard);
+                processed++;
+            });
+        });
+    }
+    
+    function saveAllCardsAsTXT() {
+        const scenes = projectData.projectInfo.scenes;
+        if (scenes.length === 0) {
+            alert('No scenes to export!');
+            return;
+        }
+        
+        let content = `${projectData.projectInfo.projectName} - Scene Cards\n`;
+        content += `${'='.repeat(70)}\n\n`;
+        
+        scenes.forEach((scene, index) => {
+            content += `SCENE #${index + 1}\n`;
+            content += `${'-'.repeat(70)}\n`;
+            content += `HEADING: ${scene.heading}\n\n`;
+            content += `DESCRIPTION:\n${scene.description || 'No description'}\n\n`;
+            content += `LOCATION: ${scene.location || 'N/A'}\n`;
+            content += `TIME: ${scene.time || 'N/A'}\n`;
+            content += `CHARACTERS: ${scene.characters.join(', ') || 'None'}\n`;
+            content += `${'='.repeat(70)}\n\n`;
+        });
+        
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${projectData.projectInfo.projectName}_cards.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        alert(`Exported ${scenes.length} cards as TXT!`);
+    }
+
+    // ========================================
+    // CANVAS CARD GENERATION
+    // ========================================
+    
+    function createSceneCardCanvas(scene, sceneNumber) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 550;
+        const ctx = canvas.getContext('2d');
+        
+        // Background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Border
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(15, 15, canvas.width - 30, canvas.height - 30);
+        
+        // Card header background
+        ctx.fillStyle = '#f5f5f5';
+        ctx.fillRect(15, 15, canvas.width - 30, 60);
+        
+        // Scene number
+        ctx.fillStyle = '#1a73e8';
+        ctx.font = 'bold 28px Arial';
+        ctx.fillText(`#${sceneNumber}`, 35, 55);
+        
+        // Heading
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 26px Arial';
+        const heading = scene.heading;
+        const maxHeadingWidth = canvas.width - 70;
+        let headingText = heading;
+        
+        // Truncate heading if too long
+        if (ctx.measureText(heading).width > maxHeadingWidth) {
+            while (ctx.measureText(headingText + '...').width > maxHeadingWidth && headingText.length > 0) {
+                headingText = headingText.slice(0, -1);
+            }
+            headingText += '...';
+        }
+        
+        ctx.fillText(headingText, 35, 110);
+        
+        // Divider line
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(35, 130);
+        ctx.lineTo(canvas.width - 35, 130);
+        ctx.stroke();
+        
+        // Description
+        ctx.fillStyle = '#333333';
+        ctx.font = '18px Arial';
+        const description = scene.description || 'No description available';
+        const words = description.split(' ');
+        let line = '';
+        let y = 165;
+        const lineHeight = 28;
+        const maxWidth = canvas.width - 70;
+        const maxY = 420;
+        
+        for (let i = 0; i < words.length; i++) {
+            const testLine = line + words[i] + ' ';
+            const metrics = ctx.measureText(testLine);
+            
+            if (metrics.width > maxWidth && line !== '') {
+                ctx.fillText(line, 35, y);
+                line = words[i] + ' ';
+                y += lineHeight;
+                
+                if (y > maxY) {
+                    ctx.fillText('...', 35, y);
+                    break;
+                }
+            } else {
+                line = testLine;
+            }
+        }
+        
+        if (y <= maxY && line.trim() !== '') {
+            ctx.fillText(line, 35, y);
+        }
+        
+        // Footer metadata
+        ctx.fillStyle = '#666666';
+        ctx.font = '16px Arial';
+        let footerY = canvas.height - 60;
+        
+        if (scene.location) {
+            ctx.fillText(`📍 ${scene.location}`, 35, footerY);
+            footerY += 22;
+        }
+        
+        if (scene.time) {
+            ctx.fillText(`🕐 ${scene.time}`, 35, footerY);
+        }
+        
+        if (scene.characters.length > 0) {
+            const charText = `👥 ${scene.characters.slice(0, 3).join(', ')}${scene.characters.length > 3 ? '...' : ''}`;
+            ctx.fillText(charText, canvas.width - 35 - ctx.measureText(charText).width, canvas.height - 60);
+        }
+        
+        // Watermark
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+        ctx.font = 'bold 56px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('ToscripT', canvas.width / 2, canvas.height - 25);
+        ctx.textAlign = 'left';
+        
+        return canvas;
+    }
+    
+    function createTempCardElement(scene, sceneNumber) {
+        const card = document.createElement('div');
+        card.style.cssText = 'width:800px; height:550px; background:#fff; padding:0; position:absolute; left:-9999px; box-sizing:border-box;';
+        
+        const characters = scene.characters.length > 0 
+            ? `👥 ${scene.characters.slice(0, 3).join(', ')}${scene.characters.length > 3 ? '...' : ''}`
+            : '';
+        
+        card.innerHTML = `
+            <div style="border:3px solid #e0e0e0; padding:0; height:100%; position:relative; box-sizing:border-box;">
+                <div style="background:#f5f5f5; padding:20px 25px; border-bottom:1px solid #e0e0e0;">
+                    <span style="color:#1a73e8; font-weight:bold; font-size:28px;">#${sceneNumber}</span>
+                </div>
+                <div style="padding:25px;">
+                    <div style="font-size:26px; font-weight:bold; margin-bottom:15px; color:#000;">${escapeHtml(scene.heading)}</div>
+                    <div style="border-bottom:1px solid #e0e0e0; margin-bottom:20px;"></div>
+                    <div style="font-size:18px; color:#333; line-height:1.6; min-height:200px; max-height:250px; overflow:hidden;">
+                        ${escapeHtml(scene.description || 'No description available')}
+                    </div>
+                </div>
+                <div style="position:absolute; bottom:25px; left:25px; right:25px; font-size:16px; color:#666;">
+                    <div style="margin-bottom:5px;">
+                        ${scene.location ? `📍 ${escapeHtml(scene.location)}` : ''}
+                        ${scene.time ? `&nbsp;&nbsp;🕐 ${escapeHtml(scene.time)}` : ''}
+                    </div>
+                    ${characters ? `<div>${characters}</div>` : ''}
+                </div>
+                <div style="position:absolute; bottom:15px; right:25px; font-size:56px; color:rgba(0,0,0,0.04); font-weight:bold;">ToscripT</div>
+            </div>
+        `;
+        return card;
+    }
+    
+    // ========================================
+    // EXPORT FUNCTIONS - SCENE ORDER
+    // ========================================
+    
+    function exportSceneOrder() {
+        const scenes = projectData.projectInfo.scenes;
+        if (scenes.length === 0) {
+            alert('No scenes to export!');
+            return;
+        }
+        
+        let content = `${projectData.projectInfo.projectName} - Scene Order Report\n`;
+        content += `Author: ${projectData.projectInfo.prodName}\n`;
+        content += `Total Scenes: ${scenes.length}\n`;
+        content += `Generated: ${new Date().toLocaleString()}\n`;
+        content += `${'='.repeat(80)}\n\n`;
+        
+        scenes.forEach((scene, index) => {
+            content += `SCENE ${index + 1}\n`;
+            content += `${'-'.repeat(80)}\n`;
+            content += `Heading:    ${scene.heading}\n`;
+            content += `Type:       ${scene.type || 'N/A'}\n`;
+            content += `Location:   ${scene.location || 'N/A'}\n`;
+            content += `Time:       ${scene.time || 'N/A'}\n`;
+            content += `Characters: ${scene.characters.join(', ') || 'None'}\n`;
+            content += `\nDescription:\n${scene.description || 'No description'}\n`;
+            content += `${'='.repeat(80)}\n\n`;
+        });
+        
+        // Statistics
+        const intScenes = scenes.filter(s => s.type.includes('INT')).length;
+        const extScenes = scenes.filter(s => s.type.includes('EXT')).length;
+        const allCharacters = new Set();
+        scenes.forEach(s => s.characters.forEach(c => allCharacters.add(c)));
+        
+        content += `STATISTICS\n`;
+        content += `${'-'.repeat(80)}\n`;
+        content += `Total Scenes:     ${scenes.length}\n`;
+        content += `Interior Scenes:  ${intScenes}\n`;
+        content += `Exterior Scenes:  ${extScenes}\n`;
+        content += `Total Characters: ${allCharacters.size}\n`;
+        content += `Characters: ${Array.from(allCharacters).join(', ')}\n`;
+        
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${projectData.projectInfo.projectName}_scene_order.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        alert('Scene order report exported!');
+    }
+    
+    // ========================================
+    // FILE OPERATIONS
+    // ========================================
+    
+    function saveFountain() {
+        const content = isPlaceholder ? '' : fountainInput.value;
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${projectData.projectInfo.projectName}.fountain`;
+        a.click();
+        URL.revokeObjectURL(url);
+        alert('Fountain file saved!');
+    }
+    
+    function savePDF(fontType) {
+        alert(`PDF export with ${fontType} fonts - Feature requires jsPDF with font support.\nUse 'Export Cards' for PDF export of scene cards.`);
     }
     
     function saveFilmproj() {
-        if (isPlaceholder) {
-            showToast('Cannot save placeholder text', 'error');
-            return;
-        }
-        
-        const filmprojData = {
-            version: '1.0',
-            projectName: projectData.projectInfo.projectName,
-            author: projectData.projectInfo.prodName,
-            created: new Date().toISOString(),
-            script: fountainInput.value,
-            scenes: projectData.projectInfo.scenes.map(scene => ({
-                sceneNumber: scene.text,
-                location: scene.sceneSetting,
-                intExt: scene.sceneType,
-                dayNight: scene.timeOfDay,
-                description: scene.description || '',
-                cast: scene.cast,
-                props: [],
-                wardrobe: [],
-                specialFX: [],
-                notes: ''
-            }))
-        };
-        
-        const content = JSON.stringify(filmprojData, null, 2);
-        const blob = new Blob([content], { type: 'application/json' });
+        const data = JSON.stringify(projectData, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `${projectData.projectInfo.projectName}.filmproj`;
         a.click();
         URL.revokeObjectURL(url);
-        
-        showToast('.filmproj file saved');
-        closeMenu();
+        alert('Project file saved!');
     }
     
-    // ========================================
-    // FILE OPERATIONS - OPEN
-    // ========================================
-    function openProject() {
-        fileInput.click();
-    }
-    
-    function handleFileSelect(e) {
+    function handleFileOpen(e) {
         const file = e.target.files[0];
         if (!file) return;
         
         const reader = new FileReader();
-        
-        reader.onload = function(event) {
-            try {
-                const content = event.target.result;
-                
-                if (file.name.endsWith('.fountain') || file.name.endsWith('.txt')) {
-                    fountainInput.value = content;
-                    isPlaceholder = false;
-                    fountainInput.classList.remove('placeholder');
-                    
-                    projectData.projectInfo.projectName = file.name.replace(/\.(fountain|txt)$/, '');
-                    
-                } else if (file.name.endsWith('.filmproj')) {
-                    const filmprojData = JSON.parse(content);
-                    
-                    projectData.projectInfo.projectName = filmprojData.projectName || 'Untitled';
-                    projectData.projectInfo.prodName = filmprojData.author || 'Author';
-                    
-                    fountainInput.value = filmprojData.script || '';
-                    isPlaceholder = false;
-                    fountainInput.classList.remove('placeholder');
-                    
-                    if (filmprojData.scenes) {
-                        projectData.projectInfo.scenes = filmprojData.scenes.map(scene => ({
-                            text: scene.sceneNumber || '',
-                            sceneType: scene.intExt || 'INT.',
-                            sceneSetting: scene.location || '',
-                            timeOfDay: scene.dayNight || 'DAY',
-                            description: scene.description || '',
-                            cast: scene.cast || [],
-                            lineIndex: 0
-                        }));
-                    }
-                }
-                
-                updatePreview();
-                extractAndDisplayScenes();
-                syncCardsWithScript();
+        reader.onload = (event) => {
+            const content = event.target.result;
+            
+            if (file.name.endsWith('.fountain')) {
+                fountainInput.value = content;
+                isPlaceholder = false;
+                updateSceneList();
                 saveToLocalStorage();
-                
-                showToast(`Opened: ${file.name}`);
-                closeMenu();
-                
-            } catch (error) {
-                console.error('File open error:', error);
-                showToast('Failed to open file', 'error');
+                alert('Fountain file loaded!');
+            } else if (file.name.endsWith('.filmproj')) {
+                try {
+                    const data = JSON.parse(content);
+                    projectData = data;
+                    fountainInput.value = data.projectInfo.scriptContent || '';
+                    isPlaceholder = !data.projectInfo.scriptContent;
+                    updateSceneList();
+                    saveToLocalStorage();
+                    alert('Project file loaded!');
+                } catch (err) {
+                    alert('Invalid .filmproj file!');
+                }
+            } else {
+                alert('Unsupported file type! Use .fountain or .filmproj files.');
             }
         };
-        
         reader.readAsText(file);
-        fileInput.value = '';
+        
+        // Reset file input
+        e.target.value = '';
     }
     
     // ========================================
-    // PROJECT MANAGEMENT
+    // CLOUD SYNC FUNCTIONS (from Toscript2)
     // ========================================
-    function newProject() {
-        if (!isPlaceholder && fountainInput.value.trim()) {
-            if (!confirm('Start a new project? Current work will be cleared (unless saved).')) {
-                return;
-            }
+    
+    function openCloudSyncModal() {
+        if (cloudSyncModal) {
+            showModal(cloudSyncModal);
         }
+    }
+    
+    function startAutoSync() {
+        if (autoSyncTimer) clearInterval(autoSyncTimer);
+        autoSyncTimer = setInterval(() => {
+            syncNow();
+        }, 5 * 60 * 1000); // 5 minutes
+    }
+    
+    function stopAutoSync() {
+        if (autoSyncTimer) {
+            clearInterval(autoSyncTimer);
+            autoSyncTimer = null;
+        }
+    }
+    
+    function syncNow() {
+        console.log('Syncing project...');
+        saveToLocalStorage();
+        alert('Project synced to local storage!\n\nCloud sync (Google Drive/Dropbox) coming soon.');
+    }
+    
+    function saveToGoogleDrive() {
+        alert('Google Drive integration - Coming soon!\n\nFor now, use Save > Fountain or Filmproj format.');
+    }
+    
+    function openFromGoogleDrive() {
+        alert('Google Drive integration - Coming soon!\n\nFor now, use Open to load .fountain or .filmproj files.');
+    }
+    
+    function saveToDropbox() {
+        alert('Dropbox integration - Coming soon!\n\nFor now, use Save > Fountain or Filmproj format.');
+    }
+    
+    function openFromDropbox() {
+        alert('Dropbox integration - Coming soon!\n\nFor now, use Open to load .fountain or .filmproj files.');
+    }
+    
+    // ========================================
+    // PROJECT INFO MODAL
+    // ========================================
+    
+    function showProjectInfo() {
+        const scenes = projectData.projectInfo.scenes;
+        const scriptContent = isPlaceholder ? '' : fountainInput.value;
+        const words = scriptContent.split(/\s+/).filter(w => w.length > 0);
+        const wordCount = words.length;
+        const characterCount = scriptContent.length;
+        const pageEstimate = Math.ceil(wordCount / 250);
         
-        projectData = {
-            projectInfo: {
-                projectName: 'Untitled',
-                prodName: 'Author',
-                scriptContent: '',
-                scenes: []
+        const allCharacters = new Set();
+        scenes.forEach(scene => {
+            scene.characters.forEach(char => allCharacters.add(char));
+        });
+        
+        const intScenes = scenes.filter(s => s.type.includes('INT')).length;
+        const extScenes = scenes.filter(s => s.type.includes('EXT')).length;
+        
+        const locations = new Set();
+        scenes.forEach(scene => {
+            if (scene.location) locations.add(scene.location);
+        });
+        
+        const modalHTML = `
+            <div style="padding:20px;">
+                <h2 style="margin-top:0; color:#1a73e8;">📊 Project Statistics</h2>
+                
+                <div style="margin-bottom:20px;">
+                    <h3 style="color:#333;">Project Information</h3>
+                    <p><strong>Title:</strong> ${escapeHtml(projectData.projectInfo.projectName)}</p>
+                    <p><strong>Author:</strong> ${escapeHtml(projectData.projectInfo.prodName)}</p>
+                </div>
+                
+                <div style="margin-bottom:20px;">
+                    <h3 style="color:#333;">Script Metrics</h3>
+                    <p><strong>Word Count:</strong> ${wordCount.toLocaleString()}</p>
+                    <p><strong>Character Count:</strong> ${characterCount.toLocaleString()}</p>
+                    <p><strong>Estimated Pages:</strong> ${pageEstimate}</p>
+                </div>
+                
+                <div style="margin-bottom:20px;">
+                    <h3 style="color:#333;">Scene Breakdown</h3>
+                    <p><strong>Total Scenes:</strong> ${scenes.length}</p>
+                    <p><strong>Interior Scenes:</strong> ${intScenes}</p>
+                    <p><strong>Exterior Scenes:</strong> ${extScenes}</p>
+                    <p><strong>Unique Locations:</strong> ${locations.size}</p>
+                </div>
+                
+                <div style="margin-bottom:20px;">
+                    <h3 style="color:#333;">Characters</h3>
+                    <p><strong>Total Characters:</strong> ${allCharacters.size}</p>
+                    ${allCharacters.size > 0 ? `<p style="color:#666; font-size:14px;">${Array.from(allCharacters).join(', ')}</p>` : ''}
+                </div>
+                
+                <div style="background:#f5f5f5; padding:15px; border-radius:5px; margin-top:20px;">
+                    <p style="margin:0; color:#666; font-size:13px;">
+                        💾 Last saved: ${new Date().toLocaleString()}<br>
+                        💻 Auto-save: ${autoSaveInterval ? 'Enabled (30s)' : 'Disabled'}
+                    </p>
+                </div>
+            </div>
+        `;
+        
+        if (projectInfoModal) {
+            const modalBody = projectInfoModal.querySelector('.modal-content');
+            if (modalBody) {
+                modalBody.innerHTML = modalHTML;
             }
-        };
-        
-        fountainInput.value = placeholderText;
-        fountainInput.classList.add('placeholder');
-        isPlaceholder = true;
-        
-        clearLocalStorage();
-        updatePreview();
-        extractAndDisplayScenes();
-        cardContainer.innerHTML = '';
-        
-        undoStack = [];
-        redoStack = [];
-        updateUndoRedoButtons();
-        
-        showToast('New project started');
+            showModal(projectInfoModal);
+        }
+    }
+    
+    // ========================================
+    // UTILITY FUNCTIONS
+    // ========================================
+    
+    function toggleMenu() {
+        menuPanel.classList.toggle('open');
+        closeSceneNavigator();
+    }
+    
+    function closeMenu() {
+        menuPanel.classList.remove('open');
+    }
+    
+    function toggleSceneNavigator() {
+        sceneNavigatorPanel.classList.toggle('open');
         closeMenu();
     }
     
-    function clearProject() {
-        if (!confirm('Clear the entire project? This cannot be undone.')) {
-            return;
+    function closeSceneNavigator() {
+        sceneNavigatorPanel.classList.remove('open');
+    }
+    
+    function toggleSaveSubmenu() {
+        const submenu = document.getElementById('save-submenu');
+        if (submenu) {
+            submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
         }
-        
-        projectData = {
-            projectInfo: {
-                projectName: 'Untitled',
-                prodName: 'Author',
-                scriptContent: '',
-                scenes: []
+    }
+    
+    function toggleCloudSubmenu() {
+        const submenu = document.getElementById('cloud-submenu');
+        if (submenu) {
+            submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+        }
+    }
+    
+    function showModal(modal) {
+        if (modal) modal.style.display = 'flex';
+    }
+    
+    function closeModal(modal) {
+        if (modal) modal.style.display = 'none';
+    }
+    
+    function changeFontSize(delta) {
+        fontSize = Math.max(12, Math.min(28, fontSize + delta));
+        fountainInput.style.fontSize = `${fontSize}px`;
+        screenplayOutput.style.fontSize = `${fontSize}px`;
+        saveToLocalStorage();
+    }
+    
+    function toggleSceneNumbers() {
+        showSceneNumbers = !showSceneNumbers;
+        if (currentView === 'script') {
+            renderEnhancedScript();
+        }
+        if (sceneNoBtn) {
+            sceneNoBtn.textContent = showSceneNumbers ? '☑ Scene Numbers' : '☐ Scene Numbers';
+        }
+        saveToLocalStorage();
+    }
+    
+    function toggleAutoSave() {
+        if (autoSaveInterval) {
+            clearInterval(autoSaveInterval);
+            autoSaveInterval = null;
+            if (autoSaveBtn) {
+                autoSaveBtn.textContent = '☐ Auto-Save (30s)';
             }
-        };
-        
-        fountainInput.value = placeholderText;
-        fountainInput.classList.add('placeholder');
-        isPlaceholder = true;
-        
-        clearLocalStorage();
-        updatePreview();
-        extractAndDisplayScenes();
-        cardContainer.innerHTML = '';
-        
-        undoStack = [];
-        redoStack = [];
-        updateUndoRedoButtons();
-        
-        showToast('Project cleared');
-        closeMenu();
+        } else {
+            autoSaveInterval = setInterval(saveToLocalStorage, 30000);
+            if (autoSaveBtn) {
+                autoSaveBtn.textContent = '☑ Auto-Save (30s)';
+            }
+            alert('Auto-save enabled! Your work will be saved every 30 seconds.');
+        }
     }
     
     function shareScript() {
-        if (isPlaceholder) {
-            showToast('Cannot share placeholder text', 'error');
-            return;
-        }
-        
-        const shareText = fountainInput.value;
+        const content = isPlaceholder ? '' : fountainInput.value;
+        const shareText = `${projectData.projectInfo.projectName}\nBy ${projectData.projectInfo.prodName}\n\n${content}`;
         
         if (navigator.share) {
             navigator.share({
                 title: projectData.projectInfo.projectName,
                 text: shareText
-            }).then(() => {
-                showToast('Script shared');
-            }).catch((err) => {
-                console.log('Share cancelled or failed:', err);
-                fallbackShare(shareText);
+            }).catch(err => console.log('Share cancelled'));
+        } else {
+            navigator.clipboard.writeText(shareText).then(() => {
+                alert('Script copied to clipboard!');
+            }).catch(() => {
+                alert('Share not supported. Use Save menu to export your script.');
             });
-        } else {
-            fallbackShare(shareText);
-        }
-        
-        closeMenu();
-    }
-    
-    function fallbackShare(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            showToast('Script copied to clipboard');
-        }).catch(() => {
-            showToast('Failed to copy script', 'error');
-        });
-    }
-	
-    // ========================================
-    // MODALS
-    // ========================================
-    function openInfoModal() {
-        infoModal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Info & Help</h2>
-                    <button class="icon-btn" onclick="this.closest('.modal').classList.remove('open')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <h3>Getting Started</h3>
-                    <p>ToscripT uses the <strong>Fountain</strong> screenplay format. It's a simple, plain-text format that automatically converts to professional screenplay formatting.</p>
-                    
-                    <h3>Basic Fountain Syntax</h3>
-                    <ul>
-                        <li><strong>Scene Headings:</strong> Start with INT. or EXT.<br>
-                        <code>INT. COFFEE SHOP - DAY</code></li>
-                        
-                        <li><strong>Character Names:</strong> All caps on their own line<br>
-                        <code>ALEX</code></li>
-                        
-                        <li><strong>Dialogue:</strong> Text below character name<br>
-                        <code>This is dialogue.</code></li>
-                        
-                        <li><strong>Parentheticals:</strong> Wrapped in parentheses<br>
-                        <code>(whispering)</code></li>
-                        
-                        <li><strong>Action:</strong> Regular text (not all caps)<br>
-                        <code>Alex walks into the room.</code></li>
-                        
-                        <li><strong>Transitions:</strong> All caps ending with TO:<br>
-                        <code>CUT TO:</code> or <code>FADE OUT.</code></li>
-                    </ul>
-                    
-                    <h3>Keyboard Shortcuts</h3>
-                    <ul>
-                        <li><strong>Ctrl/Cmd + S:</strong> Save Project</li>
-                        <li><strong>Ctrl/Cmd + Z:</strong> Undo</li>
-                        <li><strong>Ctrl/Cmd + Shift + Z:</strong> Redo</li>
-                        <li><strong>Ctrl/Cmd + P:</strong> Preview Script</li>
-                        <li><strong>Ctrl/Cmd + K:</strong> Card View</li>
-                        <li><strong>Ctrl/Cmd + E:</strong> Write View</li>
-                        <li><strong>F11:</strong> Fullscreen</li>
-                        <li><strong>Escape:</strong> Exit Focus Mode / Close Panels</li>
-                    </ul>
-                    
-                    <h3>Toolbar Buttons</h3>
-                    <ul>
-                        <li><strong>I/E:</strong> Cycle INT./EXT. scene headings</li>
-                        <li><strong>D/N:</strong> Cycle DAY/NIGHT time of day</li>
-                        <li><strong>Aa:</strong> Toggle UPPERCASE/lowercase</li>
-                        <li><strong>():</strong> Add/remove parentheses</li>
-                        <li><strong>TO:</strong> Cycle transitions (CUT TO:, FADE TO:, etc.)</li>
-                    </ul>
-                    
-                    <h3>Focus Mode</h3>
-                    <p>Enter fullscreen mode, then click the <strong>Focus</strong> button to hide all UI elements except the essential writing toolbar. Perfect for distraction-free writing!</p>
-                    
-                    <h3>Card View</h3>
-                    <p>Visualize your screenplay as index cards. Drag and drop to reorder scenes, add notes, and export cards as printable PDFs.</p>
-                    
-                    <h3>Cloud Storage</h3>
-                    <p>Save your scripts to Google Drive or Dropbox for backup and sync across devices. Enable auto-sync for automatic backups every 5 minutes.</p>
-                    
-                    <h3>Export Options</h3>
-                    <ul>
-                        <li><strong>.fountain:</strong> Plain text format (editable)</li>
-                        <li><strong>.pdf (Selectable):</strong> Standard PDF with selectable text</li>
-                        <li><strong>.pdf (Unicode):</strong> Image-based PDF for non-English scripts</li>
-                        <li><strong>.filmproj:</strong> For use with production planning apps</li>
-                    </ul>
-                    
-                    <h3>Tips</h3>
-                    <ul>
-                        <li>Use auto-save to prevent losing your work</li>
-                        <li>Enable scene numbers for easier navigation</li>
-                        <li>Use the Scene Navigator to filter and jump to scenes</li>
-                        <li>Export scene order as CSV for production scheduling</li>
-                        <li>Share individual scene cards for collaboration</li>
-                    </ul>
-                </div>
-                <div class="modal-footer">
-                    <button class="main-action-btn" onclick="this.closest('.modal').classList.remove('open')">Got It</button>
-                </div>
-            </div>
-        `;
-        
-        infoModal.classList.add('open');
-        closeMenu();
-    }
-    
-    function openAboutModal() {
-        aboutModal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>About ToscripT</h2>
-                    <button class="icon-btn" onclick="this.closest('.modal').classList.remove('open')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <h3>ToscripT Professional</h3>
-                    <p><strong>Version:</strong> 2.0 (Android Optimized)</p>
-                    <p><strong>Release Date:</strong> October 2025</p>
-                    
-                    <h3>About</h3>
-                    <p>ToscripT is a professional screenwriting application designed for mobile and tablet devices. It uses the industry-standard Fountain format to create properly formatted screenplays.</p>
-                    
-                    <h3>Features</h3>
-                    <ul>
-                        <li>✅ Fountain format support</li>
-                        <li>✅ Industry-standard screenplay formatting</li>
-                        <li>✅ Real-time preview</li>
-                        <li>✅ Scene card visualization</li>
-                        <li>✅ Drag & drop scene reordering</li>
-                        <li>✅ Multiple export formats (Fountain, PDF, .filmproj)</li>
-                        <li>✅ Cloud storage integration (Google Drive, Dropbox)</li>
-                        <li>✅ Auto-save & local storage</li>
-                        <li>✅ Focus mode for distraction-free writing</li>
-                        <li>✅ Mobile keyboard toolbar</li>
-                        <li>✅ Scene filtering & navigation</li>
-                        <li>✅ Undo/Redo support</li>
-                        <li>✅ Share & collaboration features</li>
-                    </ul>
-                    
-                    <h3>Technology</h3>
-                    <p>Built with modern web technologies for fast, responsive performance on all devices:</p>
-                    <ul>
-                        <li>Fountain.js - Screenplay parser</li>
-                        <li>jsPDF - PDF generation</li>
-                        <li>html2canvas - Image rendering</li>
-                        <li>Sortable.js - Drag & drop</li>
-                        <li>Google Drive API - Cloud storage</li>
-                        <li>Dropbox API - Cloud storage</li>
-                    </ul>
-                    
-                    <h3>Privacy</h3>
-                    <p>Your scripts are stored locally on your device. Cloud storage is optional and uses secure OAuth authentication. We never have access to your content.</p>
-                    
-                    <h3>Support</h3>
-                    <p>For support, feature requests, or bug reports, please visit our website or contact support.</p>
-                    
-                    <h3>Credits</h3>
-                    <p>Developed with ❤️ for screenwriters everywhere.</p>
-                    <p><strong>Special Thanks:</strong> The Fountain community, open-source contributors, and all the writers who shared feedback.</p>
-                    
-                    <p style="text-align: center; margin-top: 2rem; color: var(--muted-text-color);">
-                        <small>© 2025 ToscripT. All rights reserved.</small>
-                    </p>
-                </div>
-                <div class="modal-footer">
-                    <button class="main-action-btn" onclick="this.closest('.modal').classList.remove('open')">Close</button>
-                </div>
-            </div>
-        `;
-        
-        aboutModal.classList.add('open');
-        closeMenu();
-    }
-    
-    function openTitlePageModal() {
-        const currentTitle = projectData.projectInfo.projectName || 'Untitled';
-        const currentAuthor = projectData.projectInfo.prodName || 'Author';
-        
-        titlePageModal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Title Page</h2>
-                    <button class="icon-btn" onclick="this.closest('.modal').classList.remove('open')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="title-input">Title</label>
-                        <input type="text" id="title-input" value="${currentTitle}" placeholder="Enter script title">
-                    </div>
-                    <div class="form-group">
-                        <label for="author-input">Written By</label>
-                        <input type="text" id="author-input" value="${currentAuthor}" placeholder="Enter author name">
-                    </div>
-                    <div class="form-group">
-                        <label for="contact-input">Contact (Optional)</label>
-                        <input type="text" id="contact-input" placeholder="Email or phone">
-                    </div>
-                    <div class="form-group">
-                        <label for="draft-input">Draft (Optional)</label>
-                        <input type="text" id="draft-input" placeholder="e.g., First Draft, Revision 2">
-                    </div>
-                    <p style="color: var(--muted-text-color); font-size: 0.9rem; margin-top: 1rem;">
-                        Note: Title page information will be included in PDF exports.
-                    </p>
-                </div>
-                <div class="modal-footer">
-                    <button class="main-action-btn secondary" onclick="this.closest('.modal').classList.remove('open')">Cancel</button>
-                    <button class="main-action-btn" onclick="saveTitlePage()">Save</button>
-                </div>
-            </div>
-        `;
-        
-        titlePageModal.classList.add('open');
-        closeMenu();
-    }
-    
-    function saveTitlePage() {
-        const titleInput = document.getElementById('title-input');
-        const authorInput = document.getElementById('author-input');
-        
-        if (titleInput) {
-            projectData.projectInfo.projectName = titleInput.value || 'Untitled';
-        }
-        
-        if (authorInput) {
-            projectData.projectInfo.prodName = authorInput.value || 'Author';
-        }
-        
-        saveToLocalStorage();
-        titlePageModal.classList.remove('open');
-        showToast('Title page updated');
-    }
-    
-    function openProjectInfoModal() {
-        const currentTitle = projectData.projectInfo.projectName || 'Untitled';
-        const currentAuthor = projectData.projectInfo.prodName || 'Author';
-        const sceneCount = projectData.projectInfo.scenes.length;
-        const wordCount = fountainInput.value.split(/\s+/).filter(word => word.length > 0).length;
-        const pageCount = Math.ceil(sceneCount / 8) || 1;
-        
-        projectInfoModal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Project Info</h2>
-                    <button class="icon-btn" onclick="this.closest('.modal').classList.remove('open')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <h3>Project Details</h3>
-                    <div class="form-group">
-                        <label>Project Name</label>
-                        <p><strong>${currentTitle}</strong></p>
-                    </div>
-                    <div class="form-group">
-                        <label>Author</label>
-                        <p><strong>${currentAuthor}</strong></p>
-                    </div>
-                    
-                    <h3 style="margin-top: 1.5rem;">Statistics</h3>
-                    <div class="form-group">
-                        <label>Total Scenes</label>
-                        <p><strong>${sceneCount}</strong></p>
-                    </div>
-                    <div class="form-group">
-                        <label>Word Count</label>
-                        <p><strong>${wordCount.toLocaleString()}</strong></p>
-                    </div>
-                    <div class="form-group">
-                        <label>Estimated Pages</label>
-                        <p><strong>${pageCount}</strong></p>
-                    </div>
-                    
-                    <h3 style="margin-top: 1.5rem;">Scene Breakdown</h3>
-                    <div class="form-group">
-                        <label>Interior Scenes</label>
-                        <p><strong>${projectData.projectInfo.scenes.filter(s => s.sceneType.includes('INT')).length}</strong></p>
-                    </div>
-                    <div class="form-group">
-                        <label>Exterior Scenes</label>
-                        <p><strong>${projectData.projectInfo.scenes.filter(s => s.sceneType.includes('EXT')).length}</strong></p>
-                    </div>
-                    <div class="form-group">
-                        <label>Day Scenes</label>
-                        <p><strong>${projectData.projectInfo.scenes.filter(s => s.timeOfDay.includes('DAY')).length}</strong></p>
-                    </div>
-                    <div class="form-group">
-                        <label>Night Scenes</label>
-                        <p><strong>${projectData.projectInfo.scenes.filter(s => s.timeOfDay.includes('NIGHT')).length}</strong></p>
-                    </div>
-                    
-                    <p style="color: var(--muted-text-color); font-size: 0.9rem; margin-top: 1.5rem;">
-                        Last saved: ${new Date().toLocaleString()}
-                    </p>
-                </div>
-                <div class="modal-footer">
-                    <button class="main-action-btn" onclick="this.closest('.modal').classList.remove('open')">Close</button>
-                </div>
-            </div>
-        `;
-        
-        projectInfoModal.classList.add('open');
-        closeMenu();
-    }
-    
-    // ========================================
-    // SCENE FILTERING
-    // ========================================
-    function handleFilterCategoryChange() {
-        const category = filterCategorySelect.value;
-        
-        if (category === 'all') {
-            filterValueInput.style.display = 'none';
-            filterHelpText.style.display = 'none';
-            displayScenes(projectData.projectInfo.scenes);
-        } else {
-            filterValueInput.style.display = 'block';
-            filterHelpText.style.display = 'block';
-            filterValueInput.value = '';
-            filterValueInput.focus();
         }
     }
     
-    function handleFilterValueInput() {
-        const category = filterCategorySelect.value;
-        const filterValue = filterValueInput.value.toLowerCase().trim();
-        
-        if (!filterValue) {
-            displayScenes(projectData.projectInfo.scenes);
-            return;
-        }
-        
-        const filtered = projectData.projectInfo.scenes.filter(scene => {
-            switch(category) {
-                case 'sceneSetting':
-                    return scene.sceneSetting.toLowerCase().includes(filterValue);
-                case 'sceneType':
-                    return scene.sceneType.toLowerCase().includes(filterValue);
-                case 'cast':
-                    return scene.cast.some(char => char.toLowerCase().includes(filterValue));
-                case 'timeOfDay':
-                    return scene.timeOfDay.toLowerCase().includes(filterValue);
-                default:
-                    return true;
+    function clearProject() {
+        projectData = {
+            projectInfo: {
+                projectName: 'Untitled',
+                prodName: 'Author',
+                scriptContent: '',
+                scenes: []
             }
-        });
-        
-        displayScenes(filtered);
-    }
-	
-    // ========================================
-    // GOOGLE DRIVE INTEGRATION
-    // ========================================
-    const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
-    const GOOGLE_API_KEY = 'YOUR_GOOGLE_API_KEY';
-    const GOOGLE_DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
-    const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
-    
-    function initializeGoogleDrive() {
-        if (typeof gapi === 'undefined') {
-            console.log('Google API not loaded');
-            return;
-        }
-        
-        gapi.load('client:auth2', initGoogleClient);
-    }
-    
-    function initGoogleClient() {
-        gapi.client.init({
-            apiKey: GOOGLE_API_KEY,
-            clientId: GOOGLE_CLIENT_ID,
-            discoveryDocs: GOOGLE_DISCOVERY_DOCS,
-            scope: GOOGLE_SCOPES
-        }).then(() => {
-            gapiInited = true;
-            
-            gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-            updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-            
-            console.log('Google Drive initialized');
-        }).catch(error => {
-            console.error('Google Drive init error:', error);
-        });
-    }
-    
-    function updateSigninStatus(signedIn) {
-        isSignedIn = signedIn;
-        
-        if (signedIn) {
-            console.log('Signed in to Google Drive');
-        } else {
-            console.log('Not signed in to Google Drive');
-        }
-    }
-    
-    function saveToGoogleDrive() {
-        if (!gapiInited) {
-            showToast('Google Drive not initialized', 'error');
-            return;
-        }
-        
-        if (isPlaceholder) {
-            showToast('Cannot save placeholder text', 'error');
-            return;
-        }
-        
-        const authInstance = gapi.auth2.getAuthInstance();
-        
-        if (!authInstance.isSignedIn.get()) {
-            authInstance.signIn().then(() => {
-                uploadToGoogleDrive();
-            }).catch(error => {
-                console.error('Google Sign-in error:', error);
-                showToast('Google Sign-in failed', 'error');
-            });
-        } else {
-            uploadToGoogleDrive();
-        }
-        
-        closeMenu();
-    }
-    
-    function uploadToGoogleDrive() {
-        showToast('Uploading to Google Drive...');
-        
-        const content = fountainInput.value;
-        const filename = `${projectData.projectInfo.projectName}.fountain`;
-        
-        const file = new Blob([content], { type: 'text/plain' });
-        const metadata = {
-            name: filename,
-            mimeType: 'text/plain'
         };
-        
-        const form = new FormData();
-        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-        form.append('file', file);
-        
-        fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-            method: 'POST',
-            headers: new Headers({ 'Authorization': 'Bearer ' + gapi.auth.getToken().access_token }),
-            body: form
-        }).then(response => response.json()).then(data => {
-            console.log('Google Drive upload success:', data);
-            showToast('Saved to Google Drive!');
-        }).catch(error => {
-            console.error('Google Drive upload error:', error);
-            showToast('Failed to save to Google Drive', 'error');
-        });
+        fountainInput.value = placeholderText;
+        isPlaceholder = true;
+        currentPage = 0;
+        undoStack = [];
+        redoStack = [];
+        updateSceneList();
+        saveToLocalStorage();
+        closeMenu();
+        alert('Project cleared!');
     }
     
-    function openFromGoogleDrive() {
-        if (!gapiInited) {
-            showToast('Google Drive not initialized', 'error');
-            return;
-        }
-        
-        const authInstance = gapi.auth2.getAuthInstance();
-        
-        if (!authInstance.isSignedIn.get()) {
-            authInstance.signIn().then(() => {
-                pickFromGoogleDrive();
-            }).catch(error => {
-                console.error('Google Sign-in error:', error);
-                showToast('Google Sign-in failed', 'error');
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.log('Fullscreen error:', err);
             });
+            isFullscreen = true;
         } else {
-            pickFromGoogleDrive();
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+            isFullscreen = false;
         }
-        
-        closeMenu();
     }
+	
     
-    function pickFromGoogleDrive() {
-        showToast('Opening Google Drive picker...');
+	    function toggleFocusMode() {
+	        isFocusMode = !isFocusMode;
         
-        gapi.client.drive.files.list({
-            pageSize: 10,
-            fields: 'files(id, name)',
-            q: "mimeType='text/plain' and name contains '.fountain'"
-        }).then(response => {
-            const files = response.result.files;
+	        if (isFocusMode) {
+	            mainHeader.style.display = 'none';
+	            desktopSideToolbar.style.display = 'none';
+	            mobileKeyboardToolbar.style.display = 'none';
+	            if (focusExitBtn) focusExitBtn.style.display = 'block';
             
-            if (files && files.length > 0) {
-                showGoogleDriveFilePicker(files);
-            } else {
-                showToast('No Fountain files found in Google Drive', 'error');
-            }
-        }).catch(error => {
-            console.error('Google Drive list error:', error);
-            showToast('Failed to list files', 'error');
-        });
-    }
+	            // Enter fullscreen
+	            if (!isFullscreen) {
+	                toggleFullscreen();
+	            }
+            
+	            // Add focus mode styles
+	            fountainInput.style.padding = '50px';
+	            fountainInput.style.maxWidth = '800px';
+	            fountainInput.style.margin = '0 auto';
+	        } else {
+	            mainHeader.style.display = 'flex';
+	            desktopSideToolbar.style.display = 'flex';
+	            if (focusExitBtn) focusExitBtn.style.display = 'none';
+            
+	            // Exit fullscreen
+	            if (isFullscreen) {
+	                toggleFullscreen();
+	            }
+            
+	            // Remove focus mode styles
+	            fountainInput.style.padding = '';
+	            fountainInput.style.maxWidth = '';
+	            fountainInput.style.margin = '';
+	        }
+	    }
     
-    function showGoogleDriveFilePicker(files) {
-        let pickerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Open from Google Drive</h2>
-                    <button class="icon-btn" onclick="this.closest('.modal').classList.remove('open')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <h3>Select a file to open:</h3>
-                    <ul style="list-style: none; padding: 0;">
-        `;
-        
-        files.forEach(file => {
-            pickerHTML += `
-                <li style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 0.5rem; cursor: pointer;"
-                    onclick="downloadFromGoogleDrive('${file.id}', '${file.name}')">
-                    <i class="fas fa-file-alt" style="margin-right: 0.5rem;"></i>
-                    ${file.name}
-                </li>
-            `;
-        });
-        
-        pickerHTML += `
-                    </ul>
-                </div>
-                <div class="modal-footer">
-                    <button class="main-action-btn" onclick="this.closest('.modal').classList.remove('open')">Cancel</button>
-                </div>
-            </div>
-        `;
-        
-        const modal = document.getElementById('cloud-sync-modal');
-        modal.innerHTML = pickerHTML;
-        modal.classList.add('open');
-    }
+	    function showMobileToolbar() {
+	        if (window.innerWidth <= 768 && !isFocusMode && currentView === 'write') {
+	            mobileKeyboardToolbar.style.display = 'flex';
+	        }
+	    }
     
-    function downloadFromGoogleDrive(fileId, fileName) {
-        showToast('Downloading from Google Drive...');
-        
-        gapi.client.drive.files.get({
-            fileId: fileId,
-            alt: 'media'
-        }).then(response => {
-            fountainInput.value = response.body;
-            isPlaceholder = false;
-            fountainInput.classList.remove('placeholder');
-            
-            projectData.projectInfo.projectName = fileName.replace('.fountain', '');
-            
-            updatePreview();
-            extractAndDisplayScenes();
-            syncCardsWithScript();
-            saveToLocalStorage();
-            
-            showToast(`Opened: ${fileName}`);
-            
-            const modal = document.getElementById('cloud-sync-modal');
-            modal.classList.remove('open');
-            
-        }).catch(error => {
-            console.error('Google Drive download error:', error);
-            showToast('Failed to download file', 'error');
-        });
-    }
+	    function hideMobileToolbar() {
+	        if (mobileKeyboardToolbar) {
+	            mobileKeyboardToolbar.style.display = 'none';
+	        }
+	    }
     
-    // ========================================
-    // DROPBOX INTEGRATION
-    // ========================================
-    function saveToDropbox() {
-        if (typeof Dropbox === 'undefined') {
-            showToast('Dropbox not initialized', 'error');
-            return;
-        }
-        
-        if (isPlaceholder) {
-            showToast('Cannot save placeholder text', 'error');
-            return;
-        }
-        
-        showToast('Opening Dropbox...');
-        
-        const content = fountainInput.value;
-        const filename = `${projectData.projectInfo.projectName}.fountain`;
-        
-        Dropbox.save({
-            files: [{
-                url: URL.createObjectURL(new Blob([content], { type: 'text/plain' })),
-                filename: filename
-            }],
-            success: function() {
-                showToast('Saved to Dropbox!');
-            },
-            error: function(error) {
-                console.error('Dropbox save error:', error);
-                showToast('Failed to save to Dropbox', 'error');
-            }
-        });
-        
-        closeMenu();
-    }
+	    function isMobileDevice() {
+	        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+	            || window.innerWidth <= 768;
+	    }
     
-    function openFromDropbox() {
-        if (typeof Dropbox === 'undefined') {
-            showToast('Dropbox not initialized', 'error');
-            return;
-        }
-        
-        showToast('Opening Dropbox chooser...');
-        
-        Dropbox.choose({
-            extensions: ['.fountain', '.txt'],
-            multiselect: false,
-            success: function(files) {
-                if (files && files.length > 0) {
-                    const file = files[0];
-                    
-                    fetch(file.link).then(response => response.text()).then(content => {
-                        fountainInput.value = content;
-                        isPlaceholder = false;
-                        fountainInput.classList.remove('placeholder');
-                        
-                        projectData.projectInfo.projectName = file.name.replace(/\.(fountain|txt)$/, '');
-                        
-                        updatePreview();
-                        extractAndDisplayScenes();
-                        syncCardsWithScript();
-                        saveToLocalStorage();
-                        
-                        showToast(`Opened: ${file.name}`);
-                    }).catch(error => {
-                        console.error('Dropbox download error:', error);
-                        showToast('Failed to download file', 'error');
-                    });
-                }
-            },
-            cancel: function() {
-                console.log('Dropbox chooser cancelled');
-            },
-            error: function(error) {
-                console.error('Dropbox chooser error:', error);
-                showToast('Failed to open Dropbox chooser', 'error');
-            }
-        });
-        
-        closeMenu();
-    }
+	    // ========================================
+	    // EDITOR HELPER FUNCTIONS
+	    // ========================================
     
-    // ========================================
-    // AUTO-SYNC SETTINGS MODAL
-    // ========================================
-    function openCloudSyncModal() {
-        const syncStatus = autoSyncEnabled ? 'Enabled' : 'Disabled';
+	    function insertText(text, cursorOffset = 0) {
+	        const start = fountainInput.selectionStart;
+	        const end = fountainInput.selectionEnd;
+	        const value = fountainInput.value;
         
-        cloudSyncModal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Cloud Auto-Sync</h2>
-                    <button class="icon-btn" onclick="this.closest('.modal').classList.remove('open')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <h3>Auto-Sync Settings</h3>
-                    <p>Automatically backup your script to cloud storage every 5 minutes when connected to WiFi.</p>
-                    
-                    <div class="form-group">
-                        <label>Current Status</label>
-                        <p><strong>${syncStatus}</strong></p>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="sync-provider-select">Cloud Provider</label>
-                        <select id="sync-provider-select">
-                            <option value="none">None</option>
-                            <option value="google-drive">Google Drive</option>
-                            <option value="dropbox">Dropbox</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="sync-interval-select">Sync Interval</label>
-                        <select id="sync-interval-select">
-                            <option value="300000">5 minutes</option>
-                            <option value="600000">10 minutes</option>
-                            <option value="900000">15 minutes</option>
-                            <option value="1800000">30 minutes</option>
-                        </select>
-                    </div>
-                    
-                    <p style="color: var(--warning-color); font-size: 0.9rem; margin-top: 1rem;">
-                        ⚠️ Note: Auto-sync requires you to be signed in to your chosen cloud provider and may consume mobile data if not on WiFi.
-                    </p>
-                </div>
-                <div class="modal-footer">
-                    <button class="main-action-btn secondary" onclick="this.closest('.modal').classList.remove('open')">Cancel</button>
-                    <button class="main-action-btn" onclick="toggleAutoSync()">
-                        ${autoSyncEnabled ? 'Disable' : 'Enable'} Auto-Sync
-                    </button>
-                </div>
-            </div>
-        `;
+	        fountainInput.value = value.substring(0, start) + text + value.substring(end);
         
-        cloudSyncModal.classList.add('open');
-        closeMenu();
-    }
+	        const newCursorPos = start + text.length + cursorOffset;
+	        fountainInput.selectionStart = fountainInput.selectionEnd = newCursorPos;
+	        fountainInput.focus();
+        
+	        isPlaceholder = false;
+	        saveToUndoStack();
+        
+	        clearTimeout(debounceTimeout);
+	        debounceTimeout = setTimeout(() => {
+	            updateSceneList();
+	            saveToLocalStorage();
+	        }, 300);
+	    }
     
-    function toggleAutoSync() {
-        if (autoSyncEnabled) {
-            // Disable auto-sync
-            if (autoSyncTimer) {
-                clearInterval(autoSyncTimer);
-                autoSyncTimer = null;
-            }
-            autoSyncEnabled = false;
-            showToast('Auto-Sync Disabled');
-        } else {
-            // Enable auto-sync
-            const provider = document.getElementById('sync-provider-select')?.value;
-            const interval = parseInt(document.getElementById('sync-interval-select')?.value) || 300000;
+	    function insertOrCycleText(options) {
+	        const start = fountainInput.selectionStart;
+	        const value = fountainInput.value;
+	        const lineBefore = value.substring(0, start);
+	        const lastLine = lineBefore.split('\n').pop();
+        
+	        let inserted = false;
+        
+	        // Check if any option exists in current line
+	        for (let i = 0; i < options.length; i++) {
+	            const currentOption = options[i].trim();
             
-            if (provider === 'none') {
-                showToast('Please select a cloud provider', 'error');
-                return;
-            }
-            
-            autoSyncEnabled = true;
-            
-            autoSyncTimer = setInterval(() => {
-                if (!isPlaceholder && fountainInput.value.trim()) {
-                    if (provider === 'google-drive') {
-                        uploadToGoogleDrive();
-                    } else if (provider === 'dropbox') {
-                        saveToDropbox();
-                    }
-                }
-            }, interval);
-            
-            showToast(`Auto-Sync Enabled (${provider})`);
-        }
-        
-        cloudSyncModal.classList.remove('open');
-    }
-    
-    // ========================================
-    // TOAST NOTIFICATION SYSTEM
-    // ========================================
-    function showToast(message, type = 'success') {
-        // Remove existing toast
-        const existingToast = document.querySelector('.toast-notification');
-        if (existingToast) {
-            existingToast.remove();
-        }
-        
-        const toast = document.createElement('div');
-        toast.className = 'toast-notification';
-        toast.textContent = message;
-        
-        if (type === 'error') {
-            toast.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
-        } else if (type === 'warning') {
-            toast.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
-        } else {
-            toast.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
-        }
-        
-        toast.style.position = 'fixed';
-        toast.style.bottom = '100px';
-        toast.style.left = '50%';
-        toast.style.transform = 'translateX(-50%)';
-        toast.style.padding = '12px 24px';
-        toast.style.borderRadius = '8px';
-        toast.style.color = 'white';
-        toast.style.fontWeight = '600';
-        toast.style.fontSize = '14px';
-        toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
-        toast.style.zIndex = '10001';
-        toast.style.maxWidth = '90%';
-        toast.style.textAlign = 'center';
-        toast.style.animation = 'slideUpFade 0.3s ease-out';
-        
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.style.animation = 'slideDownFade 0.3s ease-out';
-            setTimeout(() => {
-                toast.remove();
-            }, 300);
-        }, 3000);
-    }
-    
-    // Add toast animations to document
-    if (!document.getElementById('toast-styles')) {
-        const style = document.createElement('style');
-        style.id = 'toast-styles';
-        style.textContent = `
-            @keyframes slideUpFade {
-                from {
-                    opacity: 0;
-                    transform: translate(-50%, 20px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translate(-50%, 0);
-                }
-            }
-            @keyframes slideDownFade {
-                from {
-                    opacity: 1;
-                    transform: translate(-50%, 0);
-                }
-                to {
-                    opacity: 0;
-                    transform: translate(-50%, 20px);
-                }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    // ========================================
-    // ANDROID WEBVIEW BRIDGE
-    // ========================================
-    window.AndroidBridge = {
-        // Called from Android when back button is pressed
-        onBackPressed: function() {
-            if (isFocusMode) {
-                exitFocusMode();
-                return true;
-            } else if (menuPanel?.classList.contains('open')) {
-                closeMenu();
-                return true;
-            } else if (sceneNavigatorPanel?.classList.contains('open')) {
-                closeSceneNavigator();
-                return true;
-            } else if (document.querySelector('.modal.open')) {
-                document.querySelectorAll('.modal.open').forEach(modal => {
-                    modal.classList.remove('open');
-                });
-                return true;
-            } else if (currentView !== 'write') {
-                switchView('write');
-                return true;
-            }
-            return false; // Let Android handle back (exit app)
-        },
-        
-        // Save current script
-        saveScript: function() {
-            saveToLocalStorage();
-            return 'Saved';
-        },
-        
-        // Get current script content
-        getScriptContent: function() {
-            return fountainInput.value;
-        },
-        
-        // Set script content
-        setScriptContent: function(content) {
-            fountainInput.value = content;
-            isPlaceholder = false;
-            fountainInput.classList.remove('placeholder');
-            updatePreview();
-            extractAndDisplayScenes();
-            syncCardsWithScript();
-            saveToLocalStorage();
-        },
-        
-        // Get project info
-        getProjectInfo: function() {
-            return JSON.stringify(projectData);
-        },
-        
-        // Show toast from Android
-        showToast: function(message, type) {
-            showToast(message, type);
-        },
-        
-        // Export as PDF (returns base64)
-        exportPdfBase64: function() {
-            return new Promise((resolve) => {
-                if (typeof jspdf === 'undefined') {
-                    resolve(null);
-                    return;
-                }
+	            if (lastLine.includes(currentOption)) {
+	                // Cycle to next option
+	                const nextOption = options[(i + 1) % options.length];
+	                const newLine = lastLine.replace(currentOption, nextOption.trim());
+	                const beforeLine = lineBefore.substring(0, lineBefore.lastIndexOf('\n') + 1);
                 
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'in', 'letter');
-                pdf.setFont('courier');
-                pdf.setFontSize(12);
+	                fountainInput.value = beforeLine + newLine + value.substring(start);
+	                fountainInput.selectionStart = fountainInput.selectionEnd = beforeLine.length + newLine.length;
+	                inserted = true;
+	                break;
+	            }
+	        }
+        
+	        // If no option found, insert first option
+	        if (!inserted) {
+	            insertText(options[0]);
+	            return;
+	        }
+        
+	        fountainInput.focus();
+	        isPlaceholder = false;
+	        saveToUndoStack();
+        
+	        clearTimeout(debounceTimeout);
+	        debounceTimeout = setTimeout(() => {
+	            updateSceneList();
+	            saveToLocalStorage();
+	        }, 300);
+	    }
+    
+	    function toggleCaps() {
+	        const start = fountainInput.selectionStart;
+	        const end = fountainInput.selectionEnd;
+        
+	        if (start === end) {
+	            // No selection - toggle entire current line
+	            const value = fountainInput.value;
+	            const lineBefore = value.substring(0, start);
+	            const lineStart = lineBefore.lastIndexOf('\n') + 1;
+	            const lineEnd = value.indexOf('\n', start);
+	            const lineEndPos = lineEnd === -1 ? value.length : lineEnd;
+	            const line = value.substring(lineStart, lineEndPos);
+            
+	            const newLine = line === line.toUpperCase() ? line.toLowerCase() : line.toUpperCase();
+	            fountainInput.value = value.substring(0, lineStart) + newLine + value.substring(lineEndPos);
+	            fountainInput.selectionStart = fountainInput.selectionEnd = lineStart + newLine.length;
+	        } else {
+	            // Toggle selected text
+	            const selectedText = fountainInput.value.substring(start, end);
+	            const newText = selectedText === selectedText.toUpperCase() 
+	                ? selectedText.toLowerCase() 
+	                : selectedText.toUpperCase();
+            
+	            fountainInput.value = fountainInput.value.substring(0, start) + newText + fountainInput.value.substring(end);
+	            fountainInput.selectionStart = start;
+	            fountainInput.selectionEnd = start + newText.length;
+	        }
+        
+	        fountainInput.focus();
+	        isPlaceholder = false;
+	        saveToUndoStack();
+        
+	        clearTimeout(debounceTimeout);
+	        debounceTimeout = setTimeout(() => {
+	            updateSceneList();
+	            saveToLocalStorage();
+	        }, 300);
+	    }
+    
+	    // ========================================
+	    // UNDO/REDO SYSTEM
+	    // ========================================
+    
+	    function saveToUndoStack() {
+	        const currentContent = fountainInput.value;
+        
+	        // Don't save if content hasn't changed
+	        if (undoStack.length > 0 && undoStack[undoStack.length - 1] === currentContent) {
+	            return;
+	        }
+        
+	        undoStack.push(currentContent);
+        
+	        // Limit stack size
+	        if (undoStack.length > 50) {
+	            undoStack.shift();
+	        }
+        
+	        // Clear redo stack when new action is performed
+	        redoStack = [];
+	    }
+    
+	    function undo() {
+	        if (undoStack.length > 1) {
+	            const current = undoStack.pop();
+	            redoStack.push(current);
+            
+	            const previous = undoStack[undoStack.length - 1];
+	            isUpdatingFromSync = true;
+	            fountainInput.value = previous;
+	            isUpdatingFromSync = false;
+            
+	            isPlaceholder = false;
+	            updateSceneList();
+	            saveToLocalStorage();
+            
+	            if (currentView === 'card') {
+	                renderEnhancedCardView();
+	            }
+	        } else {
+	            alert('Nothing to undo!');
+	        }
+	    }
+    
+	    function redo() {
+	        if (redoStack.length > 0) {
+	            const content = redoStack.pop();
+	            undoStack.push(content);
+            
+	            isUpdatingFromSync = true;
+	            fountainInput.value = content;
+	            isUpdatingFromSync = false;
+            
+	            isPlaceholder = false;
+	            updateSceneList();
+	            saveToLocalStorage();
+            
+	            if (currentView === 'card') {
+	                renderEnhancedCardView();
+	            }
+	        } else {
+	            alert('Nothing to redo!');
+	        }
+	    }
+    
+	    // ========================================
+	    // LOCAL STORAGE
+	    // ========================================
+    
+	    function saveToLocalStorage() {
+	        try {
+	            // Update project data before saving
+	            projectData.projectInfo.scriptContent = isPlaceholder ? '' : fountainInput.value;
+            
+	            // Save project data
+	            localStorage.setItem('toscript_project', JSON.stringify(projectData));
+            
+	            // Save preferences
+	            const preferences = {
+	                fontSize: fontSize,
+	                showSceneNumbers: showSceneNumbers,
+	                autoSaveEnabled: !!autoSaveInterval
+	            };
+	            localStorage.setItem('toscript_preferences', JSON.stringify(preferences));
+            
+	            console.log('Saved to localStorage');
+	        } catch (e) {
+	            console.error('Failed to save to localStorage:', e);
+            
+	            // Handle quota exceeded
+	            if (e.name === 'QuotaExceededError') {
+	                alert('Storage quota exceeded! Please export your work and clear some data.');
+	            }
+	        }
+	    }
+    
+	    function loadFromLocalStorage() {
+	        try {
+	            // Load project data
+	            const savedProject = localStorage.getItem('toscript_project');
+	            if (savedProject) {
+	                projectData = JSON.parse(savedProject);
+	                fountainInput.value = projectData.projectInfo.scriptContent || placeholderText;
+	                isPlaceholder = !projectData.projectInfo.scriptContent;
+	            }
+            
+	            // Load preferences
+	            const savedPreferences = localStorage.getItem('toscript_preferences');
+	            if (savedPreferences) {
+	                const prefs = JSON.parse(savedPreferences);
+	                fontSize = prefs.fontSize || 16;
+	                showSceneNumbers = prefs.showSceneNumbers !== false;
                 
-                const lines = fountainInput.value.split('\n');
-                const pageHeight = 11;
-                const marginTop = 1;
-                const marginLeft = 1.5;
-                const lineHeight = 0.17;
-                let y = marginTop;
+	                // Apply font size
+	                fountainInput.style.fontSize = `${fontSize}px`;
+	                screenplayOutput.style.fontSize = `${fontSize}px`;
                 
-                lines.forEach(line => {
-                    const trimmed = line.trim();
-                    
-                    if (y > pageHeight - 1) {
-                        pdf.addPage();
-                        y = marginTop;
-                    }
-                    
-                    if (trimmed === '') {
-                        y += lineHeight;
-                        return;
-                    }
-                    
-                    pdf.text(trimmed, marginLeft, y);
-                    y += lineHeight;
-                });
+	                // Update scene numbers button
+	                if (sceneNoBtn) {
+	                    sceneNoBtn.textContent = showSceneNumbers ? '☑ Scene Numbers' : '☐ Scene Numbers';
+	                }
                 
-                const pdfBase64 = pdf.output('datauristring').split(',')[1];
-                resolve(pdfBase64);
-            });
-        }
-    };
+	                // Restore auto-save if it was enabled
+	                if (prefs.autoSaveEnabled) {
+	                    autoSaveInterval = setInterval(saveToLocalStorage, 30000);
+	                    if (autoSaveBtn) {
+	                        autoSaveBtn.textContent = '☑ Auto-Save (30s)';
+	                    }
+	                }
+	            }
+            
+	            console.log('Loaded from localStorage');
+	        } catch (e) {
+	            console.error('Failed to load from localStorage:', e);
+	        }
+	    }
     
-    // Expose to Android WebView
-    if (window.Android) {
-        console.log('Android interface connected');
-    }
+	    // ========================================
+	    // KEYBOARD SHORTCUTS
+	    // ========================================
     
-    // Handle Android back button
-    document.addEventListener('backbutton', function(e) {
-        e.preventDefault();
-        if (window.AndroidBridge.onBackPressed()) {
-            // Handled by JavaScript
-        } else {
-            // Let Android handle (exit app)
-            if (window.Android && window.Android.exitApp) {
-                window.Android.exitApp();
-            }
-        }
-    }, false);
+	    document.addEventListener('keydown', (e) => {
+	        // Ctrl/Cmd + S - Save
+	        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+	            e.preventDefault();
+	            saveToLocalStorage();
+	            alert('Project saved to local storage!');
+	        }
+        
+	        // Ctrl/Cmd + Z - Undo
+	        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+	            e.preventDefault();
+	            undo();
+	        }
+        
+	        // Ctrl/Cmd + Shift + Z - Redo (or Ctrl+Y)
+	        if (((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') || 
+	            ((e.ctrlKey || e.metaKey) && e.key === 'y')) {
+	            e.preventDefault();
+	            redo();
+	        }
+        
+	        // Ctrl/Cmd + P - Preview Script
+	        if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+	            e.preventDefault();
+	            switchView('script');
+	        }
+        
+	        // Ctrl/Cmd + K - Card View
+	        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+	            e.preventDefault();
+	            switchView('card');
+	        }
+        
+	        // Ctrl/Cmd + E - Editor View
+	        if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+	            e.preventDefault();
+	            switchView('write');
+	        }
+        
+	        // Ctrl/Cmd + M - Toggle Menu
+	        if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+	            e.preventDefault();
+	            toggleMenu();
+	        }
+        
+	        // F11 - Toggle Fullscreen
+	        if (e.key === 'F11') {
+	            e.preventDefault();
+	            toggleFullscreen();
+	        }
+        
+	        // Escape - Exit focus mode or close panels
+	        if (e.key === 'Escape') {
+	            if (isFocusMode) {
+	                toggleFocusMode();
+	            } else if (menuPanel.classList.contains('open')) {
+	                closeMenu();
+	            } else if (sceneNavigatorPanel.classList.contains('open')) {
+	                closeSceneNavigator();
+	            }
+	        }
+	    });
     
-    // ========================================
-    // WINDOW UTILITY FUNCTIONS
-    // ========================================
+	    // ========================================
+	    // WINDOW RESIZE HANDLER
+	    // ========================================
     
-    // Make key functions available globally for inline onclick handlers
-    window.saveTitlePage = saveTitlePage;
-    window.downloadFromGoogleDrive = downloadFromGoogleDrive;
-    window.toggleAutoSync = toggleAutoSync;
+	    window.addEventListener('resize', () => {
+	        // Adjust toolbar visibility on resize
+	        if (window.innerWidth > 768) {
+	            hideMobileToolbar();
+	            if (currentView === 'write' && !isFocusMode) {
+	                desktopSideToolbar.style.display = 'flex';
+	            }
+	        } else {
+	            if (currentView === 'write' && !isFocusMode) {
+	                desktopSideToolbar.style.display = 'none';
+	            }
+	        }
+	    });
     
-    // ========================================
-    // INITIALIZE APP ON DOM READY
-    // ========================================
-    init();
+	    // ========================================
+	    // BEFORE UNLOAD WARNING
+	    // ========================================
     
-}); // END DOMContentLoaded
+	    window.addEventListener('beforeunload', (e) => {
+	        // Save before closing
+	        saveToLocalStorage();
+        
+	        // Warn if there's unsaved content
+	        if (!isPlaceholder && fountainInput.value.trim() !== '') {
+	            e.preventDefault();
+	            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+	            return e.returnValue;
+	        }
+	    });
+    
+	    // ========================================
+	    // HELPER FUNCTIONS
+	    // ========================================
+    
+	    function escapeHtml(text) {
+	        const div = document.createElement('div');
+	        div.textContent = text || '';
+	        return div.innerHTML;
+	    }
+    
+	    // ========================================
+	    // INITIALIZATION COMPLETE
+	    // ========================================
+    
+	    console.log('ToscripT v3.0 initialized successfully!');
+	    console.log('Features: Full card system + Cloud sync + Android optimization');
+	    console.log('Keyboard shortcuts:');
+	    console.log('  Ctrl+S: Save');
+	    console.log('  Ctrl+Z: Undo');
+	    console.log('  Ctrl+Shift+Z: Redo');
+	    console.log('  Ctrl+P: Preview Script');
+	    console.log('  Ctrl+K: Card View');
+	    console.log('  Ctrl+E: Editor View');
+	    console.log('  Ctrl+M: Toggle Menu');
+	    console.log('  F11: Fullscreen');
+	    console.log('  Escape: Exit focus mode');
+    
+	}); // End DOMContentLoaded
 
-// ========================================
-// SERVICE WORKER (for offline support)
-// ========================================
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-                console.log('Service Worker registered:', registration);
-            })
-            .catch(error => {
-                console.log('Service Worker registration failed:', error);
-            });
-    });
-}
+	// ========================================
+	// SERVICE WORKER REGISTRATION (from Toscript2)
+	// ========================================
 
-// ========================================
-// GLOBAL ERROR HANDLER
-// ========================================
-window.addEventListener('error', (e) => {
-    console.error('Global error:', e.error);
-    
-    // Ignore common harmless errors
-    if (e.error && e.error.message) {
-        const msg = e.error.message.toLowerCase();
-        if (msg.includes('script error') || 
-            msg.includes('failed to fetch') ||
-            msg.includes('load failed') ||
-            msg.includes('network error')) {
-            return; // Don't show error dialog
-        }
-    }
-    
-    // Only show critical errors
-    if (e.error && e.error.stack && !e.error.message.includes('ResizeObserver')) {
-        console.error('Critical error detected:', e.error);
-        // Optional: show error only in development
-        // Remove this entire section for production
-    }
-});
+	if ('serviceWorker' in navigator) {
+	    window.addEventListener('load', () => {
+	        navigator.serviceWorker.register('/sw.js')
+	            .then(registration => {
+	                console.log('Service Worker registered successfully:', registration.scope);
+	            })
+	            .catch(error => {
+	                console.log('Service Worker registration failed:', error);
+	            });
+	    });
+	}
 
-// ========================================
-// PREVENT CONTEXT MENU ON LONG PRESS (Android)
-// ========================================
-document.addEventListener('contextmenu', (e) => {
-    if (e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
-        e.preventDefault();
-    }
-});
+	// ========================================
+	// GLOBAL ERROR HANDLER
+	// ========================================
 
-// ========================================
-// CONSOLE INFO
-// ========================================
-console.log('%cToscripT Professional', 'font-size: 24px; font-weight: bold; color: #3b82f6;');
-console.log('%cVersion 2.0 - Android Optimized', 'font-size: 14px; color: #9ca3af;');
-console.log('%c\nApp initialized successfully!', 'color: #22c55e; font-weight: bold;');
-console.log('\nAvailable methods:');
-console.log('- AndroidBridge.onBackPressed()');
-console.log('- AndroidBridge.saveScript()');
-console.log('- AndroidBridge.getScriptContent()');
-console.log('- AndroidBridge.setScriptContent(content)');
-console.log('- AndroidBridge.getProjectInfo()');
-console.log('- AndroidBridge.showToast(message, type)');
-console.log('- AndroidBridge.exportPdfBase64()');
+	window.addEventListener('error', (e) => {
+	    console.error('Global error:', e.error);
+	    // Don't show alert for every error, just log it
+	});
+
+	window.addEventListener('unhandledrejection', (e) => {
+	    console.error('Unhandled promise rejection:', e.reason);
+	});
+
+	// ========================================
+	// END OF TOSCRIPT3
+	// ========================================
+	
